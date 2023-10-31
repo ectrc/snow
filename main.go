@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/config"
 	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
@@ -41,7 +41,7 @@ func init() {
 
 		device = postgresStorage
 	}
-	
+
 	storage.Repo = storage.NewStorage(device)
 	storage.Cache = storage.NewPersonsCacheMutex()
 }
@@ -49,33 +49,33 @@ func init() {
 func init() {
 	if DROP_TABLES {
 		user := person.NewPerson()
-		snapshot := user.Snapshot()
+		snapshot := user.AthenaProfile.Snapshot()
 
 		quest := person.NewQuest("Quest:Quest_1", "ChallengeBundle:Daily_1", "ChallengeBundleSchedule:Paid_1")
 		{
 			quest.AddObjective("quest_objective_eliminateplayers", 0)
 			quest.AddObjective("quest_objective_top1", 0)
 			quest.AddObjective("quest_objective_place_top10", 0)
-			
+
 			quest.UpdateObjectiveCount("quest_objective_eliminateplayers", 10)
 			quest.UpdateObjectiveCount("quest_objective_place_top10", -3)
-			
+
 			quest.RemoveObjective("quest_objective_top1")
 		}
 		user.AthenaProfile.Quests.AddQuest(quest)
 
 		giftBox := person.NewGift("GiftBox:GB_Default", 1, user.ID, "Hello, Bully!")
 		{
-			giftBox.AddLoot(person.NewItem("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1))
+			giftBox.AddLoot(person.NewItemWithType("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1, "athena"))
 		}
 		user.CommonCoreProfile.Gifts.AddGift(giftBox)
 
 		currency := person.NewItem("Currency:MtxPurchased", 100)
 		user.CommonCoreProfile.Items.AddItem(currency)
 
-		user.FindChanges(*snapshot)
 		user.Save()
-		printjson(user.Snapshot())
+		user.AthenaProfile.Diff(snapshot)
+		aid.PrintJSON(user.CommonCoreProfile.Snapshot())
 	}
 
 	go storage.Cache.CacheKiller()
@@ -88,19 +88,7 @@ func main() {
 		fmt.Println(person)
 	}
 
-	wait()
-}
-
-func wait() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
-}
-
-func printjson(v interface{}) {
-	json1, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(json1))
 }

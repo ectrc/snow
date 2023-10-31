@@ -6,13 +6,17 @@ import (
 
 type ItemMutex struct {
 	sync.Map
+	ProfileType string
 }
 
-func NewItemMutex() *ItemMutex {
-	return &ItemMutex{}
+func NewItemMutex(profile string) *ItemMutex {
+	return &ItemMutex{
+		ProfileType: profile,
+	}
 }
 
 func (m *ItemMutex) AddItem(item *Item) {
+	item.ProfileType = m.ProfileType
 	m.Store(item.ID, item)
 	// storage.Repo.SaveItem(item)
 }
@@ -48,6 +52,7 @@ func (m *ItemMutex) Count() int {
 
 type GiftMutex struct {
 	sync.Map
+	ProfileType string
 }
 
 func NewGiftMutex() *GiftMutex {

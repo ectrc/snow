@@ -5,6 +5,7 @@ import (
 
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
+	"github.com/r3labs/diff/v3"
 )
 
 type Profile struct {
@@ -13,20 +14,23 @@ type Profile struct {
 	Gifts      *GiftMutex
 	Quests		 *QuestMutex
 	Attributes *sync.Map
+	Type			 string
+	Changes 	 []diff.Change
 }
 
-func NewProfile() *Profile {
+func NewProfile(profile string) *Profile {
 	return &Profile{
 		ID:         uuid.New().String(),
-		Items:      NewItemMutex(),
+		Items:      NewItemMutex(profile),
 		Gifts:      NewGiftMutex(),
 		Quests:		  NewQuestMutex(),
 		Attributes: &sync.Map{},
+		Type:			 profile,
 	}
 }
 
 func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
-	items := NewItemMutex()
+	items := NewItemMutex(profile.Type)
 	gifts := NewGiftMutex()
 	quests := NewQuestMutex()
 
@@ -53,6 +57,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		Gifts:      gifts,
 		Quests:			quests,
 		Attributes: attributes,
+		Type:			  profile.Type,
 	}
 }
 
@@ -93,6 +98,12 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 		Quests:			quests,
 		Attributes:	attributes,
 	}
+}
+
+func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
+	changes, _ := diff.Diff(p.Snapshot(), snapshot)
+	p.Changes = changes
+	return changes
 }
 
 type Loadout struct {

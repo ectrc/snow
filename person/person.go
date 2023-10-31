@@ -3,7 +3,6 @@ package person
 import (
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
-	"github.com/r3labs/diff/v3"
 )
 
 type Person struct {
@@ -12,7 +11,6 @@ type Person struct {
 	AthenaProfile  *Profile
 	CommonCoreProfile *Profile
 	Loadout *Loadout
-	Changes []diff.Change
 }
 
 type Option struct {
@@ -24,8 +22,8 @@ func NewPerson() *Person {
 	return &Person{
 		ID: uuid.New().String(),
 		DisplayName: "Hello, Bully!",
-		AthenaProfile: NewProfile(),
-		CommonCoreProfile: NewProfile(),
+		AthenaProfile: NewProfile("athena"),
+		CommonCoreProfile: NewProfile("common_core"),
 		Loadout: NewLoadout(),
 	}
 }
@@ -73,11 +71,6 @@ func AllFromDatabase() []*Person {
 
 func (p *Person) Save() {
 	storage.Repo.SavePerson(p.ToDatabase())
-}
-
-func (p *Person) FindChanges(snapshot PersonSnapshot) {
-	changes, _ := diff.Diff(snapshot, *CreateSnapshot(p))
-	p.Changes = changes
 }
 
 func (p *Person) ToDatabase() *storage.DB_Person {
@@ -128,8 +121,4 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 	}
 
 	return &dbPerson
-}
-
-func (p *Person) Snapshot() *PersonSnapshot {
-	return CreateSnapshot(p)
 }

@@ -13,7 +13,7 @@ Performance first, universal Fortnite backend written in Go.
 
 ```golang
 user := person.NewPerson()
-snapshot := user.Snapshot()
+snapshot := user.AthenaProfile.Snapshot()
 
 quest := person.NewQuest("Quest:Quest_1", "ChallengeBundle:Daily_1", "ChallengeBundleSchedule:Paid_1")
 {
@@ -30,15 +30,15 @@ user.AthenaProfile.Quests.AddQuest(quest)
 
 giftBox := person.NewGift("GiftBox:GB_Default", 1, user.ID, "Hello, Bully!")
 {
-  giftBox.AddLoot(person.NewItem("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1))
+  giftBox.AddLoot(person.NewItemWithType("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1, "athena"))
 }
 user.CommonCoreProfile.Gifts.AddGift(giftBox)
 
 currency := person.NewItem("Currency:MtxPurchased", 100)
 user.CommonCoreProfile.Items.AddItem(currency)
 
-user.FindChanges(*snapshot)
 user.Save()
+user.AthenaProfile.Diff(snapshot)
 ```
 
 ## What's next?

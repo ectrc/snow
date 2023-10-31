@@ -26,6 +26,18 @@ func NewItem(templateID string, quantity int) *Item {
 	}
 }
 
+func NewItemWithType(templateID string, quantity int, profile string) *Item {
+	return &Item{
+		ID:         uuid.New().String(),
+		TemplateID: templateID,
+		Quantity:   quantity,
+		Favorite:   false,
+		HasSeen:    false,
+		Variants:   []*VariantChannel{},
+		ProfileType: profile,
+	}
+}
+
 func FromDatabaseItem(item *storage.DB_Item, profileType *string) *Item {
 	variants := []*VariantChannel{}
 

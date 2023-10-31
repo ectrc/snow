@@ -1,13 +1,5 @@
 package person
 
-type PersonSnapshot struct {
-	ID                string
-	DisplayName       string
-	AthenaProfile     ProfileSnapshot
-	CommonCoreProfile ProfileSnapshot
-	Loadout           Loadout
-}
-
 type ProfileSnapshot struct {
 	ID         string
 	Items      map[string]ItemSnapshot
@@ -34,15 +26,4 @@ type GiftSnapshot struct {
 	GiftedAt   int64
 	Message    string
 	Loot       []Item
-}
-
-// Snapshot returns a snapshot of the person. No pointers as it has to compare the value not the address.
-func CreateSnapshot(person *Person) *PersonSnapshot {
-	return &PersonSnapshot{
-		ID:                person.ID,
-		DisplayName:       person.DisplayName,
-		Loadout:           *person.Loadout,
-		AthenaProfile:     *person.AthenaProfile.Snapshot(),
-		CommonCoreProfile: *person.CommonCoreProfile.Snapshot(),
-	}
 }
