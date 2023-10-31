@@ -1,0 +1,131 @@
+package person
+
+import (
+	"sync"
+)
+
+type ItemMutex struct {
+	sync.Map
+}
+
+func NewItemMutex() *ItemMutex {
+	return &ItemMutex{}
+}
+
+func (m *ItemMutex) AddItem(item *Item) {
+	m.Store(item.ID, item)
+	// storage.Repo.SaveItem(item)
+}
+
+func (m *ItemMutex) DeleteItem(id string) {
+	m.Delete(id)
+	// storage.Repo.DeleteItem(id)
+}
+
+func (m *ItemMutex) GetItem(id string) *Item {
+	item, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return item.(*Item)
+}
+
+func (m *ItemMutex) RangeItems(f func(key string, value *Item) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Item))
+	})
+}
+
+func (m *ItemMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
+
+type GiftMutex struct {
+	sync.Map
+}
+
+func NewGiftMutex() *GiftMutex {
+	return &GiftMutex{}
+}
+
+func (m *GiftMutex) AddGift(gift *Gift) {
+	m.Store(gift.ID, gift)
+	// storage.Repo.SaveGift(gift)
+}
+
+func (m *GiftMutex) DeleteGift(id string) {
+	m.Delete(id)
+	// storage.Repo.DeleteGift(id)
+}
+
+func (m *GiftMutex) GetGift(id string) *Gift {
+	gift, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return gift.(*Gift)
+}
+
+func (m *GiftMutex) RangeGifts(f func(key string, value *Gift) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Gift))
+	})
+}
+
+func (m *GiftMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
+
+type QuestMutex struct {
+	sync.Map
+}
+
+func NewQuestMutex() *QuestMutex {
+	return &QuestMutex{}
+}
+
+func (m *QuestMutex) AddQuest(quest *Quest) {
+	m.Store(quest.ID, quest)
+	// storage.Repo.SaveQuest(quest)
+}
+
+func (m *QuestMutex) DeleteQuest(id string) {
+	m.Delete(id)
+	// storage.Repo.DeleteQuest(id)
+}
+
+func (m *QuestMutex) GetQuest(id string) *Quest {
+	quest, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return quest.(*Quest)
+}
+
+func (m *QuestMutex) RangeQuests(f func(key string, value *Quest) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Quest))
+	})
+}
+
+func (m *QuestMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}

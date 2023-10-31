@@ -1,0 +1,12 @@
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+*.pak
+*.sig
+
+.vscode
+tmp
+config.ini
