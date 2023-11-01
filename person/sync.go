@@ -134,3 +134,36 @@ func (m *QuestMutex) Count() int {
 	})
 	return count
 }
+
+type AttributeMutex struct {
+	sync.Map
+}
+
+func NewAttributeMutex() *AttributeMutex {
+	return &AttributeMutex{}
+}
+
+func (m *AttributeMutex) AddAttribute(attribute *Attribute) {
+	m.Store(attribute.Key, attribute)
+	// storage.Repo.SaveAttribute(key, value)
+}
+
+func (m *AttributeMutex) DeleteAttribute(key string) {
+	m.Delete(key)
+	// storage.Repo.DeleteAttribute(key)
+}
+
+func (m *AttributeMutex) GetAttribute(key string) *Attribute {
+	value, ok := m.Load(key)
+	if !ok {
+		return nil
+	}
+
+	return value.(*Attribute)
+}
+
+func (m *AttributeMutex) RangeAttributes(f func(key string, value *Attribute) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Attribute))
+	})
+}

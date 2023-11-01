@@ -1,11 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/config"
 	"github.com/ectrc/snow/person"
@@ -71,11 +66,10 @@ func init() {
 		user.CommonCoreProfile.Gifts.AddGift(giftBox)
 
 		currency := person.NewItem("Currency:MtxPurchased", 100)
-		user.CommonCoreProfile.Items.AddItem(currency)
+		user.AthenaProfile.Items.AddItem(currency)
 
 		user.Save()
 		user.AthenaProfile.Diff(snapshot)
-		aid.PrintJSON(user.CommonCoreProfile.Snapshot())
 	}
 
 	go storage.Cache.CacheKiller()
@@ -84,11 +78,14 @@ func init() {
 func main() {
 	persons := person.AllFromDatabase()
 
-	for _, person := range persons {
-		fmt.Println(person)
+	for _, p := range persons {
+		p.AthenaProfile.Items.RangeItems(func(id string, item *person.Item) bool {
+			aid.PrintJSON(item)
+			return true
+		})
+
+		aid.PrintJSON(p.Snapshot())
 	}
 
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
+	aid.WaitForExit()
 }

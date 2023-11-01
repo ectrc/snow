@@ -54,7 +54,8 @@ func (DB_Profile) TableName() string {
 type DB_PAttribute struct {
 	Key       string `gorm:"primary_key"`
 	ProfileID string
-	Value     string
+	ValueJSON string
+	Type      string
 }
 
 func (DB_PAttribute) TableName() string {

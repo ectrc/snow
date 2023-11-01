@@ -35,8 +35,6 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Find(&dbPerson)
 
 	if dbPerson.ID == "" {
@@ -57,8 +55,6 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Find(&dbPersons)
 
 	return dbPersons

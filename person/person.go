@@ -35,13 +35,13 @@ func FromDatabase(personId string) *Person {
 	}
 
 	loadout := FromDatabaseLoadout(&person.Loadout)
-	athenaProfile := &Profile{}
-	commonCoreProfile := &Profile{}
+	athenaProfile := NewProfile("athena")
+	commonCoreProfile := NewProfile("common_core")
 
 	for _, profile := range person.Profiles {
 		if profile.Type == "athena" {
-			athenaProfile := FromDatabaseProfile(&profile)
 			athenaProfile.ID = profile.ID
+			athenaProfile = FromDatabaseProfile(&profile)
 		}
 
 		if profile.Type == "common_core" {
@@ -49,7 +49,7 @@ func FromDatabase(personId string) *Person {
 			commonCoreProfile = FromDatabaseProfile(&profile)
 		}
 	}
-
+	
 	return &Person{
 		ID: person.ID,
 		DisplayName: person.DisplayName,
@@ -81,7 +81,10 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		Loadout: *p.Loadout.ToDatabase(),
 	}
 
-	profilesToConvert := map[string]*Profile{"athena": p.AthenaProfile, "common_core": p.CommonCoreProfile}
+	profilesToConvert := map[string]*Profile{
+		"common_core": p.CommonCoreProfile,
+		"athena": p.AthenaProfile, 
+	}
 
 	for profileType, profile := range profilesToConvert {
 		dbProfile := storage.DB_Profile{
@@ -108,12 +111,8 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 			return true
 		})
 
-		profile.Attributes.Range(func(key, value interface{}) bool {
-			dbProfile.Attributes = append(dbProfile.Attributes, storage.DB_PAttribute{
-				ProfileID: profile.ID,
-				Key: key.(string),
-				Value: value.(string),
-			})
+		profile.Attributes.RangeAttributes(func(key string, value *Attribute) bool {
+			dbProfile.Attributes = append(dbProfile.Attributes, *value.ToDatabase(p.ID))
 			return true
 		})
 
@@ -122,3 +121,26 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 
 	return &dbPerson
 }
+
+func (p *Person) AddAttribute(value *Attribute) {
+	p.AthenaProfile.Attributes.AddAttribute(value)
+}
+
+func (p *Person) GetAttribute(key string) *Attribute {
+	attribute := p.AthenaProfile.Attributes.GetAttribute(key)
+	return attribute
+}
+
+func (p *Person) RemoveAttribute(key string) {
+	p.AthenaProfile.Attributes.DeleteAttribute(key)
+}
+
+func (p *Person) Snapshot() *PersonSnapshot {
+	return &PersonSnapshot{
+		ID: p.ID,
+		DisplayName: p.DisplayName,
+		AthenaProfile: *p.AthenaProfile.Snapshot(),
+		CommonCoreProfile:* p.CommonCoreProfile.Snapshot(),
+		Loadout: *p.Loadout,
+	}
+} 

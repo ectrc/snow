@@ -1,7 +1,7 @@
 package person
 
 import (
-	"sync"
+	"fmt"
 
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
@@ -13,7 +13,7 @@ type Profile struct {
 	Items      *ItemMutex
 	Gifts      *GiftMutex
 	Quests		 *QuestMutex
-	Attributes *sync.Map
+	Attributes *AttributeMutex
 	Type			 string
 	Changes 	 []diff.Change
 }
@@ -24,7 +24,7 @@ func NewProfile(profile string) *Profile {
 		Items:      NewItemMutex(profile),
 		Gifts:      NewGiftMutex(),
 		Quests:		  NewQuestMutex(),
-		Attributes: &sync.Map{},
+		Attributes: NewAttributeMutex(),
 		Type:			 profile,
 	}
 }
@@ -33,6 +33,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 	items := NewItemMutex(profile.Type)
 	gifts := NewGiftMutex()
 	quests := NewQuestMutex()
+	attributes := NewAttributeMutex()
 
 	for _, item := range profile.Items {
 		items.AddItem(FromDatabaseItem(&item, &profile.Type))
@@ -46,9 +47,14 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		quests.AddQuest(FromDatabaseQuest(&quest, &profile.Type))
 	}
 
-	attributes := &sync.Map{}
 	for _, attribute := range profile.Attributes {
-		attributes.Store(attribute.Key, attribute.Value)
+		parsed := FromDatabaseAttribute(&attribute)
+		if parsed == nil {
+			fmt.Printf("error getting attribute from database")
+			continue
+		}
+
+		attributes.AddAttribute(parsed)
 	}
 
 	return &Profile{
@@ -69,7 +75,7 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 	items := map[string]ItemSnapshot{}
 	gifts := map[string]GiftSnapshot{}
 	quests := map[string]Quest{}
-	attributes := map[string]string{}
+	attributes := map[string]Attribute{}
 
 	p.Items.RangeItems(func(id string, item *Item) bool {
 		items[id] = item.Snapshot()
@@ -86,8 +92,8 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 		return true
 	})
 
-	p.Attributes.Range(func(key, value interface{}) bool {
-		attributes[key.(string)] = value.(string)
+	p.Attributes.RangeAttributes(func(key string, value *Attribute) bool {
+		attributes[key] = *value
 		return true
 	})
 
@@ -96,7 +102,7 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 		Items:      items,
 		Gifts:      gifts,
 		Quests:			quests,
-		Attributes:	attributes,
+		Attributes: attributes,
 	}
 }
 

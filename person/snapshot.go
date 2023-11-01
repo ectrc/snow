@@ -1,11 +1,19 @@
 package person
 
+type PersonSnapshot struct {
+	ID                string
+	DisplayName       string
+	AthenaProfile     ProfileSnapshot
+	CommonCoreProfile ProfileSnapshot
+	Loadout           Loadout
+}
+
 type ProfileSnapshot struct {
 	ID         string
 	Items      map[string]ItemSnapshot
 	Gifts      map[string]GiftSnapshot
 	Quests     map[string]Quest
-	Attributes map[string]string
+	Attributes map[string]Attribute
 }
 
 type ItemSnapshot struct {
