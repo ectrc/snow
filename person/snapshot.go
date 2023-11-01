@@ -14,6 +14,8 @@ type ProfileSnapshot struct {
 	Gifts      map[string]GiftSnapshot
 	Quests     map[string]Quest
 	Attributes map[string]Attribute
+	Revision   int
+	Type       string
 }
 
 type ItemSnapshot struct {

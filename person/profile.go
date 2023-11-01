@@ -3,6 +3,7 @@ package person
 import (
 	"fmt"
 
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 	"github.com/r3labs/diff/v3"
@@ -15,7 +16,8 @@ type Profile struct {
 	Quests		 *QuestMutex
 	Attributes *AttributeMutex
 	Type			 string
-	Changes 	 []diff.Change
+	Revision				 int
+	Changes 	 []interface{}
 }
 
 func NewProfile(profile string) *Profile {
@@ -25,7 +27,8 @@ func NewProfile(profile string) *Profile {
 		Gifts:      NewGiftMutex(),
 		Quests:		  NewQuestMutex(),
 		Attributes: NewAttributeMutex(),
-		Type:			 profile,
+		Type:			  profile,
+		Revision:   0,
 	}
 }
 
@@ -64,6 +67,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		Quests:			quests,
 		Attributes: attributes,
 		Type:			  profile.Type,
+		Revision:   profile.Revision,
 	}
 }
 
@@ -92,8 +96,8 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 		return true
 	})
 
-	p.Attributes.RangeAttributes(func(key string, value *Attribute) bool {
-		attributes[key] = *value
+	p.Attributes.RangeAttributes(func(key string, attribute *Attribute) bool {
+		attributes[key] = *attribute
 		return true
 	})
 
@@ -103,13 +107,95 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 		Gifts:      gifts,
 		Quests:			quests,
 		Attributes: attributes,
+		Type:			  p.Type,
+		Revision:   p.Revision,
 	}
 }
 
 func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
-	changes, _ := diff.Diff(p.Snapshot(), snapshot)
-	p.Changes = changes
+	changes, err := diff.Diff(snapshot, p.Snapshot())
+	if err != nil {
+		fmt.Printf("error diffing profile: %v\n", err)
+		return nil
+	}
+
+	aid.PrintJSON(changes)
+
+	for _, change := range changes {
+		switch change.Path[0] {
+		case "Items":
+			if change.Type == "create" && change.Path[2] == "ID" {
+				p.CreateItemAddedChange(p.Items.GetItem(change.Path[1]))
+			}
+
+			if change.Type == "delete" && change.Path[2] == "ID" {
+				p.CreateItemRemovedChange(change.Path[1])
+			}
+
+			if change.Type == "update" && change.Path[2] == "Quantity" {
+				p.CreateItemQuantityChangedChange(p.Items.GetItem(change.Path[1]))
+			}
+
+			if change.Type == "update" && change.Path[2] != "Quantity" {
+				p.CreateItemAttributeChangedChange(p.Items.GetItem(change.Path[1]), change.Path[2])
+			}
+		}
+	}
+
 	return changes
+}
+
+func (p *Profile) CreateItemAddedChange(item *Item) {
+	if item == nil {
+		fmt.Println("error getting item from profile", item.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, ItemAdded{
+		ChangeType: "itemAdded",
+		ItemId: item.ID,
+		Item: item.GenerateFortniteItemEntry(),
+	})
+}
+
+func (p *Profile) CreateItemRemovedChange(itemId string) {
+	p.Changes = append(p.Changes, ItemRemoved{
+		ChangeType: "itemRemoved",
+		ItemId: itemId,
+	})
+}
+
+func (p *Profile) CreateItemQuantityChangedChange(item *Item) {
+	if item == nil {
+		fmt.Println("error getting item from profile", item.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, ItemQuantityChanged{
+		ChangeType: "itemQuantityChanged",
+		ItemId: item.ID,
+		Quantity: item.Quantity,
+	})
+}
+
+func (p *Profile) CreateItemAttributeChangedChange(item *Item, attribute string) {
+	if item == nil {
+		fmt.Println("error getting item from profile", item.ID)
+		return
+	}
+
+	lookup := map[string]string{
+		"Favorite": "favorite",
+		"HasSeen": "item_seen",
+		"Variants": "variants",
+	}
+
+	p.Changes = append(p.Changes, ItemAttributeChanged{
+		ChangeType: "itemAttributeChanged",
+		ItemId: item.ID,
+		AttributeName: lookup[attribute],
+		AttributeValue: item.GetAttribute(attribute),
+	})
 }
 
 type Loadout struct {
@@ -134,8 +220,8 @@ func NewLoadout() *Loadout {
 		Backpack: "",
 		Pickaxe: "",
 		Glider: "",
-		Dances: []string{"", "", "", "", "", ""},
-		ItemWraps: []string{"", "", "", "", "", "", ""},
+		Dances: make([]string, 6),
+		ItemWraps: make([]string, 7),
 		LoadingScreen: "",
 		SkyDiveContrail: "",
 		MusicPack: "",
@@ -144,20 +230,20 @@ func NewLoadout() *Loadout {
 	}
 }
 
-func FromDatabaseLoadout(loadout *storage.DB_Loadout) *Loadout {
+func FromDatabaseLoadout(l *storage.DB_Loadout) *Loadout {
 	return &Loadout{
-		ID: loadout.ID,
-		Character: loadout.Character,
-		Backpack: loadout.Backpack,
-		Pickaxe: loadout.Pickaxe,
-		Glider: loadout.Glider,
-		Dances: loadout.Dances,
-		ItemWraps: loadout.ItemWraps,
-		LoadingScreen: loadout.LoadingScreen,
-		SkyDiveContrail: loadout.SkyDiveContrail,
-		MusicPack: loadout.MusicPack,
-		BannerIcon: loadout.BannerIcon,
-		BannerColor: loadout.BannerColor,
+		ID: l.ID,
+		Character: l.Character,
+		Backpack: l.Backpack,
+		Pickaxe: l.Pickaxe,
+		Glider: l.Glider,
+		Dances: l.Dances,
+		ItemWraps: l.ItemWraps,
+		LoadingScreen: l.LoadingScreen,
+		SkyDiveContrail: l.SkyDiveContrail,
+		MusicPack: l.MusicPack,
+		BannerIcon: l.BannerIcon,
+		BannerColor: l.BannerColor,
 	}
 }
 

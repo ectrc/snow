@@ -45,6 +45,7 @@ type DB_Profile struct {
 	Quests     []DB_Quest      `gorm:"foreignkey:ProfileID"`
 	Attributes []DB_PAttribute `gorm:"foreignkey:ProfileID"`
 	Type       string
+	Revision	 int
 }
 
 func (DB_Profile) TableName() string {

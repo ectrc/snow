@@ -35,6 +35,21 @@ func (m *ItemMutex) GetItem(id string) *Item {
 	return item.(*Item)
 }
 
+func (m *ItemMutex) GetItemByTemplateID(templateID string) *Item {
+	var item *Item
+
+	m.Range(func(key, value interface{}) bool {
+		if value.(*Item).TemplateID == templateID {
+			item = value.(*Item)
+			return false
+		}
+
+		return true
+	})
+
+	return item
+}
+
 func (m *ItemMutex) RangeItems(f func(key string, value *Item) bool) {
 	m.Range(func(key, value interface{}) bool {
 		return f(key.(string), value.(*Item))

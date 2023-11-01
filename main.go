@@ -44,48 +44,48 @@ func init() {
 func init() {
 	if DROP_TABLES {
 		user := person.NewPerson()
-		snapshot := user.AthenaProfile.Snapshot()
-
-		quest := person.NewQuest("Quest:Quest_1", "ChallengeBundle:Daily_1", "ChallengeBundleSchedule:Paid_1")
 		{
-			quest.AddObjective("quest_objective_eliminateplayers", 0)
-			quest.AddObjective("quest_objective_top1", 0)
-			quest.AddObjective("quest_objective_place_top10", 0)
+			user.CommonCoreProfile.Items.AddItem(person.NewItem("Currency:MtxPurchased", 100))
+			user.CommonCoreProfile.Items.AddItem(person.NewItem("Token:CampaignAccess", 1))
+		
+			quest := person.NewQuest("Quest:Quest_1", "ChallengeBundle:Daily_1", "ChallengeBundleSchedule:Paid_1")
+			{
+				quest.AddObjective("quest_objective_eliminateplayers", 0)
+				quest.AddObjective("quest_objective_top1", 0)
+				quest.AddObjective("quest_objective_place_top10", 0)
 
-			quest.UpdateObjectiveCount("quest_objective_eliminateplayers", 10)
-			quest.UpdateObjectiveCount("quest_objective_place_top10", -3)
+				quest.UpdateObjectiveCount("quest_objective_eliminateplayers", 10)
+				quest.UpdateObjectiveCount("quest_objective_place_top10", -3)
 
-			quest.RemoveObjective("quest_objective_top1")
+				quest.RemoveObjective("quest_objective_top1")
+			}
+			user.AthenaProfile.Quests.AddQuest(quest)
+
+			giftBox := person.NewGift("GiftBox:GB_Default", 1, user.ID, "Hello, Bully!")
+			{
+				giftBox.AddLoot(person.NewItemWithType("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1, "athena"))
+			}
+			user.CommonCoreProfile.Gifts.AddGift(giftBox)
 		}
-		user.AthenaProfile.Quests.AddQuest(quest)
-
-		giftBox := person.NewGift("GiftBox:GB_Default", 1, user.ID, "Hello, Bully!")
-		{
-			giftBox.AddLoot(person.NewItemWithType("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1, "athena"))
-		}
-		user.CommonCoreProfile.Gifts.AddGift(giftBox)
-
-		currency := person.NewItem("Currency:MtxPurchased", 100)
-		user.AthenaProfile.Items.AddItem(currency)
-
 		user.Save()
-		user.AthenaProfile.Diff(snapshot)
+
+		snapshot := user.CommonCoreProfile.Snapshot()
+		{
+			vbucks := user.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+			vbucks.Quantity = 200
+			vbucks.Favorite = true
+			
+			user.CommonCoreProfile.Items.DeleteItem(user.CommonCoreProfile.Items.GetItemByTemplateID("Token:CampaignAccess").ID)
+			user.CommonCoreProfile.Items.AddItem(person.NewItem("Token:ReceiveMtxCurrency", 1))
+		}	
+		user.CommonCoreProfile.Diff(snapshot)
+
+		aid.PrintJSON(user.CommonCoreProfile.Changes)
 	}
 
 	go storage.Cache.CacheKiller()
 }
 
 func main() {
-	persons := person.AllFromDatabase()
-
-	for _, p := range persons {
-		p.AthenaProfile.Items.RangeItems(func(id string, item *person.Item) bool {
-			aid.PrintJSON(item)
-			return true
-		})
-
-		aid.PrintJSON(p.Snapshot())
-	}
-
-	aid.WaitForExit()
+	// aid.WaitForExit()
 }

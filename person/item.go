@@ -1,6 +1,7 @@
 package person
 
 import (
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
@@ -66,6 +67,41 @@ func FromDatabaseLoot(item *storage.DB_Loot) *Item {
 		Variants: []*VariantChannel{},
 		ProfileType: item.ProfileType,
 	}
+}
+
+func (i *Item) GenerateFortniteItemEntry() aid.JSON {
+	varaints := []aid.JSON{}
+
+	for _, variant := range i.Variants {
+		varaints = append(varaints, aid.JSON{
+			"channel": variant.Channel,
+			"owned": variant.Owned,
+			"active": variant.Active,
+		})
+	}
+
+	return aid.JSON{
+		"templateId": i.TemplateID,
+		"attributes": aid.JSON{
+			"variants": varaints,
+			"favorite": i.Favorite,
+			"item_seen": i.HasSeen,
+		},
+		"quantity": i.Quantity,
+	}
+}
+
+func (i *Item) GetAttribute(attribute string) interface{} {
+	switch attribute {
+	case "Favorite":
+		return i.Favorite
+	case "HasSeen":
+		return i.HasSeen
+	case "Variants":
+		return i.Variants
+	}
+
+	return nil
 }
 
 func (i *Item) Delete() {

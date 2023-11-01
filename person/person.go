@@ -21,7 +21,7 @@ type Option struct {
 func NewPerson() *Person {
 	return &Person{
 		ID: uuid.New().String(),
-		DisplayName: "Hello, Bully!",
+		DisplayName: uuid.New().String(),
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		Loadout: NewLoadout(),
