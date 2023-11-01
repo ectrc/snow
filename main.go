@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/ectrc/snow/aid"
-	"github.com/ectrc/snow/config"
 	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 )
@@ -12,11 +11,11 @@ const (
 )
 
 func init() {
-	config := config.Get()
+	aid.LoadConfig()
 
 	var device storage.Storage
 
-	switch config.Database.Type {
+	switch aid.Config.Database.Type {
 	case "postgres":
 		postgresStorage := storage.NewPostgresStorage()
 
@@ -90,7 +89,11 @@ func init() {
 }
 
 func main() {
-	users := person.AllFromDatabase()
+	var users []*person.Person
+
+	aid.PrintTime("Fetching Persons", func() {
+		users = person.AllFromDatabase()
+	})
 
 	for _, user := range users {
 		aid.PrintJSON(user.Snapshot())

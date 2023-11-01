@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/ectrc/snow/config"
+	"github.com/ectrc/snow/aid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -11,7 +11,7 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage() *PostgresStorage {
-	db, err := gorm.Open(postgres.Open(config.Get().Database.URI), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(aid.Config.Database.URI), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
