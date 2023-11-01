@@ -37,9 +37,7 @@ func FromDatabaseQuest(quest *storage.DB_Quest, profileType *string) *Quest {
 }
 
 func (q *Quest) Delete() {
-	//storage.Repo.DeleteQuest(q.ID)
-	q.ObjectiveCounts = []int64{}
-	q.Objectives = []string{}
+	storage.Repo.DeleteQuest(q.ID)
 }
 
 func (q *Quest) AddObjective(objective string, count int64) {

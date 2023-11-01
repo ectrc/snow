@@ -2,21 +2,25 @@ package person
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"github.com/ectrc/snow/storage"
+	"github.com/google/uuid"
 )
 
 type Attribute struct {
+	ID 	  string
 	Key   string
 	Value interface{}
 	Type  string
 }
 
-func NewAttribute(key string, value interface{}, attributeType string) *Attribute {
+func NewAttribute(key string, value interface{}) *Attribute {
 	return &Attribute{
+		ID:    uuid.New().String(),
 		Key:   key,
 		Value: value,
-		Type:  attributeType,
+		Type:  reflect.TypeOf(value).String(),
 	}
 }
 
@@ -28,6 +32,7 @@ func FromDatabaseAttribute(db *storage.DB_PAttribute) *Attribute {
 	}
 
 	return &Attribute{
+		ID:    db.ID,
 		Key:   db.Key,
 		Value: value,
 		Type:  db.Type,
@@ -41,9 +46,14 @@ func (a *Attribute) ToDatabase(profileId string) *storage.DB_PAttribute {
 	}
 
 	return &storage.DB_PAttribute{
+		ID:        a.ID,
 		ProfileID: profileId,
-		Key:      a.Key,
+		Key:       a.Key,
 		ValueJSON: string(value),
-		Type:     a.Type,
+		Type:      a.Type,
 	}
+}
+
+func (a *Attribute) Delete() {
+	storage.Repo.DeleteAttribute(a.ID)
 }

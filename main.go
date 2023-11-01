@@ -45,6 +45,10 @@ func init() {
 	if DROP_TABLES {
 		user := person.NewPerson()
 		{
+			user.CommonCoreProfile.Attributes.AddAttribute(person.NewAttribute("xp", 1030))
+			user.CommonCoreProfile.Attributes.AddAttribute(person.NewAttribute("level", 100))
+			user.CommonCoreProfile.Attributes.AddAttribute(person.NewAttribute("quest_manager", aid.JSON{}))
+
 			user.CommonCoreProfile.Items.AddItem(person.NewItem("Currency:MtxPurchased", 100))
 			user.CommonCoreProfile.Items.AddItem(person.NewItem("Token:CampaignAccess", 1))
 		
@@ -79,13 +83,18 @@ func init() {
 			user.CommonCoreProfile.Items.AddItem(person.NewItem("Token:ReceiveMtxCurrency", 1))
 		}	
 		user.CommonCoreProfile.Diff(snapshot)
-
-		aid.PrintJSON(user.CommonCoreProfile.Changes)
+		user.Save()
 	}
 
 	go storage.Cache.CacheKiller()
 }
 
 func main() {
+	users := person.AllFromDatabase()
+
+	for _, user := range users {
+		aid.PrintJSON(user.Snapshot())
+	}
+
 	// aid.WaitForExit()
 }

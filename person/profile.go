@@ -3,7 +3,6 @@ package person
 import (
 	"fmt"
 
-	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 	"github.com/r3labs/diff/v3"
@@ -119,7 +118,7 @@ func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
 		return nil
 	}
 
-	aid.PrintJSON(changes)
+	// aid.PrintJSON(changes)
 
 	for _, change := range changes {
 		switch change.Path[0] {

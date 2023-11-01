@@ -53,8 +53,9 @@ func (DB_Profile) TableName() string {
 }
 
 type DB_PAttribute struct {
-	Key       string `gorm:"primary_key"`
+	ID        string `gorm:"primary_key"`
 	ProfileID string
+	Key       string
 	ValueJSON string
 	Type      string
 }
@@ -78,10 +79,11 @@ func (DB_Item) TableName() string {
 }
 
 type DB_VariantChannel struct {
-	Channel string         `gorm:"primary_key"`
+	ID      string `gorm:"primary_key"`
+	ItemID  string
+	Channel string
 	Owned   pq.StringArray `gorm:"type:text[]"`
 	Active  string
-	ItemID  string
 }
 
 func (DB_VariantChannel) TableName() string {

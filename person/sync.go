@@ -22,6 +22,12 @@ func (m *ItemMutex) AddItem(item *Item) {
 }
 
 func (m *ItemMutex) DeleteItem(id string) {
+	item := m.GetItem(id)
+	if item == nil {
+		return
+	}
+
+	item.Delete()
 	m.Delete(id)
 	// storage.Repo.DeleteItem(id)
 }

@@ -105,8 +105,11 @@ func (i *Item) GetAttribute(attribute string) interface{} {
 }
 
 func (i *Item) Delete() {
-	//storage.Repo.DeleteItem(i.ID)
-	i.Quantity = 0
+	storage.Repo.DeleteItem(i.ID)	
+}
+
+func (i *Item) DeleteLoot() {
+	storage.Repo.DeleteLoot(i.ID)
 }
 
 func (i *Item) NewChannel(channel string, owned []string, active string) *VariantChannel {
@@ -204,6 +207,7 @@ func (i *Item) Snapshot() ItemSnapshot {
 }
 
 type VariantChannel struct {
+	ID 		string
 	ItemID	string
 	Channel string
 	Owned	 	[]string
@@ -212,6 +216,7 @@ type VariantChannel struct {
 
 func FromDatabaseVariant(variant *storage.DB_VariantChannel) *VariantChannel {
 	return &VariantChannel{
+		ID:      variant.ID,
 		ItemID:  variant.ItemID,
 		Channel: variant.Channel,
 		Owned:   variant.Owned,
@@ -221,6 +226,7 @@ func FromDatabaseVariant(variant *storage.DB_VariantChannel) *VariantChannel {
 
 func (v *VariantChannel) ToDatabase() *storage.DB_VariantChannel {
 	return &storage.DB_VariantChannel{
+		ID:      v.ID,
 		ItemID:  v.ItemID,
 		Channel: v.Channel,
 		Owned:   v.Owned,

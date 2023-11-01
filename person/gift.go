@@ -57,9 +57,11 @@ func (g *Gift) FillLoot(loot []*Item) {
 }
 
 func (g *Gift) Delete() {
-	g.Quantity = 0
-	g.Loot = []*Item{}
-	//storage.Repo.DeleteGift(g.ID)
+	for _, item := range g.Loot {
+		item.DeleteLoot()
+	}
+
+	storage.Repo.DeleteGift(g.ID)
 }
 
 func (g *Gift) ToDatabase(profileId string) *storage.DB_Gift {
