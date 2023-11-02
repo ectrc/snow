@@ -1,4 +1,4 @@
-![1](https://github.com/ectrc/snow/assets/13946988/64c3b1ac-d308-4e5d-ad8d-2b7aead29195)
+![1](https://github.com/ectrc/snow/assets/13946988/fc007f07-3878-46e7-b990-668fc3d758d0)
 
 # Snow
 
