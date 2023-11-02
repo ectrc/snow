@@ -2,10 +2,6 @@ package person
 
 import "github.com/ectrc/snow/aid"
 
-type ProfileChange struct {
-	ChangeType string `json:"changeType"`
-}
-
 type FullProfileUpdate struct {
 	ChangeType string `json:"changeType"`
 	Profile aid.JSON `json:"profile"`

@@ -70,10 +70,10 @@ func FromDatabaseLoot(item *storage.DB_Loot) *Item {
 }
 
 func (i *Item) GenerateFortniteItemEntry() aid.JSON {
-	varaints := []aid.JSON{}
+	variants := []aid.JSON{}
 
 	for _, variant := range i.Variants {
-		varaints = append(varaints, aid.JSON{
+		variants = append(variants, aid.JSON{
 			"channel": variant.Channel,
 			"owned": variant.Owned,
 			"active": variant.Active,
@@ -83,7 +83,7 @@ func (i *Item) GenerateFortniteItemEntry() aid.JSON {
 	return aid.JSON{
 		"templateId": i.TemplateID,
 		"attributes": aid.JSON{
-			"variants": varaints,
+			"variants": variants,
 			"favorite": i.Favorite,
 			"item_seen": i.HasSeen,
 		},

@@ -15,7 +15,7 @@ type Profile struct {
 	Quests		 *QuestMutex
 	Attributes *AttributeMutex
 	Type			 string
-	Revision				 int
+	Revision	 int
 	Changes 	 []interface{}
 }
 
@@ -28,6 +28,7 @@ func NewProfile(profile string) *Profile {
 		Attributes: NewAttributeMutex(),
 		Type:			  profile,
 		Revision:   0,
+		Changes: 	 []interface{}{},
 	}
 }
 
@@ -118,8 +119,6 @@ func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
 		return nil
 	}
 
-	// aid.PrintJSON(changes)
-
 	for _, change := range changes {
 		switch change.Path[0] {
 		case "Items":
@@ -138,10 +137,73 @@ func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
 			if change.Type == "update" && change.Path[2] != "Quantity" {
 				p.CreateItemAttributeChangedChange(p.Items.GetItem(change.Path[1]), change.Path[2])
 			}
+		case "Quests":
+			if change.Type == "create" && change.Path[2] == "ID" {
+				p.CreateQuestAddedChange(p.Quests.GetQuest(change.Path[1]))
+			}
+
+			if change.Type == "delete" && change.Path[2] == "ID" {
+				p.CreateItemRemovedChange(change.Path[1])
+			}
+		case "Gifts":
+			if change.Type == "create" && change.Path[2] == "ID" {
+				p.CreateGiftAddedChange(p.Gifts.GetGift(change.Path[1]))
+			}
+
+			if change.Type == "delete" && change.Path[2] == "ID" {
+				p.CreateItemRemovedChange(change.Path[1])
+			}
+		case "Attributes":
+			if change.Type == "create" && change.Path[2] == "ID" {
+				p.CreateStatModifiedChange(p.Attributes.GetAttribute(change.Path[1]))
+			}
+
+			if change.Type == "update" && change.Path[2] == "Value" {
+				p.CreateStatModifiedChange(p.Attributes.GetAttribute(change.Path[1]))
+			}
 		}
 	}
 
 	return changes
+}
+
+func (p *Profile) CreateStatModifiedChange(attribute *Attribute) {
+	if attribute == nil {
+		fmt.Println("error getting attribute from profile", attribute.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, StatModified{
+		ChangeType: "statModified",
+		Name: attribute.Key,
+		Value: attribute.Value,
+	})
+}
+
+func (p *Profile) CreateGiftAddedChange(gift *Gift) {
+	if gift == nil {
+		fmt.Println("error getting gift from profile", gift.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, ItemAdded{
+		ChangeType: "itemAdded",
+		ItemId: gift.ID,
+		Item: gift.GenerateFortniteGiftEntry(),
+	})
+}
+
+func (p *Profile) CreateQuestAddedChange(quest *Quest) {
+	if quest == nil {
+		fmt.Println("error getting quest from profile", quest.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, ItemAdded{
+		ChangeType: "itemAdded",
+		ItemId: quest.ID,
+		Item: quest.GenerateFortniteQuestEntry(),
+	})
 }
 
 func (p *Profile) CreateItemAddedChange(item *Item) {

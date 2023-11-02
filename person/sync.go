@@ -165,17 +165,17 @@ func NewAttributeMutex() *AttributeMutex {
 }
 
 func (m *AttributeMutex) AddAttribute(attribute *Attribute) {
-	m.Store(attribute.Key, attribute)
+	m.Store(attribute.ID, attribute)
 	// storage.Repo.SaveAttribute(key, value)
 }
 
-func (m *AttributeMutex) DeleteAttribute(key string) {
-	m.Delete(key)
+func (m *AttributeMutex) DeleteAttribute(id string) {
+	m.Delete(id)
 	// storage.Repo.DeleteAttribute(key)
 }
 
-func (m *AttributeMutex) GetAttribute(key string) *Attribute {
-	value, ok := m.Load(key)
+func (m *AttributeMutex) GetAttribute(id string) *Attribute {
+	value, ok := m.Load(id)
 	if !ok {
 		return nil
 	}
@@ -183,8 +183,32 @@ func (m *AttributeMutex) GetAttribute(key string) *Attribute {
 	return value.(*Attribute)
 }
 
-func (m *AttributeMutex) RangeAttributes(f func(key string, value *Attribute) bool) {
+func (m *AttributeMutex) GetAttributeByKey(key string) *Attribute {
+	var found *Attribute
+
+	m.RangeAttributes(func(id string, attribute *Attribute) bool {
+		if attribute.Key == key {
+			found = attribute
+			return false
+		}
+
+		return true
+	})
+
+	return found
+}
+
+func (m *AttributeMutex) RangeAttributes(f func(id string, attribute *Attribute) bool) {
 	m.Range(func(key, value interface{}) bool {
 		return f(key.(string), value.(*Attribute))
 	})
+}
+
+func (m *AttributeMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
 }

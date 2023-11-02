@@ -1,6 +1,7 @@
 package person
 
 import (
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
@@ -8,6 +9,7 @@ import (
 type Quest struct {
 	ID              string
 	TemplateID      string
+	State					  string
 	Objectives      []string
 	ObjectiveCounts []int64
 	BundleID        string
@@ -18,6 +20,7 @@ func NewQuest(templateID string, bundleID string, scheduleID string) *Quest {
 	return &Quest{
 		ID:              uuid.New().String(),
 		TemplateID:      templateID,
+		State:					 "Active",
 		Objectives:      []string{},
 		ObjectiveCounts: []int64{},
 		BundleID:        bundleID,
@@ -25,15 +28,43 @@ func NewQuest(templateID string, bundleID string, scheduleID string) *Quest {
 	}
 }
 
+func NewDailyQuest(templateID string) *Quest {
+	return &Quest{
+		ID:              uuid.New().String(),
+		TemplateID:      templateID,
+		State:					 "Active",
+		Objectives:      []string{},
+		ObjectiveCounts: []int64{},
+	}
+}
+
 func FromDatabaseQuest(quest *storage.DB_Quest, profileType *string) *Quest {
 	return &Quest{
 		ID:              quest.ID,
 		TemplateID:      quest.TemplateID,
+		State: 				 	quest.State,
 		Objectives:      quest.Objectives,
 		ObjectiveCounts: quest.ObjectiveCounts,
 		BundleID:        quest.BundleID,
 		ScheduleID:      quest.ScheduleID,
 	}
+}
+
+func (q *Quest) GenerateFortniteQuestEntry() aid.JSON {
+	json := aid.JSON{
+		"templateId": q.TemplateID,
+		"attributes": aid.JSON{
+			"quest_state": q.State,
+			"challenge_bundle_id": q.BundleID,
+		},
+		"quantity": 1,
+	}
+
+	for i, objective := range q.Objectives {
+		json["attributes"].(aid.JSON)["completion_" + objective] = q.ObjectiveCounts[i]
+	}
+
+	return json
 }
 
 func (q *Quest) Delete() {
@@ -98,6 +129,7 @@ func (q *Quest) ToDatabase(profileId string) *storage.DB_Quest {
 		ProfileID:       profileId,
 		ID:              q.ID,
 		TemplateID:      q.TemplateID,
+		State:					q.State,
 		Objectives:      q.Objectives,
 		ObjectiveCounts: q.ObjectiveCounts,
 		BundleID:        q.BundleID,

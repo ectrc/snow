@@ -6,6 +6,14 @@ import (
 	"time"
 )
 
+func Print(v ...interface{}) {
+	if Config.Output.Level == "prod" {
+		return
+	}
+
+	fmt.Println(v...)
+}
+
 func PrintJSON(v interface{}) {
 	if Config.Output.Level == "prod" || Config.Output.Level == "time" {
 		return

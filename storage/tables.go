@@ -94,6 +94,7 @@ type DB_Quest struct {
 	ID         string `gorm:"primary_key"`
 	ProfileID  string
 	TemplateID string
+	State      string
 	Objectives pq.StringArray `gorm:"type:text[]"`
 	ObjectiveCounts pq.Int64Array `gorm:"type:bigint[]"`
 	BundleID   string

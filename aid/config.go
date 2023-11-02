@@ -10,6 +10,7 @@ type CS struct {
 	Database struct {
 		URI  string
 		Type string
+		DropAllTables bool
 	}
 	Output struct {
 		Level string
@@ -33,6 +34,7 @@ func LoadConfig() {
 		panic(err)
 	}
 
+	Config.Database.DropAllTables = cfg.Section("database").Key("drop").MustBool(false)
 	Config.Database.URI = cfg.Section("database").Key("uri").String()
 	if Config.Database.URI == "" {
 		panic("Database URI is empty")

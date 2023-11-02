@@ -3,6 +3,7 @@ package person
 import (
 	"time"
 
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
@@ -45,6 +46,34 @@ func FromDatabaseGift(gift *storage.DB_Gift) *Gift {
 		Message:		gift.Message,
 		Loot:				loot,
 	}
+}
+
+func (g *Gift) GenerateFortniteGiftEntry() aid.JSON {
+	json := aid.JSON{
+		"templateId": g.TemplateID,
+		"attributes": aid.JSON{
+			"params": aid.JSON{},
+			"lootList": []aid.JSON{},
+			"fromAccountId": g.FromID,
+			"giftedOn": time.Unix(g.GiftedAt, 0).Format(time.RFC3339),
+		},
+		"quantity": 1,
+	}
+
+	for _, loot := range g.Loot {
+		json["attributes"].(aid.JSON)["lootList"] = append(json["attributes"].(aid.JSON)["lootList"].([]aid.JSON), aid.JSON{
+			"itemGuid": loot.ID,
+			"itemType": loot.TemplateID,
+			"itemProfile": loot.ProfileType,
+			"quantity": loot.Quantity,
+		})
+	}
+
+	if g.Message != "" {
+		json["attributes"].(aid.JSON)["params"].(aid.JSON)["userMessage"] = g.Message
+	}
+
+	return json
 }
 
 func (g *Gift) AddLoot(loot *Item) {

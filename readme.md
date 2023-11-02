@@ -11,34 +11,22 @@ Performance first, universal Fortnite backend written in Go.
 
 ## Examples
 
-### Person Structure
+### Quests
 
 ```golang
-user := person.NewPerson()
-{
-  user.CommonCoreProfile.Items.AddItem(person.NewItem("Currency:MtxPurchased", 100))
-  user.CommonCoreProfile.Items.AddItem(person.NewItem("Token:CampaignAccess", 1))
+schedule := person.NewItem("ChallengeBundleSchedule:Paid_1", 1)
+user.AthenaProfile.Items.AddItem(schedule)
 
-  quest := person.NewQuest("Quest:Quest_1", "ChallengeBundle:Daily_1", "ChallengeBundleSchedule:Paid_1")
-  {
-    quest.AddObjective("quest_objective_eliminateplayers", 0)
-    quest.AddObjective("quest_objective_top1", 0)
-    quest.AddObjective("quest_objective_place_top10", 0)
+bundle := person.NewItem("ChallengeBundle:Daily_1", 1)
+user.AthenaProfile.Items.AddItem(bundle)
 
-    quest.UpdateObjectiveCount("quest_objective_eliminateplayers", 10)
-    quest.UpdateObjectiveCount("quest_objective_place_top10", -3)
+quest := person.NewQuest("Quest:Quest_2", bundle.ID, schedule.ID)
+quest.AddObjective("quest_objective_eliminateplayers", 0)
+user.AthenaProfile.Quests.AddQuest(quest)
 
-    quest.RemoveObjective("quest_objective_top1")
-  }
-  user.AthenaProfile.Quests.AddQuest(quest)
-
-  giftBox := person.NewGift("GiftBox:GB_Default", 1, user.ID, "Hello, Bully!")
-  {
-    giftBox.AddLoot(person.NewItemWithType("AthenaCharacter:CID_002_Athena_Commando_F_Default", 1, "athena"))
-  }
-  user.CommonCoreProfile.Gifts.AddGift(giftBox)
-}
-user.Save()
+daily := person.NewDailyQuest("Quest:Quest_3")
+daily.AddObjective("quest_objective_place_top10", 0)
+user.AthenaProfile.Quests.AddQuest(daily)
 ```
 
 ### Profile Changes

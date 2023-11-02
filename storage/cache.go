@@ -27,14 +27,14 @@ func (m *PersonsCache) CacheKiller() {
 		Cache.Range(func(key, value interface{}) bool {
 			cacheEntry := value.(*CacheEntry)
 			
-			if time.Since(cacheEntry.LastAccessed) >= 5 * time.Minute {
+			if time.Since(cacheEntry.LastAccessed) >= 30 * time.Minute {
 				Cache.Delete(key)
 			}
 
 			return true
 		})
 
-		time.Sleep(5 * time.Minute)
+		time.Sleep(5000 * time.Minute)
 	}
 }
 
