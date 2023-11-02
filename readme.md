@@ -6,7 +6,7 @@ Performance first, universal Fortnite backend written in Go.
 
 ## Features
 
-- **Blazing Fast** Written in Go, snow is extremely fast and can handle thousands of requests per second with its built-in caching system.
+- **Blazing Fast** Written in Go, snow is extremely fast and can handle any profile action in milliseconds.
 - **Profile Changes** Snow keeps track of profile changes exactly like Fortnite does, meaning it is one-to-one with the game.
 
 ## Examples
@@ -46,7 +46,6 @@ user.CommonCoreProfile.Diff(snapshot)
 
 ## What's next?
 
-- Be able to track my person profile structures changes, convert into the required responses for the game, and send back to the client.
 - Implement the HTTP API for the game to communicate with the backend. This is the most important part of the project as it needs to handle thousands of requests per second. _Should I use Fiber?_
 - Person Authentication for the game to determine if the person is valid or not. Fortnite uses JWT tokens for this which makes it easy to implement.
 - Embed game assets into the backend e.g. Game XP Curve, Quest Data etc. _This would mean a single binary that can be run anywhere without the need of external files._
