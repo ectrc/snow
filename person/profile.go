@@ -3,6 +3,7 @@ package person
 import (
 	"fmt"
 
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 	"github.com/r3labs/diff/v3"
@@ -10,6 +11,7 @@ import (
 
 type Profile struct {
 	ID         string
+	PersonID   string
 	Items      *ItemMutex
 	Gifts      *GiftMutex
 	Quests		 *QuestMutex
@@ -22,6 +24,7 @@ type Profile struct {
 func NewProfile(profile string) *Profile {
 	return &Profile{
 		ID:         uuid.New().String(),
+		PersonID:   "",
 		Items:      NewItemMutex(profile),
 		Gifts:      NewGiftMutex(),
 		Quests:		  NewQuestMutex(),
@@ -62,12 +65,51 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 
 	return &Profile{
 		ID:         profile.ID,
+		PersonID:   profile.PersonID,
 		Items:      items,
 		Gifts:      gifts,
 		Quests:			quests,
 		Attributes: attributes,
 		Type:			  profile.Type,
 		Revision:   profile.Revision,
+	}
+}
+
+func (p *Profile) GenerateFortniteProfileEntry() aid.JSON {
+	items := aid.JSON{}
+	attributes := aid.JSON{}
+
+	p.Items.RangeItems(func(id string, item *Item) bool {
+		items[id] = item.GenerateFortniteItemEntry()
+		return true
+	})
+
+	p.Quests.RangeQuests(func(id string, quest *Quest) bool {
+		items[id] = quest.GenerateFortniteQuestEntry()
+		return true
+	})
+
+	p.Gifts.RangeGifts(func(id string, gift *Gift) bool {
+		items[id] = gift.GenerateFortniteGiftEntry()
+		return true
+	})
+
+	p.Attributes.RangeAttributes(func(id string, attribute *Attribute) bool {
+		attributes[attribute.Key] = attribute.Value
+		return true
+	})
+
+	return aid.JSON{
+		"profileId": p.Type,
+		"accountId": p.PersonID,
+		"rvn": p.Revision,
+		"commandRevision": p.Revision,
+		"wipeNumber": 0,
+		"version": "",
+		"items": items,
+		"stats": aid.JSON{
+			"attributes": attributes,
+		},
 	}
 }
 
@@ -256,6 +298,13 @@ func (p *Profile) CreateItemAttributeChangedChange(item *Item, attribute string)
 		ItemId: item.ID,
 		AttributeName: lookup[attribute],
 		AttributeValue: item.GetAttribute(attribute),
+	})
+}
+
+func (p *Profile) CreateFullProfileUpdateChange() {
+	p.Changes = append(p.Changes, FullProfileUpdate{
+		ChangeType: "fullProfileUpdate",
+		Profile: p.GenerateFortniteProfileEntry(),
 	})
 }
 

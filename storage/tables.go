@@ -9,6 +9,7 @@ type Tabler interface {
 type DB_Person struct {
 	ID          string
 	DisplayName string
+	AccessKey  string
 	Profiles    []DB_Profile `gorm:"foreignkey:PersonID"`
 	Loadout     DB_Loadout   `gorm:"foreignkey:PersonID"`
 }

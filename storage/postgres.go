@@ -48,6 +48,26 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 	return &dbPerson
 }
 
+func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
+	var dbPerson DB_Person
+	s.Postgres.
+		Preload("Profiles").
+		Preload("Profiles.Items.Variants").
+		Preload("Profiles.Gifts.Loot").
+		Preload("Profiles.Attributes").
+		Preload("Profiles.Items").
+		Preload("Profiles.Gifts").
+		Preload("Profiles.Quests").
+		Where("display_name = ?", displayName).
+		Find(&dbPerson)
+
+	if dbPerson.ID == "" {
+		return nil
+	}
+
+	return &dbPerson
+}
+
 func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 	var dbPersons []*DB_Person
 

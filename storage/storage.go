@@ -9,6 +9,7 @@ type Storage interface {
 	Migrate(table interface{}, tableName string)
 
 	GetPerson(personId string) *DB_Person
+	GetPersonByDisplay(displayName string) *DB_Person
 	GetAllPersons() []*DB_Person
 	SavePerson(person *DB_Person)
 
@@ -37,6 +38,21 @@ func (r *Repository) GetPerson(personId string) *DB_Person {
 	}
 
 	storagePerson := r.Storage.GetPerson(personId)
+	if storagePerson != nil {
+		Cache.SavePerson(storagePerson)
+		return storagePerson
+	}
+
+	return nil
+}
+
+func (r *Repository) GetPersonByDisplay(displayName string) *DB_Person {
+	cachePerson := Cache.GetPersonByDisplay(displayName)
+	if cachePerson != nil {
+		return cachePerson
+	}
+
+	storagePerson := r.Storage.GetPersonByDisplay(displayName)
 	if storagePerson != nil {
 		Cache.SavePerson(storagePerson)
 		return storagePerson

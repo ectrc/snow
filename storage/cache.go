@@ -47,6 +47,20 @@ func (m *PersonsCache) GetPerson(id string) *DB_Person {
 	return nil
 }
 
+func (m *PersonsCache) GetPersonByDisplay(displayName string) *DB_Person {
+	var person *DB_Person
+	m.Range(func(key, value interface{}) bool {
+		if value.(*CacheEntry).Entry.(*DB_Person).DisplayName == displayName {
+			person = value.(*CacheEntry).Entry.(*DB_Person)
+			return false
+		}
+
+		return true
+	})
+
+	return person
+}
+
 func (m *PersonsCache) SavePerson(p *DB_Person) {
 	m.Store(p.ID, &CacheEntry{
 		Entry: p,

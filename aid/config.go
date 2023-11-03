@@ -15,6 +15,13 @@ type CS struct {
 	Output struct {
 		Level string
 	}
+	API struct {
+		Host string
+		Port string
+	}
+	JWT struct {
+		Secret string
+	}
 }
 
 var (
@@ -51,5 +58,20 @@ func LoadConfig() {
 
 	if Config.Output.Level != "dev" && Config.Output.Level != "prod" && Config.Output.Level != "time" && Config.Output.Level != "info" {
 		panic("Output Level must be either dev or prod")
+	}
+
+	Config.API.Host = cfg.Section("api").Key("host").String()
+	if Config.API.Host == "" {
+		panic("API Host is empty")
+	}
+
+	Config.API.Port = cfg.Section("api").Key("port").String()
+	if Config.API.Port == "" {
+		panic("API Port is empty")
+	}
+
+	Config.JWT.Secret = cfg.Section("jwt").Key("secret").String()
+	if Config.JWT.Secret == "" {
+		panic("JWT Secret is empty")
 	}
 }
