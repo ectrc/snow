@@ -6,10 +6,11 @@ Performance first, universal Fortnite backend written in Go.
 
 ## Features
 
-- **Blazing Fast** Written in Go, snow is extremely fast and can handle any profile action in milliseconds.
-- **Profile Changes** Snow keeps track of profile changes exactly like Fortnite does, meaning it is one-to-one with the game.
+- **Blazing Fast** Written in Go and build on Fast HTTP, snow is extremely fast and can handle any profile action in milliseconds with its caching system.
+- **Profile Changes** Snow, semi-automatically, keeps track of profile changes exactly like Fortnite does, meaning it is one-to-one with the game.
+- **Universal Database** Easily add new storage methods that satisfy the `Storage` interface. This means you can use any database you want. _(example of how to do this coming soon)_
 
-## Examples
+## Examples of Person Structures
 
 ### Quests
 
@@ -46,12 +47,19 @@ user.CommonCoreProfile.Diff(snapshot)
 
 ## What's next?
 
-- Implement the HTTP API for the game to communicate with the backend. This is the most important part of the project as it needs to handle thousands of requests per second. _Should I use Fiber?_
-- Person Authentication for the game to determine if the person is valid or not. Fortnite uses JWT tokens for this which makes it easy to implement.
-- Embed game assets into the backend e.g. Game XP Curve, Quest Data etc. _This would mean a single binary that can be run anywhere without the need of external files._
-- Interact with external Buckets to save player data externally.
-- A way to interact with persons outside of the game. This is mainly for a web app and other services to interact with the backend.
-- Game Server Communication. This would mean a websocket server that communicates with the game servers to send and receive data.
+- Authentication for the game to determine if the person is valid or not. Fortnite uses JWT tokens for this which makes it easy to implement.
+- Every endpoint that is used by Fortnite. This includes all MCP Operations and even extracting data from the telemetry.
+- Embed game assets into the backend e.g. Battle Pass, Quest Data etc. _This would mean a single binary that can be run anywhere without the need of external files._
+- Interact with external Services like Amazon S3 Buckets to save player data externally.
+- A way to interact with accounts outside of the game. This is mainly for a web app and other services to interact with the backend.
+
+## Known Supported Versions
+
+- **_Chapter 1 Season 2_** `Fortnite+Release-2.5-CL-3889387-Windows` I started with this build of the game as it requires more work to get working, this means snow can support _most_ versions of the game.
+
+## How do I use this?
+
+It is _technically_ possible to clone the repository and host the backend. However, this is in a very early stage and does not have a lot of features. _For example, you cannot create an account externally._ **I would recommend waiting until the backend is more stable and has more features before using it.**
 
 ## Contributing
 
