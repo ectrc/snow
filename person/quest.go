@@ -7,46 +7,48 @@ import (
 )
 
 type Quest struct {
-	ID              string
-	TemplateID      string
-	State					  string
-	Objectives      []string
+	ID string
+	ProfileID string
+	TemplateID string
+	State string
+	Objectives []string
 	ObjectiveCounts []int64
-	BundleID        string
-	ScheduleID      string
+	BundleID string
+	ScheduleID string
 }
 
 func NewQuest(templateID string, bundleID string, scheduleID string) *Quest {
 	return &Quest{
-		ID:              uuid.New().String(),
-		TemplateID:      templateID,
-		State:					 "Active",
-		Objectives:      []string{},
+		ID: uuid.New().String(),
+		TemplateID: templateID,
+		State: "Active",
+		Objectives: []string{},
 		ObjectiveCounts: []int64{},
-		BundleID:        bundleID,
-		ScheduleID:      scheduleID,
+		BundleID: bundleID,
+		ScheduleID: scheduleID,
 	}
 }
 
 func NewDailyQuest(templateID string) *Quest {
 	return &Quest{
-		ID:              uuid.New().String(),
-		TemplateID:      templateID,
-		State:					 "Active",
-		Objectives:      []string{},
+		ID: uuid.New().String(),
+		TemplateID: templateID,
+		State: "Active",
+		Objectives: []string{},
 		ObjectiveCounts: []int64{},
 	}
 }
 
-func FromDatabaseQuest(quest *storage.DB_Quest, profileType *string) *Quest {
+func FromDatabaseQuest(quest *storage.DB_Quest) *Quest {
 	return &Quest{
-		ID:              quest.ID,
-		TemplateID:      quest.TemplateID,
-		State: 				 	quest.State,
-		Objectives:      quest.Objectives,
+		ID: quest.ID,
+		ProfileID: quest.ProfileID,
+		TemplateID: quest.TemplateID,
+		State: quest.State,
+		Objectives: quest.Objectives,
 		ObjectiveCounts: quest.ObjectiveCounts,
-		BundleID:        quest.BundleID,
-		ScheduleID:      quest.ScheduleID,
+		BundleID: quest.BundleID,
+		ScheduleID: quest.ScheduleID,
 	}
 }
 
@@ -126,17 +128,17 @@ func (q *Quest) RemoveObjective(objective string) {
 
 func (q *Quest) ToDatabase(profileId string) *storage.DB_Quest {
 	return &storage.DB_Quest{
-		ProfileID:       profileId,
-		ID:              q.ID,
-		TemplateID:      q.TemplateID,
-		State:					q.State,
-		Objectives:      q.Objectives,
+		ID: q.ID,
+		ProfileID: profileId,
+		TemplateID: q.TemplateID,
+		State: q.State,
+		Objectives: q.Objectives,
 		ObjectiveCounts: q.ObjectiveCounts,
-		BundleID:        q.BundleID,
-		ScheduleID:      q.ScheduleID,
+		BundleID: q.BundleID,
+		ScheduleID: q.ScheduleID,
 	}
 }
 
 func (q *Quest) Save() {
-	//storage.Repo.SaveQuest(q.ToDatabase())
+	storage.Repo.SaveQuest(q.ToDatabase(q.ProfileID))
 }

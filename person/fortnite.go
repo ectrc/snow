@@ -7,21 +7,13 @@ func NewFortnitePerson(displayName string, key string) {
 	person.DisplayName = displayName
 	person.AccessKey = key
 
-	character := NewItem("AthenaCharacter:CID_001_Athena_Commando_F_Default", 1)
-	pickaxe := NewItem("AthenaPickaxe:DefaultPickaxe", 1)
-	glider := NewItem("AthenaGlider:DefaultGlider", 1)
-	default_dance := NewItem("AthenaDance:EID_DanceMoves", 1)
-
-	person.AthenaProfile.Items.AddItem(character)
-	person.AthenaProfile.Items.AddItem(pickaxe)
-	person.AthenaProfile.Items.AddItem(glider)
-	person.AthenaProfile.Items.AddItem(default_dance)
+	person.AthenaProfile.Items.AddItem(NewItem("AthenaCharacter:CID_001_Athena_Commando_F_Default", 1))
+	person.AthenaProfile.Items.AddItem(NewItem("AthenaCharacter:CID_032_Athena_Commando_M_Medieval", 1))
+	person.AthenaProfile.Items.AddItem(NewItem("AthenaCharacter:CID_033_Athena_Commando_F_Medieval", 1))
+	person.AthenaProfile.Items.AddItem(NewItem("AthenaPickaxe:DefaultPickaxe", 1))
+	person.AthenaProfile.Items.AddItem(NewItem("AthenaGlider:DefaultGlider", 1))
+	person.AthenaProfile.Items.AddItem(NewItem("AthenaDance:EID_DanceMoves", 1))
 	person.CommonCoreProfile.Items.AddItem(NewItem("Currency:MtxPurchased", 0))
-
-	person.Loadout.Character = character.ID
-	person.Loadout.Pickaxe = pickaxe.ID
-	person.Loadout.Glider = glider.ID
-	person.Loadout.Dances[0] = default_dance.ID
 
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("mfa_reward_claimed", true))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("rested_xp_overflow", 0))
@@ -32,7 +24,7 @@ func NewFortnitePerson(displayName string, key string) {
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("daily_rewards", []aid.JSON{}))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("competitive_identity", aid.JSON{}))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("season_update", 0))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("season_num", 2))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("season_num", aid.Config.Fortnite.Season))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("permissions", []aid.JSON{}))
 
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("loadouts", []aid.JSON{}))
@@ -51,17 +43,17 @@ func NewFortnitePerson(displayName string, key string) {
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("book_level", 1))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("book_xp", 0))
 
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_character", person.Loadout.Character))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_backpack", person.Loadout.Backpack))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_pickaxe", person.Loadout.Pickaxe))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_glider", person.Loadout.Glider))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_skydivecontrail", person.Loadout.SkyDiveContrail))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_dance", person.Loadout.Dances))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_itemwraps", person.Loadout.ItemWraps))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_loadingscreen", person.Loadout.LoadingScreen))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_musicpack", person.Loadout.MusicPack))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("banner_icon", person.Loadout.BannerIcon))
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("banner_color", person.Loadout.BannerColor))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_character", person.AthenaProfile.Items.GetItemByTemplateID("AthenaCharacter:CID_001_Athena_Commando_F_Default").ID))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_backpack", ""))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_pickaxe", person.AthenaProfile.Items.GetItemByTemplateID("AthenaPickaxe:DefaultPickaxe").ID))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_glider", person.AthenaProfile.Items.GetItemByTemplateID("AthenaGlider:DefaultGlider").ID))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_skydivecontrail", ""))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_dance", make([]string, 6)))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_itemwraps", make([]string, 7)))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_loadingscreen", ""))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("favorite_musicpack", ""))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("banner_icon", ""))
+	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("banner_color", ""))
 
 	person.CommonCoreProfile.Attributes.AddAttribute(NewAttribute("mfa_enabled", true))
 	person.CommonCoreProfile.Attributes.AddAttribute(NewAttribute("mtx_affiliate", ""))

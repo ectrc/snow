@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ectrc/snow/aid"
@@ -13,6 +15,8 @@ var (
 	profileActions = map[string]func(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
 		"QueryProfile": PostQueryProfileAction,
 		"ClientQuestLogin": PostQueryProfileAction,
+		"MarkItemSeen": PostMarkItemSeenAction,
+		"EquipBattleRoyaleCustomization": PostEquipBattleRoyaleCustomizationAction,
 	}
 )
 
@@ -21,27 +25,33 @@ func PostProfileAction(c *fiber.Ctx) error {
 	if person == nil {
 		return c.Status(404).JSON(aid.ErrorBadRequest("No Account Found"))
 	}
+	defer person.Save()
 
 	profile := person.GetProfileFromType(c.Query("profileId"))
-	if profile == nil {
-		return c.Status(404).JSON(aid.ErrorBadRequest("No Profile Found"))
-	}
+	defer profile.ClearProfileChanges()
 
-	snapshot := profile.Snapshot()
+	before := profile.Snapshot()
 	if action, ok := profileActions[c.Params("action")]; ok {
-		err := action(c, person, profile)
-		if err != nil {
+		if err := action(c, person, profile); err != nil {
 			return err
 		}
 	}
-	profile.Diff(snapshot)
-	profile.Revision++
+	changes := profile.Diff(before)
+
+	aid.Print("Changes: " + strconv.Itoa(len(changes)))
+	aid.PrintJSON(changes)
+	
+	revision, _ := strconv.Atoi(c.Query("rvn"))
+	if revision == -1 {
+		revision = profile.Revision
+	}
+	revision++
 
 	return c.Status(200).JSON(aid.JSON{
 		"profileId": profile.Type,
-		"profileRevision": profile.Revision,
-		"profileCommandRevision": profile.Revision,
-		"profileChangesBaseRevision": profile.Revision - 1,
+		"profileRevision": revision,
+		"profileCommandRevision": revision,
+		"profileChangesBaseRevision": revision - 1,
 		"profileChanges": profile.Changes,
 		"multiUpdate": []aid.JSON{},
 		"notifications": []aid.JSON{},
@@ -51,7 +61,66 @@ func PostProfileAction(c *fiber.Ctx) error {
 }
 
 func PostQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
-	profile.Changes = []interface{}{}
 	profile.CreateFullProfileUpdateChange()
+	return nil
+}
+
+func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+	var body struct {
+		ItemIds []string `json:"itemIds"`
+	}
+
+	err := c.BodyParser(&body)
+	if err != nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Body"))
+	}
+
+	for _, itemId := range body.ItemIds {
+		item := profile.Items.GetItem(itemId)
+		if item == nil {
+			continue
+		}
+		
+		item.HasSeen = true
+	}
+
+	return nil
+}
+
+func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+	var body struct {
+		SlotName string `json:"slotName"`
+		ItemToSlot string `json:"itemToSlot"`
+		IndexWithinSlot int `json:"indexWithinSlot"`
+	}
+
+	err := c.BodyParser(&body)
+	if err != nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Body"))
+	}
+
+	item := profile.Items.GetItem(body.ItemToSlot)
+	if item == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Item not found"))
+	}
+
+	attr := profile.Attributes.GetAttributeByKey("favorite_" + strings.ToLower(body.SlotName))
+	if attr == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Attribute not found"))
+	}
+
+	switch body.SlotName {
+	case "Dance":
+		value := aid.JSONParse(attr.ValueJSON)
+		value.([]any)[body.IndexWithinSlot] = item.ID
+		attr.ValueJSON = aid.JSONStringify(value)
+	case "ItemWrap":
+		value := aid.JSONParse(attr.ValueJSON)
+		value.([]any)[body.IndexWithinSlot] = item.ID
+		attr.ValueJSON = aid.JSONStringify(value)
+	default:
+		attr.ValueJSON = aid.JSONStringify(item.ID)
+	}
+
 	return nil
 }

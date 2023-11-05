@@ -40,14 +40,14 @@ func PostOAuthToken(c *fiber.Ctx) error {
 
 func PostOAuthTokenClientCredentials(c *fiber.Ctx, body *OAuthTokenBody) error {
 	credentials, err := aid.JWTSign(aid.JSON{
-		"snow_id": 0, 							// custom
+		"snow_id": 0, // custom
 		"t": "s",
 		"am": "client_credentials", // authorization method
-		"ic": true, 								// internal client
-		"mver": false, 							// mobile version
-		"clsvc": "snow", 						// client service
-		"clid": c.IP(), 						// client id
-		"jti": rand.Int63(), 				// jwt id
+		"ic": true, // internal client
+		"mver": false, // mobile version
+		"clsvc": "snow", // client service
+		"clid": c.IP(), // client id
+		"jti": rand.Int63(), // jwt id
 		"p": base64.StdEncoding.EncodeToString([]byte(c.IP())), // payload
 		"hours_expire": 1, 
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
@@ -86,20 +86,20 @@ func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
 	}
 
 	access, err := aid.JWTSign(aid.JSON{
-		"snow_id": person.ID, 							// custom
-		"iai": person.ID, 									// account id
-		"dn": person.DisplayName, 					// display name
+		"snow_id": person.ID, // custom
+		"iai": person.ID, // account id
+		"dn": person.DisplayName, // display name
 		"t": "s",
-		"am": "password", 									// authorization method
-		"ic": true, 												// internal client
-		"mver": false, 											// mobile version
-		"clsvc": "snow", 										// client service
-		"app": "com.epicgames.fortnite", 	// app name
-		"clid": c.IP(), 										// client id
-		"dvid": "default", 									// device id
-		"jti": rand.Int63(), 								// jwt id
+		"am": "password", // authorization method
+		"ic": true, // internal client
+		"mver": false, // mobile version
+		"clsvc": "snow", // client service
+		"app": "com.epicgames.fortnite", // app name
+		"clid": c.IP(), // client id
+		"dvid": "default", // device id
+		"jti": rand.Int63(), // jwt id
 		"p": base64.StdEncoding.EncodeToString([]byte(c.IP())), // payload
-		"sec": 1, 													// security level
+		"sec": 1, // security level
 		"hours_expire": 24,
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})
@@ -108,12 +108,12 @@ func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
 	}
 
 	refresh, err := aid.JWTSign(aid.JSON{
-		"snow_id": person.ID, 							// custom
-		"sub": person.ID, 									// account id
-		"clid": c.IP(), 										// client id
-		"jti": rand.Int63(), 								// jwt id
+		"snow_id": person.ID, // custom
+		"sub": person.ID, // account id
+		"clid": c.IP(), // client id
+		"jti": rand.Int63(), // jwt id
 		"t": "s",
-		"am": "refresh_token", 							// authorization method
+		"am": "refresh_token", // authorization method
 		"hours_expire": 24,
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})

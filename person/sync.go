@@ -2,23 +2,28 @@ package person
 
 import (
 	"sync"
+
+	"github.com/ectrc/snow/storage"
 )
 
 type ItemMutex struct {
 	sync.Map
 	ProfileType string
+	ProfileID	 string
 }
 
-func NewItemMutex(profile string) *ItemMutex {
+func NewItemMutex(profile *storage.DB_Profile) *ItemMutex {
 	return &ItemMutex{
-		ProfileType: profile,
+		ProfileType: profile.Type,
+		ProfileID:	 profile.ID,
 	}
 }
 
 func (m *ItemMutex) AddItem(item *Item) {
 	item.ProfileType = m.ProfileType
+	item.ProfileID = m.ProfileID
 	m.Store(item.ID, item)
-	// storage.Repo.SaveItem(item)
+	storage.Repo.SaveItem(item.ToDatabase(m.ProfileID))
 }
 
 func (m *ItemMutex) DeleteItem(id string) {
@@ -29,7 +34,7 @@ func (m *ItemMutex) DeleteItem(id string) {
 
 	item.Delete()
 	m.Delete(id)
-	// storage.Repo.DeleteItem(id)
+	storage.Repo.DeleteItem(id)
 }
 
 func (m *ItemMutex) GetItem(id string) *Item {
@@ -74,20 +79,25 @@ func (m *ItemMutex) Count() int {
 type GiftMutex struct {
 	sync.Map
 	ProfileType string
+	ProfileID	 string
 }
 
-func NewGiftMutex() *GiftMutex {
-	return &GiftMutex{}
+func NewGiftMutex(profile *storage.DB_Profile) *GiftMutex {
+	return &GiftMutex{
+		ProfileType: profile.Type,
+		ProfileID:	 profile.ID,
+	}
 }
 
 func (m *GiftMutex) AddGift(gift *Gift) {
+	gift.ProfileID = m.ProfileID
 	m.Store(gift.ID, gift)
-	// storage.Repo.SaveGift(gift)
+	storage.Repo.SaveGift(gift.ToDatabase(m.ProfileID))
 }
 
 func (m *GiftMutex) DeleteGift(id string) {
 	m.Delete(id)
-	// storage.Repo.DeleteGift(id)
+	storage.Repo.DeleteGift(id)
 }
 
 func (m *GiftMutex) GetGift(id string) *Gift {
@@ -116,20 +126,26 @@ func (m *GiftMutex) Count() int {
 
 type QuestMutex struct {
 	sync.Map
+	ProfileType string
+	ProfileID	 string
 }
 
-func NewQuestMutex() *QuestMutex {
-	return &QuestMutex{}
+func NewQuestMutex(profile *storage.DB_Profile) *QuestMutex {
+	return &QuestMutex{
+		ProfileType: profile.Type,
+		ProfileID:	 profile.ID,
+	}
 }
 
 func (m *QuestMutex) AddQuest(quest *Quest) {
+	quest.ProfileID = m.ProfileID
 	m.Store(quest.ID, quest)
-	// storage.Repo.SaveQuest(quest)
+	storage.Repo.SaveQuest(quest.ToDatabase(m.ProfileID))
 }
 
 func (m *QuestMutex) DeleteQuest(id string) {
 	m.Delete(id)
-	// storage.Repo.DeleteQuest(id)
+	storage.Repo.DeleteQuest(id)
 }
 
 func (m *QuestMutex) GetQuest(id string) *Quest {
@@ -158,20 +174,25 @@ func (m *QuestMutex) Count() int {
 
 type AttributeMutex struct {
 	sync.Map
+	ProfileType string
+	ProfileID	 string
 }
 
-func NewAttributeMutex() *AttributeMutex {
-	return &AttributeMutex{}
+func NewAttributeMutex(profile *storage.DB_Profile) *AttributeMutex {
+	return &AttributeMutex{
+		ProfileID:	 profile.ID,
+	}
 }
 
 func (m *AttributeMutex) AddAttribute(attribute *Attribute) {
+	attribute.ProfileID = m.ProfileID
 	m.Store(attribute.ID, attribute)
-	// storage.Repo.SaveAttribute(key, value)
+	storage.Repo.SaveAttribute(attribute.ToDatabase(m.ProfileID))
 }
 
 func (m *AttributeMutex) DeleteAttribute(id string) {
 	m.Delete(id)
-	// storage.Repo.DeleteAttribute(key)
+	storage.Repo.DeleteAttribute(id)
 }
 
 func (m *AttributeMutex) GetAttribute(id string) *Attribute {

@@ -2,6 +2,8 @@ package aid
 
 import (
 	"os"
+	"strconv"
+	"strings"
 
 	"gopkg.in/ini.v1"
 )
@@ -21,6 +23,10 @@ type CS struct {
 	}
 	JWT struct {
 		Secret string
+	}
+	Fortnite struct {
+		Season int
+		Build float64
 	}
 }
 
@@ -74,4 +80,28 @@ func LoadConfig() {
 	if Config.JWT.Secret == "" {
 		panic("JWT Secret is empty")
 	}
+
+	build, err := cfg.Section("fortnite").Key("build").Float64()
+	if err != nil {
+		panic("Fortnite Build is empty")
+	}
+
+	Config.Fortnite.Build = build
+
+	buildStr := strconv.FormatFloat(build, 'f', -1, 64)
+	if buildStr == "" {
+		panic("Fortnite Build is empty")
+	}
+
+	buildInfo := strings.Split(buildStr, ".")
+	if len(buildInfo) < 2 {
+		panic("Fortnite Build is invalid")
+	}
+
+	parsedSeason, err := strconv.Atoi(buildInfo[0])
+	if err != nil {
+		panic("Fortnite Season is invalid")
+	}
+
+	Config.Fortnite.Season = parsedSeason
 }

@@ -88,20 +88,52 @@ func (s *PostgresStorage) SavePerson(person *DB_Person) {
 	s.Postgres.Save(person)
 }
 
+func (s *PostgresStorage) DeletePerson(personId string) {
+	s.Postgres.Delete(&DB_Person{}, "id = ?", personId)
+}
+
+func (s *PostgresStorage) SaveProfile(profile *DB_Profile) {
+	s.Postgres.Save(profile)
+}
+
+func (s *PostgresStorage) DeleteProfile(profileId string) {
+	s.Postgres.Delete(&DB_Profile{}, "id = ?", profileId)
+}
+
+func (s *PostgresStorage) SaveItem(item *DB_Item) {
+	s.Postgres.Save(item)
+}
+
 func (s *PostgresStorage) DeleteItem(itemId string) {
 	s.Postgres.Delete(&DB_Item{}, "id = ?", itemId)
+}
+
+func (s *PostgresStorage) SaveVariant(variant *DB_VariantChannel) {
+	s.Postgres.Save(variant)
 }
 
 func (s *PostgresStorage) DeleteVariant(variantId string) {
 	s.Postgres.Delete(&DB_VariantChannel{}, "id = ?", variantId)
 }
 
+func (s *PostgresStorage) SaveQuest(quest *DB_Quest) {
+	s.Postgres.Save(quest)
+}
+
 func (s *PostgresStorage) DeleteQuest(questId string) {
 	s.Postgres.Delete(&DB_Quest{}, "id = ?", questId)
 }
 
+func (s *PostgresStorage) SaveLoot(loot *DB_Loot) {
+	s.Postgres.Save(loot)
+}
+
 func (s *PostgresStorage) DeleteLoot(lootId string) {
 	s.Postgres.Delete(&DB_Loot{}, "id = ?", lootId)
+}
+
+func (s *PostgresStorage) SaveGift(gift *DB_Gift) {
+	s.Postgres.Save(gift)
 }
 
 func (s *PostgresStorage) DeleteGift(giftId string) {
@@ -110,4 +142,9 @@ func (s *PostgresStorage) DeleteGift(giftId string) {
 
 func (s *PostgresStorage) DeleteAttribute(attributeId string) {
 	s.Postgres.Delete(&DB_PAttribute{}, "id = ?", attributeId)
+}
+
+func (s *PostgresStorage) SaveAttribute(attribute *DB_PAttribute) {
+	aid.Print("saving attribute", attribute.Key, attribute.ValueJSON)
+	s.Postgres.Save(attribute)
 }

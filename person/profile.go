@@ -10,10 +10,10 @@ import (
 )
 
 type Profile struct {
-	ID         string
-	PersonID   string
-	Items      *ItemMutex
-	Gifts      *GiftMutex
+	ID string
+	PersonID string
+	Items *ItemMutex
+	Gifts *GiftMutex
 	Quests		 *QuestMutex
 	Attributes *AttributeMutex
 	Type			 string
@@ -22,27 +22,28 @@ type Profile struct {
 }
 
 func NewProfile(profile string) *Profile {
+	id := uuid.New().String()
 	return &Profile{
-		ID:         uuid.New().String(),
-		PersonID:   "",
-		Items:      NewItemMutex(profile),
-		Gifts:      NewGiftMutex(),
-		Quests:		  NewQuestMutex(),
-		Attributes: NewAttributeMutex(),
-		Type:			  profile,
-		Revision:   0,
+		ID: id,
+		PersonID: "",
+		Items: NewItemMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Gifts: NewGiftMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Quests:		 NewQuestMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Attributes: NewAttributeMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Type:			 profile,
+		Revision: 0,
 		Changes: 	 []interface{}{},
 	}
 }
 
 func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
-	items := NewItemMutex(profile.Type)
-	gifts := NewGiftMutex()
-	quests := NewQuestMutex()
-	attributes := NewAttributeMutex()
+	items := NewItemMutex(profile)
+	gifts := NewGiftMutex(profile)
+	quests := NewQuestMutex(profile)
+	attributes := NewAttributeMutex(profile)
 
 	for _, item := range profile.Items {
-		items.AddItem(FromDatabaseItem(&item, &profile.Type))
+		items.AddItem(FromDatabaseItem(&item))
 	}
 
 	for _, gift := range profile.Gifts {
@@ -50,7 +51,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 	}
 
 	for _, quest := range profile.Quests {
-		quests.AddQuest(FromDatabaseQuest(&quest, &profile.Type))
+		quests.AddQuest(FromDatabaseQuest(&quest))
 	}
 
 	for _, attribute := range profile.Attributes {
@@ -64,14 +65,15 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 	}
 
 	return &Profile{
-		ID:         profile.ID,
-		PersonID:   profile.PersonID,
-		Items:      items,
-		Gifts:      gifts,
-		Quests:			quests,
+		ID: profile.ID,
+		PersonID: profile.PersonID,
+		Items: items,
+		Gifts: gifts,
+		Quests: quests,
 		Attributes: attributes,
-		Type:			  profile.Type,
-		Revision:   profile.Revision,
+		Type: profile.Type,
+		Revision: profile.Revision,
+		Changes: []interface{}{},
 	}
 }
 
@@ -95,7 +97,7 @@ func (p *Profile) GenerateFortniteProfileEntry() aid.JSON {
 	})
 
 	p.Attributes.RangeAttributes(func(id string, attribute *Attribute) bool {
-		attributes[attribute.Key] = attribute.Value
+		attributes[attribute.Key] = aid.JSONParse(attribute.ValueJSON)
 		return true
 	})
 
@@ -114,7 +116,7 @@ func (p *Profile) GenerateFortniteProfileEntry() aid.JSON {
 }
 
 func (p *Profile) Save() {
-	//storage.Repo.SaveProfile(p.ToDatabase())
+	// storage.Repo.SaveProfile(p.ToDatabase())
 }
 
 func (p *Profile) Snapshot() *ProfileSnapshot {
@@ -144,18 +146,18 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 	})
 
 	return &ProfileSnapshot{
-		ID:         p.ID,
-		Items:      items,
-		Gifts:      gifts,
-		Quests:			quests,
+		ID: p.ID,
+		Items: items,
+		Gifts: gifts,
+		Quests: quests,
 		Attributes: attributes,
-		Type:			  p.Type,
-		Revision:   p.Revision,
+		Type: p.Type,
+		Revision: p.Revision,
 	}
 }
 
-func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
-	changes, err := diff.Diff(snapshot, p.Snapshot())
+func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
+	changes, err := diff.Diff(*b, *p.Snapshot())
 	if err != nil {
 		fmt.Printf("error diffing profile: %v\n", err)
 		return nil
@@ -200,13 +202,18 @@ func (p *Profile) Diff(snapshot *ProfileSnapshot) []diff.Change {
 				p.CreateStatModifiedChange(p.Attributes.GetAttribute(change.Path[1]))
 			}
 
-			if change.Type == "update" && change.Path[2] == "Value" {
+			if change.Type == "update" && change.Path[2] == "ValueJSON" {
 				p.CreateStatModifiedChange(p.Attributes.GetAttribute(change.Path[1]))
 			}
 		}
 	}
 
 	return changes
+}
+
+func (p *Profile) CreateAttribute(key string, value interface{}) *Attribute {
+	p.Attributes.AddAttribute(NewAttribute(key, value))
+	return p.Attributes.GetAttribute(key)
 }
 
 func (p *Profile) CreateStatModifiedChange(attribute *Attribute) {
@@ -218,7 +225,7 @@ func (p *Profile) CreateStatModifiedChange(attribute *Attribute) {
 	p.Changes = append(p.Changes, StatModified{
 		ChangeType: "statModified",
 		Name: attribute.Key,
-		Value: attribute.Value,
+		Value: aid.JSONParse(attribute.ValueJSON),
 	})
 }
 
@@ -302,78 +309,12 @@ func (p *Profile) CreateItemAttributeChangedChange(item *Item, attribute string)
 }
 
 func (p *Profile) CreateFullProfileUpdateChange() {
-	p.Changes = append(p.Changes, FullProfileUpdate{
+	p.Changes = []interface{}{FullProfileUpdate{
 		ChangeType: "fullProfileUpdate",
 		Profile: p.GenerateFortniteProfileEntry(),
-	})
+	}}
 }
 
-type Loadout struct {
-	ID string
-	Character string
-	Backpack string
-	Pickaxe string
-	Glider string
-	Dances []string
-	ItemWraps []string
-	LoadingScreen string
-	SkyDiveContrail string
-	MusicPack string
-	BannerIcon string
-	BannerColor string
-}
-
-func NewLoadout() *Loadout {
-	return &Loadout{
-		ID: uuid.New().String(),
-		Character: "",
-		Backpack: "",
-		Pickaxe: "",
-		Glider: "",
-		Dances: make([]string, 6),
-		ItemWraps: make([]string, 7),
-		LoadingScreen: "",
-		SkyDiveContrail: "",
-		MusicPack: "",
-		BannerIcon: "",
-		BannerColor: "",
-	}
-}
-
-func FromDatabaseLoadout(l *storage.DB_Loadout) *Loadout {
-	return &Loadout{
-		ID: l.ID,
-		Character: l.Character,
-		Backpack: l.Backpack,
-		Pickaxe: l.Pickaxe,
-		Glider: l.Glider,
-		Dances: l.Dances,
-		ItemWraps: l.ItemWraps,
-		LoadingScreen: l.LoadingScreen,
-		SkyDiveContrail: l.SkyDiveContrail,
-		MusicPack: l.MusicPack,
-		BannerIcon: l.BannerIcon,
-		BannerColor: l.BannerColor,
-	}
-}
-
-func (l *Loadout) ToDatabase() *storage.DB_Loadout {
-	return &storage.DB_Loadout{
-		ID: l.ID,
-		Character: l.Character,
-		Backpack: l.Backpack,
-		Pickaxe: l.Pickaxe,
-		Glider: l.Glider,
-		Dances: l.Dances,
-		ItemWraps: l.ItemWraps,
-		LoadingScreen: l.LoadingScreen,
-		SkyDiveContrail: l.SkyDiveContrail,
-		MusicPack: l.MusicPack,
-		BannerIcon: l.BannerIcon,
-		BannerColor: l.BannerColor,
-	}
-}
-
-func (l *Loadout) Save() {
-	//storage.Repo.SaveLoadout(l.ToDatabase())
+func (p *Profile) ClearProfileChanges() {
+	p.Changes = []interface{}{}
 }

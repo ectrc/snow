@@ -1,12 +1,17 @@
-package storage
+package person
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
 
+var (
+	cache *PersonsCache
+)
+
 type CacheEntry struct {
-	Entry interface{}
+	Entry *Person
 	LastAccessed time.Time
 }
 
@@ -20,15 +25,15 @@ func NewPersonsCacheMutex() *PersonsCache {
 
 func (m *PersonsCache) CacheKiller() {
 	for {
-		if Cache.Count() == 0 {
+		if m.Count() == 0 {
 			continue
 		}
 
-		Cache.Range(func(key, value interface{}) bool {
+		m.Range(func(key, value interface{}) bool {
 			cacheEntry := value.(*CacheEntry)
 			
 			if time.Since(cacheEntry.LastAccessed) >= 30 * time.Minute {
-				Cache.Delete(key)
+				m.Delete(key)
 			}
 
 			return true
@@ -38,20 +43,21 @@ func (m *PersonsCache) CacheKiller() {
 	}
 }
 
-func (m *PersonsCache) GetPerson(id string) *DB_Person {
+func (m *PersonsCache) GetPerson(id string) *Person {
 	if p, ok := m.Load(id); ok {
+		fmt.Println("Cache hit", id)
 		cacheEntry := p.(*CacheEntry)
-		return cacheEntry.Entry.(*DB_Person)
+		return cacheEntry.Entry
 	}
 
 	return nil
 }
 
-func (m *PersonsCache) GetPersonByDisplay(displayName string) *DB_Person {
-	var person *DB_Person
-	m.Range(func(key, value interface{}) bool {
-		if value.(*CacheEntry).Entry.(*DB_Person).DisplayName == displayName {
-			person = value.(*CacheEntry).Entry.(*DB_Person)
+func (m *PersonsCache) GetPersonByDisplay(displayName string) *Person {
+	var person *Person
+	m.RangeEntry(func(key string, value *CacheEntry) bool {
+		if value.Entry.DisplayName == displayName {
+			person = value.Entry
 			return false
 		}
 
@@ -61,7 +67,7 @@ func (m *PersonsCache) GetPersonByDisplay(displayName string) *DB_Person {
 	return person
 }
 
-func (m *PersonsCache) SavePerson(p *DB_Person) {
+func (m *PersonsCache) SavePerson(p *Person) {
 	m.Store(p.ID, &CacheEntry{
 		Entry: p,
 		LastAccessed: time.Now(),
@@ -72,9 +78,9 @@ func (m *PersonsCache) DeletePerson(id string) {
 	m.Delete(id)
 }
 
-func (m *PersonsCache) RangePersons(f func(key string, value *DB_Person) bool) {
+func (m *PersonsCache) RangeEntry(f func(key string, value *CacheEntry) bool) {
 	m.Range(func(key, value interface{}) bool {
-		return f(key.(string), value.(*CacheEntry).Entry.(*DB_Person))
+		return f(key.(string), value.(*CacheEntry))
 	})
 }
 

@@ -9,24 +9,25 @@ import (
 )
 
 type Gift struct {
-	ID         string
+	ID string
+	ProfileID  string
 	TemplateID string
-	Quantity   int
-	FromID     string
-	GiftedAt   int64
-	Message		 string
-	Loot			 []*Item
+	Quantity int
+	FromID string
+	GiftedAt int64
+	Message string
+	Loot []*Item
 }
 
 func NewGift(templateID string, quantity int, fromID string, message string) *Gift {
 	return &Gift{
-		ID:         uuid.New().String(),
+		ID: uuid.New().String(),
 		TemplateID: templateID,
-		Quantity:   quantity,
-		FromID:     fromID,
-		GiftedAt:   time.Now().Unix(),
-		Message:		message,
-		Loot:				[]*Item{},
+		Quantity: quantity,
+		FromID: fromID,
+		GiftedAt: time.Now().Unix(),
+		Message: message,
+		Loot: []*Item{},
 	}
 }
 
@@ -38,13 +39,14 @@ func FromDatabaseGift(gift *storage.DB_Gift) *Gift {
 	}
 
 	return &Gift{
-		ID:         gift.ID,
+		ID: gift.ID,
+		ProfileID: gift.ProfileID,
 		TemplateID: gift.TemplateID,
-		Quantity:   gift.Quantity,
-		FromID:     gift.FromID,
-		GiftedAt:   gift.GiftedAt,
-		Message:		gift.Message,
-		Loot:				loot,
+		Quantity: gift.Quantity,
+		FromID: gift.FromID,
+		GiftedAt: gift.GiftedAt,
+		Message: gift.Message,
+		Loot: loot,
 	}
 }
 
@@ -101,19 +103,24 @@ func (g *Gift) ToDatabase(profileId string) *storage.DB_Gift {
 	}
 
 	return &storage.DB_Gift{
+		ID: g.ID,
 		ProfileID: profileId,
-		ID:         g.ID,
 		TemplateID: g.TemplateID,
-		Quantity:   g.Quantity,
-		FromID:     g.FromID,
-		GiftedAt:   g.GiftedAt,
-		Message:		g.Message,
-		Loot:				profileLoot,
+		Quantity: g.Quantity,
+		FromID: g.FromID,
+		GiftedAt: g.GiftedAt,
+		Message: g.Message,
+		Loot: profileLoot,
 	}
 }
 
 func (g *Gift) Save() {
-	//storage.Repo.SaveGift(g.ToDatabase())
+	if g.ProfileID == "" {
+		aid.Print("error saving gift", g.ID, "no profile id")
+		return
+	}
+
+	storage.Repo.SaveGift(g.ToDatabase(g.ProfileID))
 }
 
 func (g *Gift) Snapshot() GiftSnapshot {
@@ -124,12 +131,12 @@ func (g *Gift) Snapshot() GiftSnapshot {
 	}
 
 	return GiftSnapshot{
-		ID:         g.ID,
+		ID: g.ID,
 		TemplateID: g.TemplateID,
-		Quantity:   g.Quantity,
-		FromID:     g.FromID,
-		GiftedAt:   g.GiftedAt,
-		Message:		g.Message,
-		Loot:				loot,
+		Quantity: g.Quantity,
+		FromID: g.FromID,
+		GiftedAt: g.GiftedAt,
+		Message: g.Message,
+		Loot: loot,
 	}
 }

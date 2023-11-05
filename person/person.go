@@ -1,19 +1,20 @@
 package person
 
 import (
+	"time"
+
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
 
 type Person struct {
-	ID       string
+	ID string
 	DisplayName string
 	AccessKey string
-	AthenaProfile  *Profile
+	AthenaProfile *Profile
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
 	Profile0 *Profile
-	Loadout *Loadout
 }
 
 type Option struct {
@@ -30,69 +31,52 @@ func NewPerson() *Person {
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
 		Profile0: NewProfile("profile0"),
-		Loadout: NewLoadout(),
 	}
 }
 
 func Find(personId string) *Person {
-	person := storage.Repo.GetPerson(personId)
+	if cache == nil {
+		cache = NewPersonsCacheMutex()
+	}
+
+	cachedPerson := cache.GetPerson(personId)
+	if cachedPerson != nil {
+		return cachedPerson
+	}
+
+	person := storage.Repo.GetPersonFromDB(personId)
 	if person == nil {
 		return nil
 	}
 
-	loadout := FromDatabaseLoadout(&person.Loadout)
-	athenaProfile := NewProfile("athena")
-	commonCoreProfile := NewProfile("common_core")
-	commonPublicProfile := NewProfile("common_public")
-	profile0 := NewProfile("profile0")
-
-	for _, profile := range person.Profiles {
-		if profile.Type == "athena" {
-			athenaProfile.ID = profile.ID
-			athenaProfile = FromDatabaseProfile(&profile)
-		}
-
-		if profile.Type == "common_core" {
-			commonCoreProfile.ID = profile.ID
-			commonCoreProfile = FromDatabaseProfile(&profile)
-		}
-
-		if profile.Type == "common_public" {
-			commonPublicProfile.ID = profile.ID
-			commonPublicProfile = FromDatabaseProfile(&profile)
-		}
-
-		if profile.Type == "profile0" {
-			profile0.ID = profile.ID
-			profile0 = FromDatabaseProfile(&profile)
-		}
-	}
-	
-	return &Person{
-		ID: person.ID,
-		DisplayName: person.DisplayName,
-		AccessKey: person.AccessKey,
-		AthenaProfile: athenaProfile,
-		CommonCoreProfile: commonCoreProfile,
-		CommonPublicProfile: commonPublicProfile,
-		Profile0: profile0,
-		Loadout: loadout,
-	}
+	return findHelper(person)
 }
 
 func FindByDisplay(displayName string) *Person {
-	person := storage.Repo.GetPersonByDisplay(displayName)
+	if cache == nil {
+		cache = NewPersonsCacheMutex()
+	}
+
+	person := storage.Repo.GetPersonByDisplayFromDB(displayName)
 	if person == nil {
 		return nil
 	}
 
-	loadout := FromDatabaseLoadout(&person.Loadout)
+	cachedPerson := cache.GetPerson(person.ID)
+	if cachedPerson != nil {
+		return cachedPerson
+	}
+
+	return findHelper(person)
+}
+
+func findHelper(databasePerson *storage.DB_Person) *Person {
 	athenaProfile := NewProfile("athena")
 	commonCoreProfile := NewProfile("common_core")
 	commonPublicProfile := NewProfile("common_public")
 	profile0 := NewProfile("profile0")
 
-	for _, profile := range person.Profiles {
+	for _, profile := range databasePerson.Profiles {
 		if profile.Type == "athena" {
 			athenaProfile.ID = profile.ID
 			athenaProfile = FromDatabaseProfile(&profile)
@@ -113,17 +97,23 @@ func FindByDisplay(displayName string) *Person {
 			profile0 = FromDatabaseProfile(&profile)
 		}
 	}
-	
-	return &Person{
-		ID: person.ID,
-		DisplayName: person.DisplayName,
-		AccessKey: person.AccessKey,
+
+	person := &Person{
+		ID: databasePerson.ID,
+		DisplayName: databasePerson.DisplayName,
+		AccessKey: databasePerson.AccessKey,
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
 		Profile0: profile0,
-		Loadout: loadout,
 	}
+
+	cache.Store(person.ID, &CacheEntry{
+		Entry: person,
+		LastAccessed: time.Now(),
+	})
+	
+	return person
 }
 
 func AllFromDatabase() []*Person {
@@ -152,7 +142,8 @@ func (p *Person) GetProfileFromType(profileType string) *Profile {
 }
 
 func (p *Person) Save() {
-	storage.Repo.SavePerson(p.ToDatabase())
+	dbPerson := p.ToDatabase()
+	storage.Repo.SavePerson(dbPerson)
 }
 
 func (p *Person) ToDatabase() *storage.DB_Person {
@@ -160,7 +151,6 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Profiles: []storage.DB_Profile{},
-		Loadout: *p.Loadout.ToDatabase(),
 		AccessKey: p.AccessKey,
 	}
 
@@ -178,7 +168,9 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 			Type: profileType,
 			Items: []storage.DB_Item{},
 			Gifts: []storage.DB_Gift{},
+			Quests: []storage.DB_Quest{},
 			Attributes: []storage.DB_PAttribute{},
+			Revision: profile.Revision,
 		}
 
 		profile.Items.RangeItems(func(id string, item *Item) bool {
@@ -225,7 +217,6 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		AthenaProfile: *p.AthenaProfile.Snapshot(),
-		CommonCoreProfile:* p.CommonCoreProfile.Snapshot(),
-		Loadout: *p.Loadout,
+		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
 	}
 } 

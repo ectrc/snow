@@ -7,39 +7,40 @@ import (
 )
 
 type Item struct {
-	ID          string
-	TemplateID  string
-	Quantity    int
-	Favorite    bool
-	HasSeen     bool
-	Variants    []*VariantChannel
+	ID string
+	ProfileID string
+	TemplateID string
+	Quantity int
+	Favorite bool
+	HasSeen bool
+	Variants []*VariantChannel
 	ProfileType string
 }
 
 func NewItem(templateID string, quantity int) *Item {
 	return &Item{
-		ID:         uuid.New().String(),
+		ID: uuid.New().String(),
 		TemplateID: templateID,
-		Quantity:   quantity,
-		Favorite:   false,
-		HasSeen:    false,
-		Variants:   []*VariantChannel{},
+		Quantity: quantity,
+		Favorite: false,
+		HasSeen: false,
+		Variants: []*VariantChannel{},
 	}
 }
 
 func NewItemWithType(templateID string, quantity int, profile string) *Item {
 	return &Item{
-		ID:         uuid.New().String(),
+		ID: uuid.New().String(),
 		TemplateID: templateID,
-		Quantity:   quantity,
-		Favorite:   false,
-		HasSeen:    false,
-		Variants:   []*VariantChannel{},
+		Quantity: quantity,
+		Favorite: false,
+		HasSeen: false,
+		Variants: []*VariantChannel{},
 		ProfileType: profile,
 	}
 }
 
-func FromDatabaseItem(item *storage.DB_Item, profileType *string) *Item {
+func FromDatabaseItem(item *storage.DB_Item) *Item {
 	variants := []*VariantChannel{}
 
 	for _, variant := range item.Variants {
@@ -47,13 +48,12 @@ func FromDatabaseItem(item *storage.DB_Item, profileType *string) *Item {
 	}
 
 	return &Item{
-		ID:          item.ID,
-		TemplateID:  item.TemplateID,
-		Quantity:    item.Quantity,
-		Favorite:    item.Favorite,
-		HasSeen:     item.HasSeen,
-		Variants:    variants,
-		ProfileType: *profileType,
+		ID: item.ID,
+		TemplateID: item.TemplateID,
+		Quantity: item.Quantity,
+		Favorite: item.Favorite,
+		HasSeen: item.HasSeen,
+		Variants: variants,
 	}
 }
 
@@ -114,10 +114,10 @@ func (i *Item) DeleteLoot() {
 
 func (i *Item) NewChannel(channel string, owned []string, active string) *VariantChannel {
 	return &VariantChannel{
-		ItemID:  i.ID,
+		ItemID: i.ID,
 		Channel: channel,
-		Owned:   owned,
-		Active:  active,
+		Owned: owned,
+		Active: active,
 	}
 }
 
@@ -160,27 +160,32 @@ func (i *Item) ToDatabase(profileId string) *storage.DB_Item {
 	}
 
 	return &storage.DB_Item{
-		ProfileID:  profileId,
-		ID:         i.ID,
+		ProfileID: profileId,
+		ID: i.ID,
 		TemplateID: i.TemplateID,
-		Quantity:   i.Quantity,
-		Favorite:   i.Favorite,
-		HasSeen:    i.HasSeen,
-		Variants:   variants,
+		Quantity: i.Quantity,
+		Favorite: i.Favorite,
+		HasSeen: i.HasSeen,
+		Variants: variants,
 	}
 }
 
 func (i *Item) Save() {
-	//storage.Repo.SaveItem(i.ToDatabase())
+	if i.ProfileID == "" {
+		aid.Print("error saving item", i.ID, "no profile id")
+		return
+	}
+
+	storage.Repo.SaveItem(i.ToDatabase(i.ProfileID))
 }
 
 func (i *Item) ToLootDatabase(giftId string) *storage.DB_Loot {
 	return &storage.DB_Loot{
-		GiftID:			 giftId,
+		GiftID: giftId,
 		ProfileType: i.ProfileType,
-		ID:          i.ID,
-		TemplateID:  i.TemplateID,
-		Quantity:    i.Quantity,
+		ID: i.ID,
+		TemplateID: i.TemplateID,
+		Quantity: i.Quantity,
 	}
 }
 
@@ -196,12 +201,12 @@ func (i *Item) Snapshot() ItemSnapshot {
 	}
 
 	return ItemSnapshot{
-		ID:          i.ID,
-		TemplateID:  i.TemplateID,
-		Quantity:    i.Quantity,
-		Favorite:    i.Favorite,
-		HasSeen:     i.HasSeen,
-		Variants:    variants,
+		ID: i.ID,
+		TemplateID: i.TemplateID,
+		Quantity: i.Quantity,
+		Favorite: i.Favorite,
+		HasSeen: i.HasSeen,
+		Variants: variants,
 		ProfileType: i.ProfileType,
 	}
 }
@@ -216,21 +221,21 @@ type VariantChannel struct {
 
 func FromDatabaseVariant(variant *storage.DB_VariantChannel) *VariantChannel {
 	return &VariantChannel{
-		ID:      variant.ID,
-		ItemID:  variant.ItemID,
+		ID: variant.ID,
+		ItemID: variant.ItemID,
 		Channel: variant.Channel,
-		Owned:   variant.Owned,
-		Active:  variant.Active,
+		Owned: variant.Owned,
+		Active: variant.Active,
 	}
 }
 
 func (v *VariantChannel) ToDatabase() *storage.DB_VariantChannel {
 	return &storage.DB_VariantChannel{
-		ID:      v.ID,
-		ItemID:  v.ItemID,
+		ID: v.ID,
+		ItemID: v.ItemID,
 		Channel: v.Channel,
-		Owned:   v.Owned,
-		Active:  v.Active,
+		Owned: v.Owned,
+		Active: v.Active,
 	}
 }
 

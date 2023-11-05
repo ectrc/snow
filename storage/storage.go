@@ -1,8 +1,7 @@
 package storage
 
 var (
-	Repo  *Repository
-	Cache *PersonsCache
+	Repo *Repository
 )
 
 type Storage interface {
@@ -13,11 +12,25 @@ type Storage interface {
 	GetAllPersons() []*DB_Person
 	SavePerson(person *DB_Person)
 
+	SaveProfile(profile *DB_Profile)
+	DeleteProfile(profileId string)
+
+	SaveItem(item *DB_Item)
 	DeleteItem(itemId string)
+
+	SaveVariant(variant *DB_VariantChannel)
 	DeleteVariant(variantId string)
+
+	SaveQuest(quest *DB_Quest)
 	DeleteQuest(questId string)
+
+	SaveLoot(loot *DB_Loot)
 	DeleteLoot(lootId string)
+
+	SaveGift(gift *DB_Gift)
 	DeleteGift(giftId string)
+
+	SaveAttribute(attribute *DB_PAttribute)
 	DeleteAttribute(attributeId string)
 }
 
@@ -31,30 +44,18 @@ func NewStorage(s Storage) *Repository {
 	}
 }
 
-func (r *Repository) GetPerson(personId string) *DB_Person {
-	cachePerson := Cache.GetPerson(personId)
-	if cachePerson != nil {
-		return cachePerson
-	}
-
+func (r *Repository) GetPersonFromDB(personId string) *DB_Person {
 	storagePerson := r.Storage.GetPerson(personId)
 	if storagePerson != nil {
-		Cache.SavePerson(storagePerson)
 		return storagePerson
 	}
 
 	return nil
 }
 
-func (r *Repository) GetPersonByDisplay(displayName string) *DB_Person {
-	cachePerson := Cache.GetPersonByDisplay(displayName)
-	if cachePerson != nil {
-		return cachePerson
-	}
-
+func (r *Repository) GetPersonByDisplayFromDB(displayName string) *DB_Person {
 	storagePerson := r.Storage.GetPersonByDisplay(displayName)
 	if storagePerson != nil {
-		Cache.SavePerson(storagePerson)
 		return storagePerson
 	}
 
@@ -66,28 +67,59 @@ func (r *Repository) GetAllPersons() []*DB_Person {
 }
 
 func (r *Repository) SavePerson(person *DB_Person) {
-	Cache.SavePerson(person)
 	r.Storage.SavePerson(person)
+}
+
+func (r *Repository) SaveProfile(profile *DB_Profile) {
+	r.Storage.SaveProfile(profile)
+}
+
+func (r *Repository) DeleteProfile(profileId string) {
+	r.Storage.DeleteProfile(profileId)
+}
+
+func (r *Repository) SaveItem(item *DB_Item) {
+	r.Storage.SaveItem(item)
 }
 
 func (r *Repository) DeleteItem(itemId string) {
 	r.Storage.DeleteItem(itemId)
 }
 
+func (r *Repository) SaveVariant(variant *DB_VariantChannel) {
+	r.Storage.SaveVariant(variant)
+}
+
 func (r *Repository) DeleteVariant(variantId string) {
 	r.Storage.DeleteVariant(variantId)
+}
+
+func (r *Repository) SaveQuest(quest *DB_Quest) {
+	r.Storage.SaveQuest(quest)
 }
 
 func (r *Repository) DeleteQuest(questId string) {
 	r.Storage.DeleteQuest(questId)
 }
 
+func (r *Repository) SaveLoot(loot *DB_Loot) {
+	r.Storage.SaveLoot(loot)
+}
+
 func (r *Repository) DeleteLoot(lootId string) {
 	r.Storage.DeleteLoot(lootId)
 }
 
+func (r *Repository) SaveGift(gift *DB_Gift) {
+	r.Storage.SaveGift(gift)
+}
+
 func (r *Repository) DeleteGift(giftId string) {
 	r.Storage.DeleteGift(giftId)
+}
+
+func (r *Repository) SaveAttribute(attribute *DB_PAttribute) {
+	r.Storage.SaveAttribute(attribute)
 }
 
 func (r *Repository) DeleteAttribute(attributeId string) {

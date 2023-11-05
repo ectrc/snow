@@ -22,7 +22,6 @@ func init() {
 		}
 
 		postgresStorage.Migrate(&storage.DB_Person{}, "Persons")
-		postgresStorage.Migrate(&storage.DB_Loadout{}, "Loadouts")
 		postgresStorage.Migrate(&storage.DB_Profile{}, "Profiles")
 		postgresStorage.Migrate(&storage.DB_Item{}, "Items")
 		postgresStorage.Migrate(&storage.DB_Gift{}, "Gifts")
@@ -35,12 +34,11 @@ func init() {
 	}
 
 	storage.Repo = storage.NewStorage(device)
-	storage.Cache = storage.NewPersonsCacheMutex()
 }
 
 func init() {
 	if aid.Config.Database.DropAllTables {
-		person.NewFortnitePerson("ac", "ket")
+		person.NewFortnitePerson("ac", "1")
 	}
 
 	aid.PrintTime("Loading all persons from database", func() {
@@ -49,7 +47,7 @@ func init() {
 		}
 	})
 
-	go storage.Cache.CacheKiller()
+	// go storage.Cache.CacheKiller()
 }
 
 func main() {
@@ -58,6 +56,8 @@ func main() {
 	r.Use(aid.FiberLogger())
 	r.Use(aid.FiberLimiter())
 	r.Use(aid.FiberCors())
+
+	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
 
 	account := r.Group("/account/api")
 	account.Get("/public/account/:accountId", handlers.GetPublicAccount)
@@ -68,6 +68,7 @@ func main() {
 	fortnite := r.Group("/fortnite/api")
 	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetAccountReceipts)
 	fortnite.Get("/versioncheck/*", handlers.GetVersionCheck)
+	fortnite.Get("/calendar/v1/timeline", handlers.GetTimelineCalendar)
 
 	matchmaking := fortnite.Group("/matchmaking")
 	matchmaking.Get("/session/findPlayer/:accountId", handlers.GetSessionFindPlayer)
@@ -76,6 +77,9 @@ func main() {
 	storage.Get("/system", handlers.GetCloudStorageFiles)
 	storage.Get("/system/config", handlers.GetCloudStorageConfig)
 	storage.Get("/system/:fileName", handlers.GetCloudStorageFile)
+	storage.Get("/user/:accountId", handlers.GetUserStorageFiles)
+	storage.Get("/user/:accountId/:fileName", handlers.GetUserStorageFile)
+	storage.Put("/user/:accountId/:fileName", handlers.PutUserStorageFile)
 	
 	game := fortnite.Group("/game/v2")
 	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostTryPlayOnPlatform)

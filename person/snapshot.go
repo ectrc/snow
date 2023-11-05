@@ -5,7 +5,6 @@ type PersonSnapshot struct {
 	DisplayName       string
 	AthenaProfile     ProfileSnapshot
 	CommonCoreProfile ProfileSnapshot
-	Loadout           Loadout
 }
 
 type ProfileSnapshot struct {

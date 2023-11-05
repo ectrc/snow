@@ -17,7 +17,7 @@ func GetCloudStorageConfig(c *fiber.Ctx) error {
 		"epicAppName": "Live",
 		"isAuthenticated": true,
 		"disableV2": true,
-		"lastUpdated": "2021-01-01T00:00:00Z",
+		"lastUpdated": "0000-00-00T00:00:00.000Z",
 		"transports": []string{},
 	})
 }
@@ -28,5 +28,17 @@ func GetCloudStorageFile(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest)
 	}
 
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
+}
+
+func GetUserStorageFiles(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON([]aid.JSON{})
+}
+
+func GetUserStorageFile(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
+}
+
+func PutUserStorageFile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
