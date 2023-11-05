@@ -36,10 +36,7 @@ func PostProfileAction(c *fiber.Ctx) error {
 			return err
 		}
 	}
-	changes := profile.Diff(before)
-
-	aid.Print("Changes: " + strconv.Itoa(len(changes)))
-	aid.PrintJSON(changes)
+	profile.Diff(before)
 	
 	revision, _ := strconv.Atoi(c.Query("rvn"))
 	if revision == -1 {
@@ -82,6 +79,7 @@ func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) 
 		}
 		
 		item.HasSeen = true
+		item.Save()
 	}
 
 	return nil
@@ -121,6 +119,8 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 	default:
 		attr.ValueJSON = aid.JSONStringify(item.ID)
 	}
+
+	attr.Save()
 
 	return nil
 }
