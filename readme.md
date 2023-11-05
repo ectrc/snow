@@ -47,8 +47,8 @@ user.CommonCoreProfile.Diff(snapshot)
 
 ## What's next?
 
-- Authentication for the game to determine if the person is valid or not. Fortnite uses JWT tokens for this which makes it easy to implement.
-- Every endpoint that is used by Fortnite. This includes all MCP Operations and even extracting data from the telemetry.
+- Every endpoint that is used by Fortnite. This includes all MCP Operations, extracting data from the telemetry and even the Party Service (maybe party v2).
+- Automatic storefront that uses previous data to generate a storefront. This would use item shops from history to make sure there are no blank spots in the storefront. Also battle pass tiers etc.
 - Embed game assets into the backend e.g. Battle Pass, Quest Data etc. _This would mean a single binary that can be run anywhere without the need of external files._
 - Interact with external Services like Amazon S3 Buckets to save player data externally.
 - A way to interact with accounts outside of the game. This is mainly for a web app and other services to interact with the backend.
@@ -56,6 +56,7 @@ user.CommonCoreProfile.Diff(snapshot)
 ## Known Supported Versions
 
 - **_Chapter 1 Season 2_** `Fortnite+Release-2.5-CL-3889387-Windows` I started with this build of the game as it requires more work to get working, this means snow can support _most_ versions of the game.
+- **_Chapter 1 Season 5_** `Fortnite+Release-5.41-CL-4363240-Windows` This build was used to make sure challenges, variants and lobby backgrounds work.
 
 ## How do I use this?
 

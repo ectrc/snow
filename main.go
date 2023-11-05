@@ -71,11 +71,13 @@ func main() {
 	account.Delete("/oauth/sessions/kill", handlers.DeleteOAuthSessions)
 
 	fortnite := r.Group("/fortnite/api")
+	fortnite.Use(handlers.MiddlewareOAuthVerify)
 	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetFortniteReceipts)
 	fortnite.Get("/v2/versioncheck/*", handlers.GetFortniteVersion)
 	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
 
 	storefront := fortnite.Group("/storefront/v2")
+	storefront.Use(handlers.MiddlewareOAuthVerify)
 	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
 	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
 
@@ -91,11 +93,13 @@ func main() {
 	storage.Put("/user/:accountId/:fileName", handlers.PutUserStorageFile)
 	
 	game := fortnite.Group("/game/v2")
+	game.Use(handlers.MiddlewareOAuthVerify)
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
 	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostGamePlatform)
 	game.Post("/grant_access/:accountId", handlers.PostGameAccess)
 
 	profile := game.Group("/profile/:accountId")
+	profile.Use(handlers.MiddlewareOAuthVerify)
 	profile.Post("/client/:action", handlers.PostProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
