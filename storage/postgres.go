@@ -140,11 +140,10 @@ func (s *PostgresStorage) DeleteGift(giftId string) {
 	s.Postgres.Delete(&DB_Gift{}, "id = ?", giftId)
 }
 
-func (s *PostgresStorage) DeleteAttribute(attributeId string) {
-	s.Postgres.Delete(&DB_PAttribute{}, "id = ?", attributeId)
+func (s *PostgresStorage) SaveAttribute(attribute *DB_PAttribute) {
+	s.Postgres.Save(attribute)
 }
 
-func (s *PostgresStorage) SaveAttribute(attribute *DB_PAttribute) {
-	aid.Print("saving attribute", attribute.Key, attribute.ValueJSON)
-	s.Postgres.Save(attribute)
+func (s *PostgresStorage) DeleteAttribute(attributeId string) {
+	s.Postgres.Delete(&DB_PAttribute{}, "id = ?", attributeId)
 }

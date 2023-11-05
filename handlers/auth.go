@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/base64"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -41,15 +39,6 @@ func PostOAuthToken(c *fiber.Ctx) error {
 func PostOAuthTokenClientCredentials(c *fiber.Ctx, body *OAuthTokenBody) error {
 	credentials, err := aid.JWTSign(aid.JSON{
 		"snow_id": 0, // custom
-		"t": "s",
-		"am": "client_credentials", // authorization method
-		"ic": true, // internal client
-		"mver": false, // mobile version
-		"clsvc": "snow", // client service
-		"clid": c.IP(), // client id
-		"jti": rand.Int63(), // jwt id
-		"p": base64.StdEncoding.EncodeToString([]byte(c.IP())), // payload
-		"hours_expire": 1, 
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})
 	if err != nil {
@@ -87,20 +76,6 @@ func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
 
 	access, err := aid.JWTSign(aid.JSON{
 		"snow_id": person.ID, // custom
-		"iai": person.ID, // account id
-		"dn": person.DisplayName, // display name
-		"t": "s",
-		"am": "password", // authorization method
-		"ic": true, // internal client
-		"mver": false, // mobile version
-		"clsvc": "snow", // client service
-		"app": "com.epicgames.fortnite", // app name
-		"clid": c.IP(), // client id
-		"dvid": "default", // device id
-		"jti": rand.Int63(), // jwt id
-		"p": base64.StdEncoding.EncodeToString([]byte(c.IP())), // payload
-		"sec": 1, // security level
-		"hours_expire": 24,
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})
 	if err != nil {
@@ -108,13 +83,7 @@ func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
 	}
 
 	refresh, err := aid.JWTSign(aid.JSON{
-		"snow_id": person.ID, // custom
-		"sub": person.ID, // account id
-		"clid": c.IP(), // client id
-		"jti": rand.Int63(), // jwt id
-		"t": "s",
-		"am": "refresh_token", // authorization method
-		"hours_expire": 24,
+		"snow_id": person.ID,
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})
 	if err != nil {
@@ -136,6 +105,66 @@ func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
 		"refresh_token": "eg1~"+refresh,
 		"token_type": "bearer",
 	})
+}
+
+func GetOAuthVerify(c *fiber.Ctx) error {
+	auth := c.Get("Authorization")
+	if auth == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
+	}
+	real := strings.ReplaceAll(auth, "bearer eg1~", "")
+
+	claims, err := aid.JWTVerify(real)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	if claims["snow_id"] == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	snowId, ok := claims["snow_id"].(string)
+	if !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	person := p.Find(snowId)
+	if person == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func MiddlewareOAuthVerify(c *fiber.Ctx) error {
+	auth := c.Get("Authorization")
+	if auth == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
+	}
+	real := strings.ReplaceAll(auth, "bearer eg1~", "")
+
+	claims, err := aid.JWTVerify(real)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	if claims["snow_id"] == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	snowId, ok := claims["snow_id"].(string)
+	if !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	person := p.Find(snowId)
+	if person == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	c.Locals("person", person)
+
+	return c.Next()
 }
 
 func DeleteOAuthSessions(c *fiber.Ctx) error {

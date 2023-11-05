@@ -9,33 +9,35 @@ func AnyNoContent(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func PostTryPlayOnPlatform(c *fiber.Ctx) error {
+func PostGamePlatform(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).SendString("true")
 }
 
-func GetEnabledFeatures(c *fiber.Ctx) error {
+func GetGameEnabledFeatures(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON([]string{})
 }
 
-func PostGrantAccess(c *fiber.Ctx) error {
+func PostGameAccess(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).SendString("true")
 }
 
-func GetAccountReceipts(c *fiber.Ctx) error {
+func GetFortniteReceipts(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON([]string{})
 }
 
-func GetSessionFindPlayer(c *fiber.Ctx) error {
+func GetMatchmakingSession(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON([]string{})
 }
 
-func GetVersionCheck(c *fiber.Ctx) error {
+func GetFortniteVersion(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"type": "NO_UPDATE",
 	})
 }
 
 func GetContentPages(c *fiber.Ctx) error {
+	// seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
+	
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"battlepassaboutmessages": aid.JSON{
 			"news": aid.JSON{
@@ -71,6 +73,19 @@ func GetContentPages(c *fiber.Ctx) error {
 					"messagetype": "normal",
 				},
 			},
+			"lastModified": "0000-00-00T00:00:00.000Z",
+		},
+		"dynamicbackgrounds": aid.JSON{
+			"backgrounds": aid.JSON{"backgrounds": []aid.JSON{
+				// {
+				// 	"key": "lobby",
+				// 	"stage": "season"+seasonString,
+				// },
+				// {
+				// 	"key": "vault",
+				// 	"stage": "season"+seasonString,
+				// },
+			}},
 			"lastModified": "0000-00-00T00:00:00.000Z",
 		},
 		"lastModified": "0000-00-00T00:00:00.000Z",

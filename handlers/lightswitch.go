@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ectrc/snow/aid"
@@ -11,28 +14,69 @@ import (
 func GetLightswitchBulkStatus(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON([]aid.JSON{{
 		"serviceInstanceId": "fortnite",
-		"status": "UP",
-		"banned": false,
+		"status" :"UP",
+		"message": "fortnite is up.",
+		"maintenanceUri": nil,
+		"allowedActions": []string{"PLAY","DOWNLOAD"},
+		"banned":false,
+		"launcherInfoDTO": aid.JSON{
+			"appName":"Fortnite",
+			"catalogItemId":"4fe75bbc5a674f4f9b356b5c90567da5",
+			"namespace":"fn",
+		},
 	}})
 }
 
-func GetTimelineCalendar(c *fiber.Ctx) error {
+func GetFortniteTimeline(c *fiber.Ctx) error {
+	userAgent := c.Get("User-Agent")
+	fmt.Println(userAgent)
+	if !strings.Contains(userAgent, "++Fortnite") {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("No User Agent"))
+	}
+
+	build := regexp.MustCompile(`\d+\.\d+`).FindString(userAgent)
+	if len(strings.Split(build, ".")) != 2 {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Build"))
+	}
+	
+	season, err := strconv.Atoi(strings.Split(build, ".")[0])
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorBadRequest("Failed to parse Build"))
+	}
+
 	events := []aid.JSON{
 		{
-			"activeUntil": aid.TimeEndOfWeekString(),
+			"activeUntil": "9999-12-31T23:59:59.999Z",
 			"activeSince": "0001-01-01T00:00:00Z",
-			"activeEventId": "EventFlag.Season" + strconv.Itoa(aid.Config.Fortnite.Season),
-		},
-		{
-			"activeUntil": aid.TimeEndOfWeekString(),
-			"activeSince": "0001-01-01T00:00:00Z",
-			"activeEventId": "EventFlag.LobbySeason" + strconv.Itoa(aid.Config.Fortnite.Season),
+			"eventType": "EventFlag.Season" + strings.Split(build, ".")[0],
 		},
 	}
 
+	switch season {
+	case 2:
+		events = append(events, aid.JSON{
+			"activeUntil": "9999-12-31T23:59:59.999Z",
+			"activeSince": "0001-01-01T00:00:00Z",
+			"eventType": "EventFlag.LobbyWinterDecor",
+		})
+	case 6:
+		events = append(events, aid.JSON{
+			"activeUntil": "9999-01-01T00:00:00.000Z",
+			"activeSince": "0001-01-01T00:00:00Z",
+			"eventType": "EventFlag.LobbySeason6Halloween",
+		})
+	default:
+		events = append(events, aid.JSON{
+			"activeUntil": "9999-12-31T23:59:59.999Z",
+			"activeSince": "0001-01-01T00:00:00Z",
+			"eventType": "EventFlag.LobbySeason" + strings.Split(build, ".")[0],
+		})
+	}
+
 	state := aid.JSON{
-		"seasonNumber": aid.Config.Fortnite.Season,
-		"seasonTemplateId": "AthenaSeason:AthenaSeason" + strconv.Itoa(aid.Config.Fortnite.Season),
+		"eventNamedWeights": aid.JSON{},
+		"seasonNumber": season,
+		"seasonTemplateId": "AthenaSeason:AthenaSeason" + strings.Split(build, ".")[0],
 		"seasonBegin": time.Now().Add(-time.Hour * 24 * 7).Format("2006-01-02T15:04:05.000Z"),
 		"seasonEnd": time.Now().Add(time.Hour * 24 * 7).Format("2006-01-02T15:04:05.000Z"),
 		"seasonDisplayedEnd": time.Now().Add(time.Hour * 24 * 7).Format("2006-01-02T15:04:05.000Z"),
@@ -56,6 +100,10 @@ func GetTimelineCalendar(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"channels": aid.JSON{
 			"client-events": client,
+			"client-matchmaking": aid.JSON{
+				"states": []aid.JSON{},
+				"cacheExpire": "9999-12-31T23:59:59.999Z",	
+			},
 		},
 		"currentTime": time.Now().Format("2006-01-02T15:04:05.000Z"),
 		"cacheIntervalMins": 5,

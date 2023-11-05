@@ -66,16 +66,21 @@ func main() {
 	account := r.Group("/account/api")
 	account.Get("/public/account/:accountId", handlers.GetPublicAccount)
 	account.Get("/public/account/:accountId/externalAuths", handlers.GetPublicAccountExternalAuths)
+	account.Get("/oauth/verify", handlers.GetOAuthVerify)
 	account.Post("/oauth/token", handlers.PostOAuthToken)
 	account.Delete("/oauth/sessions/kill", handlers.DeleteOAuthSessions)
 
 	fortnite := r.Group("/fortnite/api")
-	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetAccountReceipts)
-	fortnite.Get("/versioncheck/*", handlers.GetVersionCheck)
-	fortnite.Get("/calendar/v1/timeline", handlers.GetTimelineCalendar)
+	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetFortniteReceipts)
+	fortnite.Get("/v2/versioncheck/*", handlers.GetFortniteVersion)
+	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
+
+	storefront := fortnite.Group("/storefront/v2")
+	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
+	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
 
 	matchmaking := fortnite.Group("/matchmaking")
-	matchmaking.Get("/session/findPlayer/:accountId", handlers.GetSessionFindPlayer)
+	matchmaking.Get("/session/findPlayer/:accountId", handlers.GetMatchmakingSession)
 
 	storage := fortnite.Group("/cloudstorage")
 	storage.Get("/system", handlers.GetCloudStorageFiles)
@@ -86,9 +91,9 @@ func main() {
 	storage.Put("/user/:accountId/:fileName", handlers.PutUserStorageFile)
 	
 	game := fortnite.Group("/game/v2")
-	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostTryPlayOnPlatform)
-	game.Post("/grant_access/:accountId", handlers.PostGrantAccess)
-	game.Get("/enabled_features", handlers.GetEnabledFeatures)
+	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
+	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostGamePlatform)
+	game.Post("/grant_access/:accountId", handlers.PostGameAccess)
 
 	profile := game.Group("/profile/:accountId")
 	profile.Post("/client/:action", handlers.PostProfileAction)

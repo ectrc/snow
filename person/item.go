@@ -71,6 +71,11 @@ func FromDatabaseLoot(item *storage.DB_Loot) *Item {
 
 func (i *Item) GenerateFortniteItemEntry() aid.JSON {
 	variants := []aid.JSON{}
+	attributes := aid.JSON{
+		"variants": variants,
+		"favorite": i.Favorite,
+		"item_seen": i.HasSeen,
+	}
 
 	for _, variant := range i.Variants {
 		variants = append(variants, aid.JSON{
@@ -80,13 +85,15 @@ func (i *Item) GenerateFortniteItemEntry() aid.JSON {
 		})
 	}
 
+	if i.TemplateID == "Currency:MtxPurchased" {
+		attributes = aid.JSON{
+			"platform": "Shared",
+		}
+	}
+
 	return aid.JSON{
 		"templateId": i.TemplateID,
-		"attributes": aid.JSON{
-			"variants": variants,
-			"favorite": i.Favorite,
-			"item_seen": i.HasSeen,
-		},
+		"attributes": attributes,
 		"quantity": i.Quantity,
 	}
 }
