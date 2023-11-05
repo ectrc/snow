@@ -46,8 +46,6 @@ func init() {
 			aid.Print("Loaded person: " + person.DisplayName)
 		}
 	})
-
-	// go storage.Cache.CacheKiller()
 }
 
 func main() {
