@@ -27,13 +27,15 @@ func PrintJSON(v interface{}) {
 }
 
 func PrintTime(label string, functions ...func()) {
+	current := time.Now()
+
+	for _, f := range functions {
+		f()
+	}
+
 	if Config.Output.Level == "prod" {
 		return
 	}
 
-	current := time.Now()
-	for _, f := range functions {
-		f()
-	}
 	fmt.Println(label + ":", time.Since(current))
 }

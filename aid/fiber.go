@@ -10,7 +10,7 @@ import (
 
 func FiberLogger() fiber.Handler {
 	return logger.New(logger.Config{
-		Format: "${status} ${path}\n",
+		Format: "(${status}) (${latency}) ${path}\n",
 	})
 }
 

@@ -118,10 +118,23 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 
 func AllFromDatabase() []*Person {
 	var persons []*Person
-
 	for _, person := range storage.Repo.GetAllPersons() {
 		persons = append(persons, Find(person.ID))
 	}
+
+	return persons
+}
+
+func AllFromCache() []*Person {
+	if cache == nil {
+		cache = NewPersonsCacheMutex()
+	}
+
+	var persons []*Person
+	cache.RangeEntry(func(key string, value *CacheEntry) bool {
+		persons = append(persons, value.Entry)
+		return true
+	})
 
 	return persons
 }

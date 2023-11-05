@@ -25,7 +25,6 @@ func PostProfileAction(c *fiber.Ctx) error {
 	if person == nil {
 		return c.Status(404).JSON(aid.ErrorBadRequest("No Account Found"))
 	}
-	defer person.Save()
 
 	profile := person.GetProfileFromType(c.Query("profileId"))
 	defer profile.ClearProfileChanges()
@@ -79,7 +78,7 @@ func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) 
 		}
 		
 		item.HasSeen = true
-		item.Save()
+		go item.Save()
 	}
 
 	return nil
@@ -106,6 +105,9 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 	if attr == nil {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Attribute not found"))
 	}
+	defer func() {
+		go attr.Save()
+	}()
 
 	switch body.SlotName {
 	case "Dance":
@@ -119,8 +121,6 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 	default:
 		attr.ValueJSON = aid.JSONStringify(item.ID)
 	}
-
-	attr.Save()
 
 	return nil
 }

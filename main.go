@@ -46,6 +46,12 @@ func init() {
 			aid.Print("Loaded person: " + person.DisplayName)
 		}
 	})
+
+	aid.PrintTime("Loading all persons from cache", func() {
+		for _, person := range person.AllFromCache() {
+			aid.Print("Loaded person: " + person.DisplayName)
+		}
+	})
 }
 
 func main() {

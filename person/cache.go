@@ -1,7 +1,6 @@
 package person
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -45,7 +44,6 @@ func (m *PersonsCache) CacheKiller() {
 
 func (m *PersonsCache) GetPerson(id string) *Person {
 	if p, ok := m.Load(id); ok {
-		fmt.Println("Cache hit", id)
 		cacheEntry := p.(*CacheEntry)
 		return cacheEntry.Entry
 	}

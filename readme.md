@@ -2,7 +2,7 @@
 
 # Snow
 
-Performance first, universal Fortnite backend written in Go.
+Performance first, universal Fortnite private server backend written in Go.
 
 ## Features
 
