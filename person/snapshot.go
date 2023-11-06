@@ -1,10 +1,12 @@
 package person
 
 type PersonSnapshot struct {
-	ID                string
-	DisplayName       string
-	AthenaProfile     ProfileSnapshot
-	CommonCoreProfile ProfileSnapshot
+	ID                  string
+	DisplayName         string
+	AthenaProfile       ProfileSnapshot
+	CommonCoreProfile   ProfileSnapshot
+	CommonPublicProfile ProfileSnapshot
+	Profile0Profile     ProfileSnapshot
 }
 
 type ProfileSnapshot struct {

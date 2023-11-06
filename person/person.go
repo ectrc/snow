@@ -14,7 +14,7 @@ type Person struct {
 	AthenaProfile *Profile
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
-	Profile0 *Profile
+	Profile0Profile *Profile
 }
 
 type Option struct {
@@ -30,7 +30,7 @@ func NewPerson() *Person {
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
-		Profile0: NewProfile("profile0"),
+		Profile0Profile: NewProfile("profile0"),
 	}
 }
 
@@ -105,7 +105,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
-		Profile0: profile0,
+		Profile0Profile: profile0,
 	}
 
 	cache.Store(person.ID, &CacheEntry{
@@ -148,7 +148,7 @@ func (p *Person) GetProfileFromType(profileType string) *Profile {
 	case "common_public":
 		return p.CommonPublicProfile
 	case "profile0":
-		return p.Profile0
+		return p.Profile0Profile
 	}
 
 	return nil
@@ -171,7 +171,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		"common_core": p.CommonCoreProfile,
 		"athena": p.AthenaProfile,
 		"common_public": p.CommonPublicProfile,
-		"profile0": p.Profile0,
+		"profile0": p.Profile0Profile,
 	}
 
 	for profileType, profile := range profilesToConvert {
@@ -231,5 +231,7 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		DisplayName: p.DisplayName,
 		AthenaProfile: *p.AthenaProfile.Snapshot(),
 		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
+		CommonPublicProfile: *p.CommonPublicProfile.Snapshot(),
+		Profile0Profile: *p.Profile0Profile.Snapshot(),
 	}
 } 

@@ -14,6 +14,7 @@ func NewFortnitePerson(displayName string, key string) {
 	person.AthenaProfile.Items.AddItem(NewItem("AthenaGlider:DefaultGlider", 1))
 	person.AthenaProfile.Items.AddItem(NewItem("AthenaDance:EID_DanceMoves", 1))
 	person.CommonCoreProfile.Items.AddItem(NewItem("Currency:MtxPurchased", 0))
+	person.Profile0Profile.Items.AddItem(NewItem("Currency:MtxPurchased", 0)) // for season 2 and bellow
 
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("mfa_reward_claimed", true))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("rested_xp_overflow", 0))
