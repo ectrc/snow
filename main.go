@@ -10,7 +10,7 @@ import (
 )
 func init() {
 	aid.LoadConfig()
-
+	
 	var device storage.Storage
 	switch aid.Config.Database.Type {
 	case "postgres":
