@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ var (
 		"ClientQuestLogin": PostQueryProfileAction,
 		"MarkItemSeen": PostMarkItemSeenAction,
 		"EquipBattleRoyaleCustomization": PostEquipBattleRoyaleCustomizationAction,
+		"SetBattleRoyaleBanner": PostSetBattleRoyaleBannerAction,
 	}
 )
 
@@ -68,7 +70,7 @@ func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) 
 
 	err := c.BodyParser(&body)
 	if err != nil {
-		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Body"))
+		return fmt.Errorf("invalid Body")
 	}
 
 	for _, itemId := range body.ItemIds {
@@ -93,21 +95,24 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 
 	err := c.BodyParser(&body)
 	if err != nil {
-		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Body"))
+		return fmt.Errorf("invalid Body")
 	}
 
 	item := profile.Items.GetItem(body.ItemToSlot)
 	if item == nil {
-		return c.Status(400).JSON(aid.ErrorBadRequest("Item not found"))
+		if body.ItemToSlot != "" && !strings.Contains(strings.ToLower(body.ItemToSlot), "random") {
+			return fmt.Errorf("item not found")
+		}
+
+		item = &p.Item{
+			ID: body.ItemToSlot,
+		}
 	}
 
 	attr := profile.Attributes.GetAttributeByKey("favorite_" + strings.ToLower(body.SlotName))
 	if attr == nil {
-		return c.Status(400).JSON(aid.ErrorBadRequest("Attribute not found"))
+		return fmt.Errorf("attribute not found")
 	}
-	defer func() {
-		go attr.Save()
-	}()
 
 	switch body.SlotName {
 	case "Dance":
@@ -122,5 +127,47 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 		attr.ValueJSON = aid.JSONStringify(item.ID)
 	}
 
+	go attr.Save()
+	return nil
+}
+
+func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+	var body struct {
+		HomebaseBannerColorID string `json:"homebaseBannerColorId" binding:"required"`
+		HomebaseBannerIconID string `json:"homebaseBannerIconId" binding:"required"`
+	}
+	
+	err := c.BodyParser(&body)
+	if err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	colorItem := person.CommonCoreProfile.Items.GetItemByTemplateID("HomebaseBannerColor:"+body.HomebaseBannerColorID)
+	if colorItem == nil {
+		return fmt.Errorf("color item not found")
+	}
+
+	iconItem := person.CommonCoreProfile.Items.GetItemByTemplateID("HomebaseBannerIcon:"+body.HomebaseBannerIconID)
+	if iconItem == nil {
+		return fmt.Errorf("icon item not found")
+	}
+
+	iconAttr := profile.Attributes.GetAttributeByKey("banner_icon")
+	if iconAttr == nil {
+		return fmt.Errorf("icon attribute not found")
+	}
+
+	colorAttr := profile.Attributes.GetAttributeByKey("banner_color")
+	if colorAttr == nil {
+		return fmt.Errorf("color attribute not found")
+	}
+
+	iconAttr.ValueJSON = aid.JSONStringify(strings.Split(iconItem.TemplateID, ":")[1])
+	colorAttr.ValueJSON = aid.JSONStringify(strings.Split(colorItem.TemplateID, ":")[1])
+
+	go func() {
+		iconAttr.Save()
+		colorAttr.Save()
+	}()
 	return nil
 }

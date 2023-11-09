@@ -1,20 +1,58 @@
 package person
 
-import "github.com/ectrc/snow/aid"
+import (
+	"strconv"
 
-func NewFortnitePerson(displayName string, key string) {
+	"github.com/ectrc/snow/aid"
+)
+
+var (
+	defaultAthenaItems = []string{
+		"AthenaCharacter:CID_001_Athena_Commando_F_Default",
+		"AthenaPickaxe:DefaultPickaxe",
+		"AthenaGlider:DefaultGlider",
+		"AthenaDance:EID_DanceMoves",
+	}
+	defaultCommonCoreItems = []string{
+		"Currency:MtxPurchased",
+		"HomebaseBannerIcon:StandardBanner",
+		"HomebaseBannerColor:DefaultColor",
+	}
+)
+
+func NewFortnitePerson(displayName string, key string) *Person {
 	person := NewPerson()
 	person.DisplayName = displayName
 	person.AccessKey = key
 
-	person.AthenaProfile.Items.AddItem(NewItem("AthenaCharacter:CID_001_Athena_Commando_F_Default", 1))
-	person.AthenaProfile.Items.AddItem(NewItem("AthenaCharacter:CID_032_Athena_Commando_M_Medieval", 1))
-	person.AthenaProfile.Items.AddItem(NewItem("AthenaCharacter:CID_033_Athena_Commando_F_Medieval", 1))
-	person.AthenaProfile.Items.AddItem(NewItem("AthenaPickaxe:DefaultPickaxe", 1))
-	person.AthenaProfile.Items.AddItem(NewItem("AthenaGlider:DefaultGlider", 1))
-	person.AthenaProfile.Items.AddItem(NewItem("AthenaDance:EID_DanceMoves", 1))
-	person.CommonCoreProfile.Items.AddItem(NewItem("Currency:MtxPurchased", 0))
 	person.Profile0Profile.Items.AddItem(NewItem("Currency:MtxPurchased", 0)) // for season 2 and bellow
+
+	for _, item := range defaultAthenaItems {
+		person.AthenaProfile.Items.AddItem(NewItem(item, 1))
+	}
+
+	for _, item := range defaultCommonCoreItems {
+		if item == "HomebaseBannerIcon:StandardBanner" {
+			for i := 1; i < 32; i++ {
+				person.CommonCoreProfile.Items.AddItem(NewItem(item+strconv.Itoa(i), 1))
+			}
+			continue
+		}
+
+		if item == "HomebaseBannerColor:DefaultColor" {
+			for i := 1; i < 22; i++ {
+				person.CommonCoreProfile.Items.AddItem(NewItem(item+strconv.Itoa(i), 1))
+			}
+			continue
+		}
+
+		if item == "Currency:MtxPurchased" {
+			person.CommonCoreProfile.Items.AddItem(NewItem(item, 0))
+			continue
+		}
+
+		person.CommonCoreProfile.Items.AddItem(NewItem(item, 1))
+	}
 
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("mfa_reward_claimed", true))
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("rested_xp_overflow", 0))
@@ -69,4 +107,6 @@ func NewFortnitePerson(displayName string, key string) {
 	person.CommonCoreProfile.Attributes.AddAttribute(NewAttribute("gift_history", aid.JSON{}))
 	
 	person.Save()
+
+	return person
 }

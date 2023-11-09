@@ -215,9 +215,6 @@ func GetPublicAccounts(c *fiber.Ctx) error {
 		})
 	}
 
-	aid.PrintJSON(accountIds)
-	aid.PrintJSON(response)
-
 	return c.Status(fiber.StatusOK).JSON(response)
 }
 
