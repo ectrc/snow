@@ -110,56 +110,56 @@ func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
 func GetOAuthVerify(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
 	}
 	real := strings.ReplaceAll(auth, "bearer eg1~", "")
 
 	claims, err := aid.JWTVerify(real)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	snowId, ok := claims["snow_id"].(string)
 	if !ok {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	person := p.Find(snowId)
 	if person == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
-	return c.SendStatus(fiber.StatusNoContent)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func MiddlewareOAuthVerify(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
 	}
 	real := strings.ReplaceAll(auth, "bearer eg1~", "")
 
 	claims, err := aid.JWTVerify(real)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	snowId, ok := claims["snow_id"].(string)
 	if !ok {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	person := p.Find(snowId)
 	if person == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
 	c.Locals("person", person)
@@ -180,7 +180,31 @@ func GetPublicAccount(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"id": person.ID,
 		"displayName": person.DisplayName,
+		"externalAuths": []aid.JSON{},
 	})
+}
+
+func GetPublicAccounts(c *fiber.Ctx) error {
+	response := []aid.JSON{}
+
+	accountIds := c.Request().URI().QueryArgs().PeekMulti("accountId")
+	for _, accountIdSlice := range accountIds {
+		person := p.Find(string(accountIdSlice))
+		if person == nil {
+			continue
+		}
+
+		response = append(response, aid.JSON{
+			"id": person.ID,
+			"displayName": person.DisplayName,
+			"externalAuths": []aid.JSON{},
+		})
+	}
+
+	aid.PrintJSON(accountIds)
+	aid.PrintJSON(response)
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func GetPublicAccountExternalAuths(c *fiber.Ctx) error {
@@ -190,4 +214,17 @@ func GetPublicAccountExternalAuths(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON([]aid.JSON{})
+}
+
+func GetPublicAccountByDisplayName(c *fiber.Ctx) error {
+	person := p.FindByDisplay(c.Params("displayName"))
+	if person == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("No Account Found"))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{
+		"id": person.ID,
+		"displayName": person.DisplayName,
+		"externalAuths": []aid.JSON{},
+	})
 }

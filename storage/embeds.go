@@ -6,12 +6,12 @@ import (
 )
 
 var (
-	//go:embed assets/*
+	//go:embed mem/*
 	Assets embed.FS
 )
 
 func Asset(file string) (*[]byte) {
-	data, err := Assets.ReadFile("assets/" + strings.ToLower(file))
+	data, err := Assets.ReadFile("mem/" + strings.ToLower(file))
 	if err != nil {
 		return nil
 	}
