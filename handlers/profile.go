@@ -32,7 +32,7 @@ func PostProfileAction(c *fiber.Ctx) error {
 	before := profile.Snapshot()
 	if action, ok := profileActions[c.Params("action")]; ok {
 		if err := action(c, person, profile); err != nil {
-			return err
+			return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
 		}
 	}
 	profile.Diff(before)
@@ -86,7 +86,7 @@ func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) 
 
 func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
 	var body struct {
-		SlotName string `json:"slotName"`
+		SlotName string `json:"slotName" binding:"required"`
 		ItemToSlot string `json:"itemToSlot"`
 		IndexWithinSlot int `json:"indexWithinSlot"`
 	}

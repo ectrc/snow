@@ -1,10 +1,11 @@
 package aid
 
 import (
-	"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/goccy/go-json"
 )
 
 func WaitForExit() {

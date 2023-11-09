@@ -25,6 +25,17 @@ func (s *PostgresStorage) Migrate(table interface{}, tableName string) {
 	s.Postgres.Table(tableName).AutoMigrate(table)
 }
 
+func (s *PostgresStorage) MigrateAll() {
+	s.Migrate(&DB_Person{}, "Persons")
+	s.Migrate(&DB_Profile{}, "Profiles")
+	s.Migrate(&DB_Item{}, "Items")
+	s.Migrate(&DB_Gift{}, "Gifts")
+	s.Migrate(&DB_Quest{}, "Quests")
+	s.Migrate(&DB_Loot{}, "Loot")
+	s.Migrate(&DB_VariantChannel{}, "Variants")
+	s.Migrate(&DB_PAttribute{}, "Attributes")
+}
+
 func (s *PostgresStorage) DropTables() {
 	s.Postgres.Exec(`DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;`)
 }

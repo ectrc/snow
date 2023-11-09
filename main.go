@@ -5,6 +5,7 @@ import (
 	"github.com/ectrc/snow/handlers"
 	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
+	"github.com/goccy/go-json"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,21 +16,11 @@ func init() {
 	switch aid.Config.Database.Type {
 	case "postgres":
 		postgresStorage := storage.NewPostgresStorage()
-
 		if aid.Config.Database.DropAllTables {
 			aid.Print("Dropping all tables")
 			postgresStorage.DropTables()
 		}
-
-		postgresStorage.Migrate(&storage.DB_Person{}, "Persons")
-		postgresStorage.Migrate(&storage.DB_Profile{}, "Profiles")
-		postgresStorage.Migrate(&storage.DB_Item{}, "Items")
-		postgresStorage.Migrate(&storage.DB_Gift{}, "Gifts")
-		postgresStorage.Migrate(&storage.DB_Quest{}, "Quests")
-		postgresStorage.Migrate(&storage.DB_Loot{}, "Loot")
-		postgresStorage.Migrate(&storage.DB_VariantChannel{}, "Variants")
-		postgresStorage.Migrate(&storage.DB_PAttribute{}, "Attributes")
-
+		postgresStorage.MigrateAll()
 		device = postgresStorage
 	}
 
@@ -40,22 +31,14 @@ func init() {
 	if aid.Config.Database.DropAllTables {
 		person.NewFortnitePerson("ac", "1")
 	}
-
-	aid.PrintTime("Loading all persons from database", func() {
-		for _, person := range person.AllFromDatabase() {
-			aid.Print("Loaded person: " + person.DisplayName)
-		}
-	})
-
-	aid.PrintTime("Loading all persons from cache", func() {
-		for _, person := range person.AllFromCache() {
-			aid.Print("Loaded person: " + person.DisplayName)
-		}
-	})
 }
 
 func main() {
-	r := fiber.New()
+	r := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+		JSONEncoder: json.Marshal,
+		JSONDecoder: json.Unmarshal,
+	})
 
 	r.Use(aid.FiberLogger())
 	r.Use(aid.FiberLimiter())
@@ -78,7 +61,7 @@ func main() {
 	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
 
 	storefront := fortnite.Group("/storefront/v2")
-	storefront.Use(handlers.MiddlewareOAuthVerify)
+	storefront.Use(handlers.OAuthMiddleware)
 	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
 	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
 
@@ -91,7 +74,7 @@ func main() {
 	storage.Get("/system/:fileName", handlers.GetCloudStorageFile)
 
 	user := storage.Group("/user")
-	user.Use(handlers.MiddlewareOAuthVerify)
+	user.Use(handlers.OAuthMiddleware)
 	user.Get("/:accountId", handlers.GetUserStorageFiles)
 	user.Get("/:accountId/:fileName", handlers.GetUserStorageFile)
 	user.Put("/:accountId/:fileName", handlers.PutUserStorageFile)
@@ -102,11 +85,16 @@ func main() {
 	game.Post("/grant_access/:accountId", handlers.PostGameAccess)
 
 	profile := game.Group("/profile/:accountId")
-	profile.Use(handlers.MiddlewareOAuthVerify)
+	profile.Use(handlers.OAuthMiddleware)
 	profile.Post("/client/:action", handlers.PostProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
+
+	r.Hooks().OnListen(func(ld fiber.ListenData) error {
+		aid.Print("Listening on " + ld.Host + ":" + ld.Port)
+		return nil
+	})
 
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
 	r.Listen(aid.Config.API.Host + aid.Config.API.Port)

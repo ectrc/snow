@@ -1,9 +1,10 @@
 package aid
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 func Print(v ...interface{}) {

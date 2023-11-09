@@ -133,10 +133,24 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{
+		"app": "fortnite",
+		"token": "eg1~"+real,
+		"token_type": "bearer",
+		"expires_at": time.Now().Add(time.Hour * 24).Format("2006-01-02T15:04:05.999Z"),
+		"expires_in": 86400,
+		"client_id": c.IP(),
+		"session_id": "0",
+		"device_id": "default",
+		"internal_client": true,
+		"client_service": "snow",
+		"in_app_id": person.ID,
+		"account_id": person.ID,
+		"displayName": person.DisplayName,
+	})
 }
 
-func MiddlewareOAuthVerify(c *fiber.Ctx) error {
+func OAuthMiddleware(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
