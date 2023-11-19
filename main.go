@@ -83,6 +83,7 @@ func main() {
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
 	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostGamePlatform)
 	game.Post("/grant_access/:accountId", handlers.PostGameAccess)
+	game.Post("/profileToken/verify/:accountId", handlers.AnyNoContent)
 
 	profile := game.Group("/profile/:accountId")
 	profile.Use(handlers.OAuthMiddleware)

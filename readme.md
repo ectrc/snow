@@ -53,10 +53,17 @@ user.CommonCoreProfile.Diff(snapshot)
 - Interact with external Services like Amazon S3 Buckets to save player data externally.
 - A way to interact with accounts outside of the game. This is mainly for a web app and other services to interact with the backend.
 
-## Known Supported Versions
+## Version Support
+
+### Supported
 
 - **_Chapter 1 Season 2_** `Fortnite+Release-2.5-CL-3889387-Windows` I started with this build of the game as it requires more work to get working, this means snow can support _most_ versions of the game.
 - **_Chapter 1 Season 5_** `Fortnite+Release-5.41-CL-4363240-Windows` This build was used to make sure challenges, variants and lobby backgrounds work.
+- **_Chapter 1 Season 8_** `Fortnite+Release-8.51-CL-6165369-Windows` Fixed the invisible player bugs and other specific issues.
+
+### Broken
+
+- **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` Does not accept the JWT Token for user authentication. I have some ideas why however not planned for a fix.
 
 ## How do I use this?
 
