@@ -19,11 +19,12 @@ func NewItemMutex(profile *storage.DB_Profile) *ItemMutex {
 	}
 }
 
-func (m *ItemMutex) AddItem(item *Item) {
+func (m *ItemMutex) AddItem(item *Item) *Item {
 	item.ProfileType = m.ProfileType
 	item.ProfileID = m.ProfileID
 	m.Store(item.ID, item)
-	storage.Repo.SaveItem(item.ToDatabase(m.ProfileID))
+	// storage.Repo.SaveItem(item.ToDatabase(m.ProfileID))
+	return item
 }
 
 func (m *ItemMutex) DeleteItem(id string) {
@@ -89,10 +90,11 @@ func NewGiftMutex(profile *storage.DB_Profile) *GiftMutex {
 	}
 }
 
-func (m *GiftMutex) AddGift(gift *Gift) {
+func (m *GiftMutex) AddGift(gift *Gift) *Gift {
 	gift.ProfileID = m.ProfileID
 	m.Store(gift.ID, gift)
-	storage.Repo.SaveGift(gift.ToDatabase(m.ProfileID))
+	// storage.Repo.SaveGift(gift.ToDatabase(m.ProfileID))
+	return gift
 }
 
 func (m *GiftMutex) DeleteGift(id string) {
@@ -137,10 +139,11 @@ func NewQuestMutex(profile *storage.DB_Profile) *QuestMutex {
 	}
 }
 
-func (m *QuestMutex) AddQuest(quest *Quest) {
+func (m *QuestMutex) AddQuest(quest *Quest) *Quest {
 	quest.ProfileID = m.ProfileID
 	m.Store(quest.ID, quest)
-	storage.Repo.SaveQuest(quest.ToDatabase(m.ProfileID))
+	// storage.Repo.SaveQuest(quest.ToDatabase(m.ProfileID))
+	return quest
 }
 
 func (m *QuestMutex) DeleteQuest(id string) {
@@ -184,10 +187,11 @@ func NewAttributeMutex(profile *storage.DB_Profile) *AttributeMutex {
 	}
 }
 
-func (m *AttributeMutex) AddAttribute(attribute *Attribute) {
+func (m *AttributeMutex) AddAttribute(attribute *Attribute) *Attribute {
 	attribute.ProfileID = m.ProfileID
 	m.Store(attribute.ID, attribute)
-	storage.Repo.SaveAttribute(attribute.ToDatabase(m.ProfileID))
+	// storage.Repo.SaveAttribute(attribute.ToDatabase(m.ProfileID))
+	return attribute
 }
 
 func (m *AttributeMutex) DeleteAttribute(id string) {
@@ -226,6 +230,75 @@ func (m *AttributeMutex) RangeAttributes(f func(id string, attribute *Attribute)
 }
 
 func (m *AttributeMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
+
+type LoadoutMutex struct {
+	sync.Map
+	ProfileType string
+	ProfileID	 string
+}
+
+func NewLoadoutMutex(profile *storage.DB_Profile) *LoadoutMutex {
+	return &LoadoutMutex{
+		ProfileID:	 profile.ID,
+	}
+}
+
+func (m *LoadoutMutex) AddLoadout(loadout *Loadout) *Loadout {
+	loadout.ProfileID = m.ProfileID
+	m.Store(loadout.ID, loadout)
+	// storage.Repo.SaveLoadout(loadout.ToDatabase(m.ProfileID))
+	return loadout
+}
+
+func (m *LoadoutMutex) DeleteItem(id string) {
+	loadout := m.GetLoadout(id)
+	if loadout == nil {
+		return
+	}
+
+	loadout.Delete()
+	m.Delete(id)
+	storage.Repo.DeleteItem(id)
+}
+
+func (m *LoadoutMutex) GetLoadout(id string) *Loadout {
+	loadout, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return loadout.(*Loadout)
+}
+
+func (m *LoadoutMutex) GetLoadoutByName(name string) *Loadout {
+	var loadout *Loadout
+
+	m.Range(func(key, value interface{}) bool {
+		if value.(*Loadout).LockerName == name {
+			loadout = value.(*Loadout)
+			return false
+		}
+
+		return true
+	})
+
+	return loadout
+}
+
+func (m *LoadoutMutex) RangeLoadouts(f func(key string, value *Loadout) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Loadout))
+	})
+}
+
+func (m *LoadoutMutex) Count() int {
 	count := 0
 	m.Range(func(key, value interface{}) bool {
 		count++

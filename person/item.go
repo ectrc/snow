@@ -70,19 +70,10 @@ func FromDatabaseLoot(item *storage.DB_Loot) *Item {
 }
 
 func (i *Item) GenerateFortniteItemEntry() aid.JSON {
-	variants := []aid.JSON{}
 	attributes := aid.JSON{
-		"variants": variants,
+		"variants": i.GenerateFortniteItemVariantChannels(),
 		"favorite": i.Favorite,
 		"item_seen": i.HasSeen,
-	}
-
-	for _, variant := range i.Variants {
-		variants = append(variants, aid.JSON{
-			"channel": variant.Channel,
-			"owned": variant.Owned,
-			"active": variant.Active,
-		})
 	}
 
 	if i.TemplateID == "Currency:MtxPurchased" {
@@ -96,6 +87,20 @@ func (i *Item) GenerateFortniteItemEntry() aid.JSON {
 		"attributes": attributes,
 		"quantity": i.Quantity,
 	}
+}
+
+func (i *Item) GenerateFortniteItemVariantChannels() []aid.JSON {
+	variants := []aid.JSON{}
+
+	for _, variant := range i.Variants {
+		variants = append(variants, aid.JSON{
+			"channel": variant.Channel,
+			"owned": variant.Owned,
+			"active": variant.Active,
+		})
+	}
+
+	return variants
 }
 
 func (i *Item) GetAttribute(attribute string) interface{} {

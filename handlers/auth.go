@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	oatuhTokenGrantTypes = map[string]func(c *fiber.Ctx, body *OAuthTokenBody) error{
+	oauthTokenGrantTypes = map[string]func(c *fiber.Ctx, body *OAuthTokenBody) error{
 		"client_credentials": PostOAuthTokenClientCredentials,
 		"password": PostOAuthTokenPassword,
 	}
@@ -29,7 +29,7 @@ func PostOAuthToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Request Body"))	
 	}
 
-	if action, ok := oatuhTokenGrantTypes[body.GrantType]; ok {
+	if action, ok := oauthTokenGrantTypes[body.GrantType]; ok {
 		return action(c, &body)
 	}
 

@@ -29,28 +29,35 @@ func PostProfileAction(c *fiber.Ctx) error {
 	}
 
 	profile := person.GetProfileFromType(c.Query("profileId"))
-	defer profile.ClearProfileChanges()
-
-	before := profile.Snapshot()
-	if action, ok := profileActions[c.Params("action")]; ok {
+	if action, ok := profileActions[c.Params("action")]; ok && profile != nil {
+		defer profile.ClearProfileChanges()
+		before := profile.Snapshot()
 		if err := action(c, person, profile); err != nil {
 			return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
 		}
+		profile.Diff(before)
 	}
-	profile.Diff(before)
 	
 	revision, _ := strconv.Atoi(c.Query("rvn"))
-	if revision == -1 {
+	if revision == -1 && profile == nil {
+		revision = 1
+	}
+	if revision == -1 && profile != nil {
 		revision = profile.Revision
 	}
 	revision++
 
+	changes := []interface{}{}
+	if profile != nil {
+		changes = profile.Changes
+	}
+
 	return c.Status(200).JSON(aid.JSON{
-		"profileId": profile.Type,
+		"profileId": c.Query("profileId"),
 		"profileRevision": revision,
 		"profileCommandRevision": revision,
 		"profileChangesBaseRevision": revision - 1,
-		"profileChanges": profile.Changes,
+		"profileChanges": changes,
 		"multiUpdate": []aid.JSON{},
 		"notifications": []aid.JSON{},
 		"responseVersion": 1,

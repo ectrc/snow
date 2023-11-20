@@ -15,6 +15,7 @@ type ProfileSnapshot struct {
 	Gifts      map[string]GiftSnapshot
 	Quests     map[string]Quest
 	Attributes map[string]Attribute
+	Loadouts   map[string]Loadout
 	Revision   int
 	Type       string
 }

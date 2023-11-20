@@ -24,6 +24,7 @@ type DB_Profile struct {
 	Gifts []DB_Gift `gorm:"foreignkey:ProfileID"`
 	Quests []DB_Quest `gorm:"foreignkey:ProfileID"`
 	Attributes []DB_PAttribute `gorm:"foreignkey:ProfileID"`
+	Loadouts []DB_Loadout `gorm:"foreignkey:ProfileID"`
 	Type string
 	Revision	 int
 }
@@ -42,6 +43,28 @@ type DB_PAttribute struct {
 
 func (DB_PAttribute) TableName() string {
 	return "Attributes"
+}
+
+type DB_Loadout struct {
+	ID string `gorm:"primary_key"`
+	ProfileID string
+	TemplateID string
+	LockerName string
+	BannerID string
+	BannerColorID string
+	CharacterID string
+	PickaxeID string
+	BackpackID string
+	GliderID string
+	DanceID pq.StringArray `gorm:"type:text[]"`
+	ItemWrapID pq.StringArray `gorm:"type:text[]"`
+	ContrailID string
+	LoadingScreenID string
+	MusicPackID string
+}
+
+func (DB_Loadout) TableName() string {
+	return "Loadouts"
 }
 
 type DB_Item struct {

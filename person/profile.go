@@ -14,11 +14,12 @@ type Profile struct {
 	PersonID string
 	Items *ItemMutex
 	Gifts *GiftMutex
-	Quests		 *QuestMutex
+	Quests *QuestMutex
 	Attributes *AttributeMutex
-	Type			 string
-	Revision	 int
-	Changes 	 []interface{}
+	Loadouts *LoadoutMutex
+	Type string
+	Revision int
+	Changes []interface{}
 }
 
 func NewProfile(profile string) *Profile {
@@ -28,8 +29,9 @@ func NewProfile(profile string) *Profile {
 		PersonID: "",
 		Items: NewItemMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Gifts: NewGiftMutex(&storage.DB_Profile{ID: id, Type: profile}),
-		Quests:		 NewQuestMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Quests:	NewQuestMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Attributes: NewAttributeMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Loadouts: NewLoadoutMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Type:			 profile,
 		Revision: 0,
 		Changes: 	 []interface{}{},
@@ -41,6 +43,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 	gifts := NewGiftMutex(profile)
 	quests := NewQuestMutex(profile)
 	attributes := NewAttributeMutex(profile)
+	loadouts := NewLoadoutMutex(profile)
 
 	for _, item := range profile.Items {
 		items.AddItem(FromDatabaseItem(&item))
@@ -52,6 +55,10 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 
 	for _, quest := range profile.Quests {
 		quests.AddQuest(FromDatabaseQuest(&quest))
+	}
+
+	for _, loadout := range profile.Loadouts {
+		loadouts.AddLoadout(FromDatabaseLoadout(&loadout))
 	}
 
 	for _, attribute := range profile.Attributes {
@@ -71,6 +78,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		Gifts: gifts,
 		Quests: quests,
 		Attributes: attributes,
+		Loadouts: loadouts,
 		Type: profile.Type,
 		Revision: profile.Revision,
 		Changes: []interface{}{},
@@ -101,6 +109,11 @@ func (p *Profile) GenerateFortniteProfileEntry() aid.JSON {
 		return true
 	})
 
+	p.Loadouts.RangeLoadouts(func(id string, loadout *Loadout) bool {
+		items[id] = loadout.GenerateFortniteLoadoutEntry()
+		return true
+	})
+
 	return aid.JSON{
 		"profileId": p.Type,
 		"accountId": p.PersonID,
@@ -124,6 +137,7 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 	gifts := map[string]GiftSnapshot{}
 	quests := map[string]Quest{}
 	attributes := map[string]Attribute{}
+	loadouts := map[string]Loadout{}
 
 	p.Items.RangeItems(func(id string, item *Item) bool {
 		items[id] = item.Snapshot()
@@ -145,12 +159,18 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 		return true
 	})
 
+	p.Loadouts.RangeLoadouts(func(id string, loadout *Loadout) bool {
+		loadouts[id] = *loadout
+		return true
+	})
+
 	return &ProfileSnapshot{
 		ID: p.ID,
 		Items: items,
 		Gifts: gifts,
 		Quests: quests,
 		Attributes: attributes,
+		Loadouts: loadouts,
 		Type: p.Type,
 		Revision: p.Revision,
 	}
@@ -204,6 +224,18 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 
 			if change.Type == "update" && change.Path[2] == "ValueJSON" {
 				p.CreateStatModifiedChange(p.Attributes.GetAttribute(change.Path[1]))
+			}
+		case "Loadouts":
+			if change.Type == "create" && change.Path[2] == "ID" {
+				p.CreateLoadoutAddedChange(p.Loadouts.GetLoadout(change.Path[1]))
+			}
+
+			if change.Type == "delete" && change.Path[2] == "ID" {
+				p.CreateLoadoutRemovedChange(change.Path[1])
+			}
+
+			if change.Type == "update" && change.Path[2] != "ID" {
+				p.CreateLoadoutChangedChange(p.Loadouts.GetLoadout(change.Path[1]), change.Path[2])
 			}
 		}
 	}
@@ -313,6 +345,55 @@ func (p *Profile) CreateFullProfileUpdateChange() {
 		ChangeType: "fullProfileUpdate",
 		Profile: p.GenerateFortniteProfileEntry(),
 	}}
+}
+
+func (p *Profile) CreateLoadoutAddedChange(loadout *Loadout) {
+	if loadout == nil {
+		fmt.Println("error getting item from profile", loadout.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, ItemAdded{
+		ChangeType: "itemAdded",
+		ItemId: loadout.ID,
+		Item: loadout.GenerateFortniteLoadoutEntry(),
+	})
+}
+
+func (p *Profile) CreateLoadoutRemovedChange(loadoutId string) {
+	p.Changes = append(p.Changes, ItemRemoved{
+		ChangeType: "itemRemoved",
+		ItemId: loadoutId,
+	})
+}
+
+func (p *Profile) CreateLoadoutChangedChange(loadout *Loadout, attribute string) {
+	if loadout == nil {
+		fmt.Println("error getting item from profile", loadout.ID)
+		return
+	}
+
+	lookup := map[string]string{
+		"LockerName": "locker_name",
+		"BannerID": "banner_icon_template",
+		"BannerColorID": "banner_color_template",
+		"CharacterID": "locker_slots_data",
+		"PickaxeID": "locker_slots_data",
+		"BackpackID": "locker_slots_data",
+		"GliderID": "locker_slots_data",
+		"DanceID": "locker_slots_data",
+		"ItemWrapID": "locker_slots_data",
+		"ContrailID": "locker_slots_data",
+		"LoadingScreenID": "locker_slots_data",
+		"MusicPackID": "locker_slots_data",
+	}
+
+	p.Changes = append(p.Changes, ItemAttributeChanged{
+		ChangeType: "itemAttributeChanged",
+		ItemId: loadout.ID,
+		AttributeName: lookup[attribute],
+		AttributeValue: loadout.GetAttribute(lookup[attribute]),
+	})
 }
 
 func (p *Profile) ClearProfileChanges() {

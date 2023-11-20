@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/ectrc/snow/aid"
 	"github.com/gofiber/fiber/v2"
 )
@@ -26,7 +28,7 @@ func GetFortniteReceipts(c *fiber.Ctx) error {
 }
 
 func GetMatchmakingSession(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON([]string{})
+	return c.Status(fiber.StatusOK).Send([]byte{})
 }
 
 func GetFortniteVersion(c *fiber.Ctx) error {
@@ -35,8 +37,24 @@ func GetFortniteVersion(c *fiber.Ctx) error {
 	})
 }
 
+func GetWaitingRoomStatus(c *fiber.Ctx) error {
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func GetRegion(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{
+		"continent": aid.JSON{
+			"code": "EU",
+		},
+		"country": aid.JSON{
+			"iso_code": "GB",
+		},
+		"subdivisions": []aid.JSON{},
+	})
+}
+
 func GetContentPages(c *fiber.Ctx) error {
-	// seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
+	seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
 	
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"battlepassaboutmessages": aid.JSON{
@@ -77,14 +95,14 @@ func GetContentPages(c *fiber.Ctx) error {
 		},
 		"dynamicbackgrounds": aid.JSON{
 			"backgrounds": aid.JSON{"backgrounds": []aid.JSON{
-				// {
-				// 	"key": "lobby",
-				// 	"stage": "season"+seasonString,
-				// },
-				// {
-				// 	"key": "vault",
-				// 	"stage": "season"+seasonString,
-				// },
+				{
+					"key": "lobby",
+					"stage": "season" + seasonString,
+				},
+				{
+					"key": "vault",
+					"stage": "season" + seasonString,
+				},
 			}},
 			"lastModified": "0000-00-00T00:00:00.000Z",
 		},

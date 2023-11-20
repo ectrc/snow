@@ -4,6 +4,7 @@ import (
 	"github.com/ectrc/snow/aid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type PostgresStorage struct {
@@ -11,7 +12,9 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage() *PostgresStorage {
-	db, err := gorm.Open(postgres.Open(aid.Config.Database.URI), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(aid.Config.Database.URI), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -34,6 +37,7 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Loot{}, "Loot")
 	s.Migrate(&DB_VariantChannel{}, "Variants")
 	s.Migrate(&DB_PAttribute{}, "Attributes")
+	s.Migrate(&DB_Loadout{}, "Loadouts")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -50,6 +54,8 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
+		Preload("Profiles.Loadouts").
+		Where("id = ?", personId).
 		Find(&dbPerson)
 
 	if dbPerson.ID == "" {
@@ -62,13 +68,14 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	var dbPerson DB_Person
 	s.Postgres.
-		Preload("Profiles").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Quests").
+		// Preload("Profiles").
+		// Preload("Profiles.Items.Variants").
+		// Preload("Profiles.Gifts.Loot").
+		// Preload("Profiles.Attributes").
+		// Preload("Profiles.Items").
+		// Preload("Profiles.Gifts").
+		// Preload("Profiles.Quests").
+		// Preload("Profiles.Loadouts").
 		Where("display_name = ?", displayName).
 		Find(&dbPerson)
 
@@ -90,6 +97,7 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
+		Preload("Profiles.Loadouts").
 		Find(&dbPersons)
 
 	return dbPersons
@@ -157,4 +165,12 @@ func (s *PostgresStorage) SaveAttribute(attribute *DB_PAttribute) {
 
 func (s *PostgresStorage) DeleteAttribute(attributeId string) {
 	s.Postgres.Delete(&DB_PAttribute{}, "id = ?", attributeId)
+}
+
+func (s *PostgresStorage) SaveLoadout(loadout *DB_Loadout) {
+	s.Postgres.Save(loadout)
+}
+
+func (s *PostgresStorage) DeleteLoadout(loadoutId string) {
+	s.Postgres.Delete(&DB_Loadout{}, "id = ?", loadoutId)
 }

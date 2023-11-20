@@ -45,6 +45,14 @@ func main() {
 	r.Use(aid.FiberCors())
 
 	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
+	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
+	r.Get("/region", handlers.GetRegion)
+	r.Put("/profile/play_region", handlers.AnyNoContent)
+
+	r.Get("/snow/cache", func(c *fiber.Ctx) error {
+		cache := person.AllFromCache()
+		return c.JSON(cache)
+	})
 
 	account := r.Group("/account/api")
 	account.Get("/public/account", handlers.GetPublicAccounts)

@@ -1,8 +1,6 @@
 package person
 
 import (
-	"time"
-
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
@@ -108,10 +106,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		Profile0Profile: profile0,
 	}
 
-	cache.Store(person.ID, &CacheEntry{
-		Entry: person,
-		LastAccessed: time.Now(),
-	})
+	cache.SavePerson(person)
 	
 	return person
 }
@@ -182,6 +177,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 			Items: []storage.DB_Item{},
 			Gifts: []storage.DB_Gift{},
 			Quests: []storage.DB_Quest{},
+			Loadouts: []storage.DB_Loadout{},
 			Attributes: []storage.DB_PAttribute{},
 			Revision: profile.Revision,
 		}
@@ -203,6 +199,11 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 
 		profile.Attributes.RangeAttributes(func(key string, value *Attribute) bool {
 			dbProfile.Attributes = append(dbProfile.Attributes, *value.ToDatabase(p.ID))
+			return true
+		})
+
+		profile.Loadouts.RangeLoadouts(func(id string, loadout *Loadout) bool {
+			dbProfile.Loadouts = append(dbProfile.Loadouts, *loadout.ToDatabase(p.ID))
 			return true
 		})
 

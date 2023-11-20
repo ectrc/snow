@@ -32,6 +32,9 @@ type Storage interface {
 
 	SaveAttribute(attribute *DB_PAttribute)
 	DeleteAttribute(attributeId string)
+
+	SaveLoadout(loadout *DB_Loadout)
+	DeleteLoadout(loadoutId string)
 }
 
 type Repository struct {
@@ -124,4 +127,12 @@ func (r *Repository) SaveAttribute(attribute *DB_PAttribute) {
 
 func (r *Repository) DeleteAttribute(attributeId string) {
 	r.Storage.DeleteAttribute(attributeId)
+}
+
+func (r *Repository) SaveLoadout(loadout *DB_Loadout) {
+	r.Storage.SaveLoadout(loadout)
+}
+
+func (r *Repository) DeleteLoadout(loadoutId string) {
+	r.Storage.DeleteLoadout(loadoutId)
 }
