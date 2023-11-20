@@ -8,6 +8,7 @@ import (
 
 type Loadout struct {
 	ID string
+	PersonID string
 	ProfileID string
 	TemplateID string
 	LockerName string
@@ -65,7 +66,7 @@ func NewLoadout(name string, athena *Profile) *Loadout {
 
 	return &Loadout{
 		ID: uuid.New().String(),
-		ProfileID: athena.ID,
+		PersonID: athena.ID,
 		TemplateID: "CosmeticLocker:CosmeticLocker_Athena",
 		LockerName: name,
 		CharacterID: aid.JSONParse(character.ValueJSON).(string),
@@ -103,12 +104,26 @@ func FromDatabaseLoadout(loadout *storage.DB_Loadout) *Loadout {
 }
 
 func (l *Loadout) GenerateFortniteLoadoutEntry() aid.JSON {
+	bannerItem := Find(l.PersonID).AthenaProfile.Items.GetItem(l.BannerID)
+	if bannerItem == nil {
+		bannerItem = &Item{
+			TemplateID: "HomebaseBannerIcon:StandardBanner1",
+		}
+	}
+
+	bannerColorItem := Find(l.PersonID).AthenaProfile.Items.GetItem(l.BannerColorID)
+	if bannerColorItem == nil {
+		bannerColorItem = &Item{
+			TemplateID: "HomebaseBannerColor:DefaultColor1",
+		}
+	}
+
 	json := aid.JSON{
 		"templateId": l.TemplateID,
 		"attributes": aid.JSON{
 			"locker_name": l.LockerName,
-			"banner_icon_template": l.BannerID,
-			"banner_color_template": l.BannerColorID,
+			"banner_icon_template": bannerItem.TemplateID,
+			"banner_color_template": bannerColorItem.TemplateID,
 			"locker_slots_data": l.GenerateFortniteLockerSlotsData(),
 			"item_seen": true,
 		},
@@ -118,13 +133,27 @@ func (l *Loadout) GenerateFortniteLoadoutEntry() aid.JSON {
 }
 
 func (l *Loadout) GetAttribute(attribute string) interface{} {
+	bannerItem := Find(l.PersonID).AthenaProfile.Items.GetItem(l.BannerID)
+	if bannerItem == nil {
+		bannerItem = &Item{
+			TemplateID: "HomebaseBannerIcon:StandardBanner1",
+		}
+	}
+
+	bannerColorItem := Find(l.PersonID).AthenaProfile.Items.GetItem(l.BannerColorID)
+	if bannerColorItem == nil {
+		bannerColorItem = &Item{
+			TemplateID: "HomebaseBannerColor:DefaultColor5",
+		}
+	}
+
 	switch attribute {
 	case "locker_name":
 		return l.LockerName
 	case "banner_icon_template":
-		return l.BannerID
+		return bannerItem.TemplateID
 	case "banner_color_template":
-		return l.BannerColorID
+		return bannerColorItem.TemplateID
 	case "locker_slots_data":
 		return l.GenerateFortniteLockerSlotsData()
 	}
@@ -154,7 +183,7 @@ func (l *Loadout) GetItemSlotData(itemId string) aid.JSON {
 		"activeVariants": []aid.JSON{},
 	}
 
-	person := Find(l.ProfileID)
+	person := Find(l.PersonID)
 	if person == nil {
 		return json
 	}
@@ -179,40 +208,38 @@ func (l *Loadout) GetItemSlotData(itemId string) aid.JSON {
 
 func (l *Loadout) GetItemsSlotData(itemIds []string) aid.JSON {
 	json := aid.JSON{
-		"items": []string{},
-		"activeVariants": []aid.JSON{},
+		"items": make([]string, len(itemIds)),
+		"activeVariants": make([]aid.JSON, len(itemIds)),
 	}
 
-	person := Find(l.ProfileID)
+	person := Find(l.PersonID)
 	if person == nil {
 		return json
 	}
 
-	for _, itemId := range itemIds {
+	for idx, itemId := range itemIds {
 		item := person.AthenaProfile.Items.GetItem(itemId)
 		if item == nil {
 			item = &Item{
-				ProfileID: l.ProfileID,
+				TemplateID: "",
 				Variants: []*VariantChannel{},
 			}
 		}
-
+		
 		items := json["items"].([]string)
-		items = append(items, item.TemplateID)
+		items[idx] = item.TemplateID
+		
 
 		activeVariants := json["activeVariants"].([]aid.JSON)
-		activeVariants = append(activeVariants, aid.JSON{
-			"variants": item.GenerateFortniteItemVariantChannels(),
-		})
+		activeVariants[idx] = aid.JSON{
+			"variants": []aid.JSON{},
+		}
 
 		json["items"] = items
 		json["activeVariants"] = activeVariants
 	}
 
-	return aid.JSON{
-		"items": itemIds,
-		"activeVariants": []aid.JSON{},
-	}
+	return json
 }
 
 func (l *Loadout) Delete() {

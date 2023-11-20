@@ -47,7 +47,7 @@ func main() {
 	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
 	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/region", handlers.GetRegion)
-	r.Put("/profile/play_region", handlers.AnyNoContent)
+	// r.Put("/profile/play_region", handlers.AnyNoContent)
 
 	r.Get("/snow/cache", func(c *fiber.Ctx) error {
 		cache := person.AllFromCache()

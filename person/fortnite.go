@@ -67,8 +67,6 @@ func NewFortnitePerson(displayName string, key string) *Person {
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("season_update", 0)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("season_num", aid.Config.Fortnite.Season)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("permissions", []aid.JSON{})).Save()
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("last_applied_loadout", "")).Save()
-	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("active_loadout_index", 0)).Save()
 
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("accountLevel", 1)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("level", 1)).Save()
@@ -114,12 +112,14 @@ func NewFortnitePerson(displayName string, key string) *Person {
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("last_applied_loadout", loadout.ID)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(NewAttribute("active_loadout_index", 0)).Save()
 
-	allItemsBytes := storage.Asset("cosmetics.json")
-	var allItems []string
-	json.Unmarshal(*allItemsBytes, &allItems)
-
-	for _, item := range allItems {
-		person.AthenaProfile.Items.AddItem(NewItem(item, 1)).Save()
+	if aid.Config.Fortnite.Everything {
+		allItemsBytes := storage.Asset("cosmetics.json")
+		var allItems []string
+		json.Unmarshal(*allItemsBytes, &allItems)
+		
+		for _, item := range allItems {
+			person.AthenaProfile.Items.AddItem(NewItem(item, 1)).Save()
+		}
 	}
 	
 	person.Save()

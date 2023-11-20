@@ -17,8 +17,11 @@ var (
 		"QueryProfile": PostQueryProfileAction,
 		"ClientQuestLogin": PostQueryProfileAction,
 		"MarkItemSeen": PostMarkItemSeenAction,
+		"SetItemFavoriteStatusBatch": PostSetItemFavoriteStatusBatchAction,
 		"EquipBattleRoyaleCustomization": PostEquipBattleRoyaleCustomizationAction,
 		"SetBattleRoyaleBanner": PostSetBattleRoyaleBannerAction,
+		"SetCosmeticLockerSlot": PostSetCosmeticLockerSlotAction,
+		"SetCosmeticLockerBanner": PostSetCosmeticLockerBannerAction,
 	}
 )
 
@@ -176,5 +179,135 @@ func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.
 		iconAttr.Save()
 		colorAttr.Save()
 	}()
+	return nil
+}
+
+func PostSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+	var body struct {
+		ItemIds []string `json:"itemIds" binding:"required"`
+		Favorite []bool `json:"itemFavStatus" binding:"required"`
+	}
+
+	err := c.BodyParser(&body)
+	if err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	for i, itemId := range body.ItemIds {
+		item := profile.Items.GetItem(itemId)
+		if item == nil {
+			continue
+		}
+
+		item.Favorite = body.Favorite[i]
+		go item.Save()
+	}
+
+	return nil
+}
+
+func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error { 
+	var body struct {
+		Category string `json:"category" binding:"required"` // item type e.g. Character
+		ItemToSlot string `json:"itemToSlot" binding:"required"` // template id
+		LockerItem string `json:"lockerItem" binding:"required"` // locker id
+		SlotIndex int `json:"slotIndex" binding:"required"` // index of slot
+		VariantUpdates []aid.JSON `json:"variantUpdates" binding:"required"` // variant updates
+	}
+
+	err := c.BodyParser(&body)
+	if err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	item := profile.Items.GetItemByTemplateID(body.ItemToSlot)
+	if item == nil {
+		if body.ItemToSlot != "" && !strings.Contains(strings.ToLower(body.ItemToSlot), "random") {
+			return fmt.Errorf("item not found")
+		} 
+
+		item = &p.Item{
+			ID: body.ItemToSlot,
+		}
+	}
+
+	currentLocker := profile.Loadouts.GetLoadout(body.LockerItem)
+	if currentLocker == nil {
+		return fmt.Errorf("current locker not found")
+	}
+
+	switch body.Category {
+	case "Character":
+		currentLocker.CharacterID = item.ID
+	case "Backpack":
+		currentLocker.BackpackID = item.ID
+	case "Pickaxe":
+		currentLocker.PickaxeID = item.ID
+	case "Glider":
+		currentLocker.GliderID = item.ID
+	case "ItemWrap":
+		if body.SlotIndex == -1 {
+			for i := range currentLocker.ItemWrapID {
+				currentLocker.ItemWrapID[i] = item.ID
+			}
+			break
+		}
+		currentLocker.ItemWrapID[body.SlotIndex] = item.ID
+		profile.CreateLoadoutChangedChange(currentLocker, "ItemWrapID")
+	case "Dance":
+		if body.SlotIndex == -1 {
+			for i := range currentLocker.DanceID {
+				currentLocker.DanceID[i] = item.ID
+			}
+			break
+		}
+		currentLocker.DanceID[body.SlotIndex] = item.ID
+		profile.CreateLoadoutChangedChange(currentLocker, "DanceID")
+	case "SkyDiveContrail":
+		currentLocker.ContrailID = item.ID
+	case "LoadingScreen":
+		currentLocker.LoadingScreenID = item.ID
+	case "MusicPack":
+		currentLocker.MusicPackID = item.ID
+	}
+
+	go currentLocker.Save()	
+	return nil
+}
+
+func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error { 
+	var body struct {
+		LockerItem string `json:"lockerItem" binding:"required"` // locker id
+		BannerColorTemplateName string `json:"bannerColorTemplateName" binding:"required"` // template id
+		BannerIconTemplateName string `json:"bannerIconTemplateName" binding:"required"` // template id
+	}
+
+	err := c.BodyParser(&body)
+	if err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	color := person.CommonCoreProfile.Items.GetItemByTemplateID("HomebaseBannerColor:" + body.BannerColorTemplateName)
+	if color == nil {
+		return fmt.Errorf("color item not found")
+	}
+
+	icon := profile.Items.GetItemByTemplateID("HomebaseBannerIcon:" + body.BannerIconTemplateName)
+	if icon == nil {
+		// return fmt.Errorf("icon item not found")
+		icon = &p.Item{
+			ID: body.BannerIconTemplateName,
+		}
+	}
+
+	currentLocker := profile.Loadouts.GetLoadout(body.LockerItem)
+	if currentLocker == nil {
+		return fmt.Errorf("current locker not found")
+	}
+
+	currentLocker.BannerColorID = color.ID
+	currentLocker.BannerID = icon.ID
+
+	go currentLocker.Save()
 	return nil
 }

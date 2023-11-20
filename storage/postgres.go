@@ -12,8 +12,13 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage() *PostgresStorage {
+	l := logger.Default.LogMode(logger.Silent)
+	if aid.Config.Output.Level == "time" {
+		l = logger.Default.LogMode(logger.Info)
+	}
+
 	db, err := gorm.Open(postgres.Open(aid.Config.Database.URI), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: l,
 	})
 	if err != nil {
 		panic(err)
@@ -34,10 +39,10 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Item{}, "Items")
 	s.Migrate(&DB_Gift{}, "Gifts")
 	s.Migrate(&DB_Quest{}, "Quests")
+	s.Migrate(&DB_Loadout{}, "Loadouts")
 	s.Migrate(&DB_Loot{}, "Loot")
 	s.Migrate(&DB_VariantChannel{}, "Variants")
 	s.Migrate(&DB_PAttribute{}, "Attributes")
-	s.Migrate(&DB_Loadout{}, "Loadouts")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -48,13 +53,13 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 	var dbPerson DB_Person
 	s.Postgres.
 		Preload("Profiles").
+		Preload("Profiles.Loadouts").
 		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Profiles.Loadouts").
 		Where("id = ?", personId).
 		Find(&dbPerson)
 
@@ -68,14 +73,14 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	var dbPerson DB_Person
 	s.Postgres.
-		// Preload("Profiles").
-		// Preload("Profiles.Items.Variants").
-		// Preload("Profiles.Gifts.Loot").
-		// Preload("Profiles.Attributes").
-		// Preload("Profiles.Items").
-		// Preload("Profiles.Gifts").
-		// Preload("Profiles.Quests").
-		// Preload("Profiles.Loadouts").
+		Preload("Profiles").
+		Preload("Profiles.Loadouts").
+		Preload("Profiles.Items.Variants").
+		Preload("Profiles.Gifts.Loot").
+		Preload("Profiles.Attributes").
+		Preload("Profiles.Items").
+		Preload("Profiles.Gifts").
+		Preload("Profiles.Quests").
 		Where("display_name = ?", displayName).
 		Find(&dbPerson)
 
@@ -91,13 +96,13 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 
 	s.Postgres.
 		Preload("Profiles").
+		Preload("Profiles.Loadouts").
 		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Profiles.Loadouts").
 		Find(&dbPersons)
 
 	return dbPersons

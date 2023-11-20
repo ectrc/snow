@@ -27,6 +27,7 @@ type CS struct {
 	Fortnite struct {
 		Season int
 		Build float64
+		Everything bool
 	}
 }
 
@@ -104,4 +105,5 @@ func LoadConfig() {
 	}
 
 	Config.Fortnite.Season = parsedSeason
+	Config.Fortnite.Everything = cfg.Section("fortnite").Key("everything").MustBool(false)
 }

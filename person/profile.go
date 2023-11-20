@@ -183,6 +183,8 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 		return nil
 	}
 
+	aid.PrintJSON(changes)
+
 	for _, change := range changes {
 		switch change.Path[0] {
 		case "Items":
@@ -333,18 +335,11 @@ func (p *Profile) CreateItemAttributeChangedChange(item *Item, attribute string)
 	}
 
 	p.Changes = append(p.Changes, ItemAttributeChanged{
-		ChangeType: "itemAttributeChanged",
+		ChangeType: "itemAttrChanged",
 		ItemId: item.ID,
 		AttributeName: lookup[attribute],
 		AttributeValue: item.GetAttribute(attribute),
 	})
-}
-
-func (p *Profile) CreateFullProfileUpdateChange() {
-	p.Changes = []interface{}{FullProfileUpdate{
-		ChangeType: "fullProfileUpdate",
-		Profile: p.GenerateFortniteProfileEntry(),
-	}}
 }
 
 func (p *Profile) CreateLoadoutAddedChange(loadout *Loadout) {
@@ -389,11 +384,18 @@ func (p *Profile) CreateLoadoutChangedChange(loadout *Loadout, attribute string)
 	}
 
 	p.Changes = append(p.Changes, ItemAttributeChanged{
-		ChangeType: "itemAttributeChanged",
+		ChangeType: "itemAttrChanged",
 		ItemId: loadout.ID,
 		AttributeName: lookup[attribute],
 		AttributeValue: loadout.GetAttribute(lookup[attribute]),
 	})
+}
+
+func (p *Profile) CreateFullProfileUpdateChange() {
+	p.Changes = []interface{}{FullProfileUpdate{
+		ChangeType: "fullProfileUpdate",
+		Profile: p.GenerateFortniteProfileEntry(),
+	}}
 }
 
 func (p *Profile) ClearProfileChanges() {
