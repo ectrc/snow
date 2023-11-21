@@ -183,8 +183,6 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 		return nil
 	}
 
-	aid.PrintJSON(changes)
-
 	for _, change := range changes {
 		switch change.Path[0] {
 		case "Items":

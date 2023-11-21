@@ -1,6 +1,8 @@
 package person
 
 import (
+	"strings"
+
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
@@ -122,8 +124,8 @@ func (l *Loadout) GenerateFortniteLoadoutEntry() aid.JSON {
 		"templateId": l.TemplateID,
 		"attributes": aid.JSON{
 			"locker_name": l.LockerName,
-			"banner_icon_template": bannerItem.TemplateID,
-			"banner_color_template": bannerColorItem.TemplateID,
+			"banner_icon_template": l.GetAttribute("banner_icon_template"),
+			"banner_color_template": l.GetAttribute("banner_color_template"),
 			"locker_slots_data": l.GenerateFortniteLockerSlotsData(),
 			"item_seen": true,
 		},
@@ -140,20 +142,18 @@ func (l *Loadout) GetAttribute(attribute string) interface{} {
 		}
 	}
 
-	bannerColorItem := Find(l.PersonID).AthenaProfile.Items.GetItem(l.BannerColorID)
+	bannerColorItem := Find(l.PersonID).CommonCoreProfile.Items.GetItem(l.BannerColorID)
 	if bannerColorItem == nil {
-		bannerColorItem = &Item{
-			TemplateID: "HomebaseBannerColor:DefaultColor5",
-		}
+		return nil
 	}
 
 	switch attribute {
 	case "locker_name":
 		return l.LockerName
 	case "banner_icon_template":
-		return bannerItem.TemplateID
+		return strings.Split(bannerItem.TemplateID, ":")[1]
 	case "banner_color_template":
-		return bannerColorItem.TemplateID
+		return strings.Split(bannerColorItem.TemplateID, ":")[1]
 	case "locker_slots_data":
 		return l.GenerateFortniteLockerSlotsData()
 	}
@@ -195,6 +195,7 @@ func (l *Loadout) GetItemSlotData(itemId string) aid.JSON {
 
 	items := json["items"].([]string)
 	items = append(items, item.TemplateID)
+
 	activeVariants := json["activeVariants"].([]aid.JSON)
 	activeVariants = append(activeVariants, aid.JSON{
 		"variants": item.GenerateFortniteItemVariantChannels(),
@@ -217,21 +218,17 @@ func (l *Loadout) GetItemsSlotData(itemIds []string) aid.JSON {
 		return json
 	}
 
-	for idx, itemId := range itemIds {
+	for pos, itemId := range itemIds {
 		item := person.AthenaProfile.Items.GetItem(itemId)
 		if item == nil {
-			item = &Item{
-				TemplateID: "",
-				Variants: []*VariantChannel{},
-			}
+			continue
 		}
 		
 		items := json["items"].([]string)
-		items[idx] = item.TemplateID
-		
+		items[pos] = item.TemplateID
 
 		activeVariants := json["activeVariants"].([]aid.JSON)
-		activeVariants[idx] = aid.JSON{
+		activeVariants[pos] = aid.JSON{
 			"variants": []aid.JSON{},
 		}
 

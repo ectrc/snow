@@ -27,8 +27,6 @@ func NewFortnitePerson(displayName string, key string) *Person {
 	person.DisplayName = displayName
 	person.AccessKey = key
 
-	person.Profile0Profile.Items.AddItem(NewItem("Currency:MtxPurchased", 0)).Save() // for season 2 and bellow
-
 	for _, item := range defaultAthenaItems {
 		person.AthenaProfile.Items.AddItem(NewItem(item, 1))
 	}
@@ -50,6 +48,7 @@ func NewFortnitePerson(displayName string, key string) *Person {
 
 		if item == "Currency:MtxPurchased" {
 			person.CommonCoreProfile.Items.AddItem(NewItem(item, 0)).Save()
+			person.Profile0Profile.Items.AddItem(NewItem(item, 0)).Save()
 			continue
 		}
 

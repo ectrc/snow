@@ -246,6 +246,7 @@ func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.
 	case "Glider":
 		currentLocker.GliderID = item.ID
 	case "ItemWrap":
+		defer profile.CreateLoadoutChangedChange(currentLocker, "ItemWrapID")
 		if body.SlotIndex == -1 {
 			for i := range currentLocker.ItemWrapID {
 				currentLocker.ItemWrapID[i] = item.ID
@@ -253,8 +254,8 @@ func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.
 			break
 		}
 		currentLocker.ItemWrapID[body.SlotIndex] = item.ID
-		profile.CreateLoadoutChangedChange(currentLocker, "ItemWrapID")
 	case "Dance":
+		defer profile.CreateLoadoutChangedChange(currentLocker, "DanceID")
 		if body.SlotIndex == -1 {
 			for i := range currentLocker.DanceID {
 				currentLocker.DanceID[i] = item.ID
@@ -262,7 +263,6 @@ func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.
 			break
 		}
 		currentLocker.DanceID[body.SlotIndex] = item.ID
-		profile.CreateLoadoutChangedChange(currentLocker, "DanceID")
 	case "SkyDiveContrail":
 		currentLocker.ContrailID = item.ID
 	case "LoadingScreen":
