@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
-	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 	"github.com/goccy/go-json"
 
@@ -29,7 +29,7 @@ func init() {
 
 func init() {
 	if aid.Config.Database.DropAllTables {
-		person.NewFortnitePerson("ac", "1")
+		fortnite.NewFortnitePerson("ac", "1")
 	}
 }
 
@@ -48,11 +48,6 @@ func main() {
 	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/region", handlers.GetRegion)
 	r.Put("/profile/play_region", handlers.AnyNoContent)
-
-	r.Get("/snow/cache", func(c *fiber.Ctx) error {
-		cache := person.AllFromCache()
-		return c.JSON(cache)
-	})
 
 	account := r.Group("/account/api")
 	account.Get("/public/account", handlers.GetPublicAccounts)

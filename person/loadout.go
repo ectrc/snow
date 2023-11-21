@@ -1,6 +1,7 @@
 package person
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ectrc/snow/aid"
@@ -144,8 +145,12 @@ func (l *Loadout) GetAttribute(attribute string) interface{} {
 
 	bannerColorItem := Find(l.PersonID).CommonCoreProfile.Items.GetItem(l.BannerColorID)
 	if bannerColorItem == nil {
-		return nil
+		bannerColorItem = &Item{
+			TemplateID: "HomebaseBannerColor:DefaultColor1",
+		}
 	}
+
+	fmt.Println(attribute)
 
 	switch attribute {
 	case "locker_name":
@@ -157,6 +162,7 @@ func (l *Loadout) GetAttribute(attribute string) interface{} {
 	case "locker_slots_data":
 		return l.GenerateFortniteLockerSlotsData()
 	}
+
 
 	return nil
 }
