@@ -10,3 +10,5 @@
 .vscode
 tmp
 config.ini
+
+hide_*

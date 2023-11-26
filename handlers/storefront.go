@@ -4,39 +4,59 @@ import (
 	"github.com/goccy/go-json"
 
 	"github.com/ectrc/snow/aid"
-	"github.com/ectrc/snow/fortnite"
-	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetStorefrontCatalog(c *fiber.Ctx) error {
-	person := c.Locals("person").(*person.Person)
-	storefront := fortnite.NewCatalog()
+// 	person := c.Locals("person").(*person.Person)
+// 	storefront := fortnite.NewCatalog()
 
-	bundleStorefront := fortnite.NewStorefront("bundles")
-	{
-		bundle := fortnite.NewBundleEntry("v2:/hello_og", "OG Bundle", 300)
-		bundle.Asset = "/Game/Catalog/NewDisplayAssets/DAv2_CID_A_183_M_AntiquePal_S7A9W.DAv2_CID_A_183_M_AntiquePal_S7A9W"
-		bundle.AddBundleGrant(*fortnite.NewBundleItem("AthenaCharacter:CID_028_Athena_Commando_F", 1000, 500, 800))
-		bundle.AddBundleGrant(*fortnite.NewBundleItem("AthenaCharacter:CID_001_Athena_Commando_F", 1000, 500, 800))
-		bundle.AddMeta("AnalyticOfferGroupId", "3")
-		bundle.AddMeta("SectionId", "OGBundles")
-		bundle.AddMeta("TileSize", "DoubleWide")
-		bundle.AddMeta("NewDisplayAssetPath", bundle.Asset)
-		bundleStorefront.Add(*bundle)
+// 	daily := fortnite.NewStorefront("BRDailyStorefront")
+// 	weekly := fortnite.NewStorefront("BRWeeklyStorefront")
+	
+// 	for len(weekly.CatalogEntries) < 8 {
+// 		set := fortnite.Cosmetics.GetRandomSet()
 
-		random := fortnite.NewItemEntry("v2:/random", "Random Bundle", 300)
-		random.AddGrant("AthenaCharacter:CID_Random")
-		random.AddMeta("AnalyticOfferGroupId", "3")
-		random.AddMeta("SectionId", "OGBundles")
-		random.AddMeta("TileSize", "DoubleWide")
+// 		for _, cosmetic := range set.Items {
+// 			if cosmetic.Type.BackendValue == "AthenaBackpack" {
+// 				continue
+// 			}
 
-		bundleStorefront.Add(*random)
+// 			entry := fortnite.NewCatalogEntry().Section("Featured").DisplayAsset(cosmetic.DisplayAssetPath).SetPrice(fortnite.GetPriceForRarity(cosmetic.Rarity.BackendValue))
+// 			entry.AddGrant(cosmetic.Type.BackendValue + ":" + cosmetic.ID)
+
+// 			if cosmetic.Backpack != "" {
+// 				entry.AddGrant("AthenaBackpack:" + cosmetic.Backpack)
+// 			}
+
+// 			if cosmetic.Type.BackendValue != "AthenaCharacter" {
+// 				entry.TileSize("Small")
+// 			}
+
+// 			if cosmetic.Type.BackendValue == "AthenaCharacter" {
+// 				entry.TileSize("Normal")
+// 				entry.Priority = -99999
+// 			}
+
+// 			entry.Panel = set.Name
+
+// 			weekly.Add(*entry)
+// 		}
+// 	}
+
+// 	storefront.Add(daily)
+// 	storefront.Add(weekly)
+
+	// return c.Status(fiber.StatusOK).JSON(storefront.GenerateFortniteCatalog(person))
+
+	var x aid.JSON
+	err := json.Unmarshal(*storage.Asset("hide_a.json"), &x)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(aid.JSON{"error":err.Error()})
 	}
-	storefront.Add(bundleStorefront)
 
-	return c.Status(fiber.StatusOK).JSON(storefront.GenerateFortniteCatalog(person))
+	return c.Status(fiber.StatusOK).JSON(x)
 }
 
 func GetStorefrontKeychain(c *fiber.Ctx) error {

@@ -28,6 +28,8 @@ func init() {
 }
 
 func init() {
+	fortnite.PreloadCosmetics(aid.Config.Fortnite.Season)
+	
 	if aid.Config.Database.DropAllTables {
 		fortnite.NewFortnitePerson("ac", "1")
 	}
@@ -94,6 +96,9 @@ func main() {
 
 	lightswitch := r.Group("/lightswitch/api")
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
+
+	snow := r.Group("/snow")
+	snow.Get("/cosmetics", handlers.GetPrelaodedCosmetics)
 
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {
 		aid.Print("Listening on " + ld.Host + ":" + ld.Port)

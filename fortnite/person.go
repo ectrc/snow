@@ -1,12 +1,11 @@
 package fortnite
 
 import (
-	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
-	"github.com/ectrc/snow/storage"
 )
 
 var (
@@ -35,21 +34,27 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 	for _, item := range defaultCommonCoreItems {
 		if item == "HomebaseBannerIcon:StandardBanner" {
 			for i := 1; i < 32; i++ {
-				person.CommonCoreProfile.Items.AddItem(p.NewItem(item+strconv.Itoa(i), 1)).Save()
+				item := p.NewItem(item+strconv.Itoa(i), 1)
+				item.HasSeen = true
+				person.CommonCoreProfile.Items.AddItem(item).Save()
 			}
 			continue
 		}
 
 		if item == "HomebaseBannerColor:DefaultColor" {
 			for i := 1; i < 22; i++ {
-				person.CommonCoreProfile.Items.AddItem(p.NewItem(item+strconv.Itoa(i), 1)).Save()
+				item := p.NewItem(item+strconv.Itoa(i), 1)
+				item.HasSeen = true
+				person.CommonCoreProfile.Items.AddItem(item).Save()
 			}
 			continue
 		}
 
 		if item == "Currency:MtxPurchased" {
-			person.CommonCoreProfile.Items.AddItem(p.NewItem(item, 0)).Save()
-			person.Profile0Profile.Items.AddItem(p.NewItem(item, 0)).Save()
+			item := p.NewItem(item, 0)
+			item.HasSeen = true
+			person.CommonCoreProfile.Items.AddItem(item).Save()
+			person.Profile0Profile.Items.AddItem(item).Save()
 			continue
 		}
 
@@ -106,19 +111,19 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 
 	loadout := p.NewLoadout("sandbox_loadout", person.AthenaProfile)
 	person.AthenaProfile.Loadouts.AddLoadout(loadout).Save()
-	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("loadouts", []string{
-		loadout.ID,
-	})).Save()
+	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("loadouts", []string{loadout.ID})).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("last_applied_loadout", loadout.ID)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("active_loadout_index", 0)).Save()
 
 	if aid.Config.Fortnite.Everything {
-		allItemsBytes := storage.Asset("cosmetics.json")
-		var allItems []string
-		json.Unmarshal(*allItemsBytes, &allItems)
-		
-		for _, item := range allItems {
-			person.AthenaProfile.Items.AddItem(p.NewItem(item, 1)).Save()
+		for _, item := range Cosmetics.Items {
+			if strings.Contains(strings.ToLower(item.ID), "random") {
+				continue
+			}
+
+			item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
+			item.HasSeen = true
+			person.AthenaProfile.Items.AddItem(item).Save()
 		}
 	}
 	
