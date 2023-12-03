@@ -51,6 +51,7 @@ func main() {
 	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/region", handlers.GetRegion)
 	r.Put("/profile/play_region", handlers.AnyNoContent)
+	r.Post("/api/v1/assets/Fortnite/:versionId/:assetName", handlers.PostAssets)
 
 	account := r.Group("/account/api")
 	account.Get("/public/account", handlers.GetPublicAccounts)
@@ -89,6 +90,7 @@ func main() {
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
 	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostGamePlatform)
 	game.Post("/grant_access/:accountId", handlers.PostGameAccess)
+	game.Post("/creative/discovery/surface/:accountId", handlers.PostDiscovery)
 	game.Post("/profileToken/verify/:accountId", handlers.AnyNoContent)
 
 	profile := game.Group("/profile/:accountId")
