@@ -1,7 +1,7 @@
 package fortnite
 
 import (
-	"sort"
+	"strings"
 
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/person"
@@ -16,6 +16,7 @@ var (
 		"EFortRarity::Uncommon": 800,
 		"EFortRarity::Common": 500,
 	}
+	StaticCatalog = NewCatalog() 
 )
 
 func GetPriceForRarity(rarity string) int {
@@ -23,9 +24,9 @@ func GetPriceForRarity(rarity string) int {
 }
 
 type Catalog struct {
-	RefreshIntervalHrs int          `json:"refreshIntervalHrs"`
-	DailyPurchaseHrs int          `json:"dailyPurchaseHrs"`
-	Expiration string       `json:"expiration"`
+	RefreshIntervalHrs int `json:"refreshIntervalHrs"`
+	DailyPurchaseHrs int `json:"dailyPurchaseHrs"`
+	Expiration string `json:"expiration"`
 	Storefronts []Storefront `json:"storefronts"`
 }
 
@@ -80,32 +81,8 @@ func (s *Storefront) GenerateResponse(p *person.Person) aid.JSON {
 		"catalogEntries": []aid.JSON{},
 	}
 
-	names := []string{}
 	for _, entry := range s.CatalogEntries {
-		grantStrings := entry.Grants
-		sort.Strings(grantStrings)
-		for _, grant := range grantStrings {
-			entry.Name += grant + "-"
-		}
-
-		names = append(names, entry.Name)
-	}
-
-	aid.PrintJSON(names)
-	sort.Strings(names)
-
-	for _, devname := range names {
-		for _, entry := range s.CatalogEntries {
-			grantStrings := entry.Grants
-			sort.Strings(grantStrings)
-			for _, grant := range grantStrings {
-				entry.Name += grant + "-"
-			}
-
-			if devname == entry.Name {
-				json["catalogEntries"] = append(json["catalogEntries"].([]aid.JSON), entry.GenerateResponse(p))
-			}
-		}
+		json["catalogEntries"] = append(json["catalogEntries"].([]aid.JSON), entry.GenerateResponse(p))
 	}
 
 	return json
@@ -120,6 +97,7 @@ type Entry struct {
 	Priority int
 	Grants []string
 	DisplayAssetPath string
+	NewDisplayAssetPath string
 	Title string
 	ShortDescription string
 }
@@ -145,7 +123,7 @@ func (e *Entry) AddMeta(key string, value interface{}) *Entry {
 	return e
 }
 
-func (e *Entry) TileSize(size string) *Entry {
+func (e *Entry) SetTileSize(size string) *Entry {
 	e.Meta = append(e.Meta, aid.JSON{
 		"Key": "TileSize",
 		"Value": size,
@@ -153,12 +131,19 @@ func (e *Entry) TileSize(size string) *Entry {
 	return e
 }
 
-func (e *Entry) PanelType(panel string) *Entry {
+func (e *Entry) SetPanel(panel string) *Entry {
 	e.Panel = panel
 	return e
 }
 
-func (e *Entry) Section(sectionId string) *Entry {
+func (e *Entry) SetSection(sectionId string) *Entry {
+	for _, m := range e.Meta {
+		if m["Key"] == "SectionId" {
+			m["Value"] = sectionId
+			return e
+		}
+	}
+
 	e.Meta = append(e.Meta, aid.JSON{
 		"Key": "SectionId",
 		"Value": sectionId,
@@ -166,8 +151,31 @@ func (e *Entry) Section(sectionId string) *Entry {
 	return e
 }
 
-func (e *Entry) DisplayAsset(asset string) *Entry {
-	e.DisplayAssetPath = asset
+func (e *Entry) SetDisplayAsset(asset string) *Entry {
+	displayAsset := "DAv2_Featured_" + asset
+	e.DisplayAssetPath = "/Game/Catalog/DisplayAssets/" + displayAsset + "." + displayAsset
+	return e
+}
+
+func (e *Entry) IsNewDisplayAssetValid(asset string) bool {
+	newDisplayAsset := "DAv2_" + strings.ReplaceAll(asset, "Athena_Commando_", "")
+	_, exists := KnownDisplayAssets[newDisplayAsset]
+	return exists
+}
+
+func (e *Entry) SetNewDisplayAsset(asset string) *Entry {
+	newDisplayAsset := "DAv2_" + strings.ReplaceAll(asset, "Athena_Commando_", "")
+	e.NewDisplayAssetPath = "/Game/Catalog/NewDisplayAssets/" + newDisplayAsset + "." + newDisplayAsset
+	return e
+}
+
+func (e *Entry) SetDisplayAssetPath(path string) *Entry {
+	e.DisplayAssetPath = strings.ReplaceAll(path, "FortniteGame/Content", "/Game")
+	return e
+}
+
+func (e *Entry) SetNewDisplayAssetPath(path string) *Entry {
+	e.NewDisplayAssetPath = path
 	return e
 }
 
@@ -188,10 +196,22 @@ func (e *Entry) SetPrice(price int) *Entry {
 
 func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 	grantStrings := e.Grants
-	sort.Strings(grantStrings)
 	for _, grant := range grantStrings {
 		e.Name += grant + "-"
 	}
+
+	if e.NewDisplayAssetPath == "" && len(e.Grants) != 0 {
+		safeTemplateId := strings.ReplaceAll(strings.Split(e.Grants[0], ":")[1], "Athena_Commando_", "")
+		newDisplayAsset := "DAv2_" + safeTemplateId
+		e.NewDisplayAssetPath = "/Game/Catalog/NewDisplayAssets/" + newDisplayAsset + "." + newDisplayAsset
+	}
+	e.AddMeta("NewDisplayAssetPath", e.NewDisplayAssetPath)
+
+	if e.DisplayAssetPath == "" && len(e.Grants) != 0 {	
+		displayAsset := "DA_Featured_" + strings.Split(e.Grants[0], ":")[1]
+		e.DisplayAssetPath = "/Game/Catalog/DisplayAssets/" + displayAsset + "." + displayAsset
+	}
+	e.AddMeta("DisplayAssetPath", e.DisplayAssetPath)
 
 	json := aid.JSON{
 		"offerId": e.ID,
@@ -210,24 +230,21 @@ func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 		},
 		"categories": []string{},
 		"catalogGroupPriority": 0,
+		"sortPriority": e.Priority,
 		"dailyLimit": -1,
 		"weeklyLimit": -1,
 		"monthlyLimit": -1,
 		"fufillmentIds": []string{},
-		"filterWeight": e.Priority,
+		"filterWeight": 0.0,
 		"appStoreId": []string{},
 		"refundable": false,
 		"itemGrants": []aid.JSON{},
 		"metaInfo": e.Meta,
 		"meta": aid.JSON{},
+		"displayAssetPath": e.DisplayAssetPath,
 		"title": e.Title,
 		"shortDescription": e.ShortDescription,
 	}
-
-	if e.DisplayAssetPath != "" {
-		json["displayAssetPath"] = "/" + e.DisplayAssetPath
-	}
-
 	grants := []aid.JSON{}
 	requirements := []aid.JSON{}
 	meta := []aid.JSON{}
@@ -261,4 +278,102 @@ func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 	json["metaInfo"] = meta
 
 	return json
+}
+
+func GenerateStorefront() {
+	storefront := NewCatalog()
+
+	daily := NewStorefront("BRDailyStorefront")
+	weekly := NewStorefront("BRWeeklyStorefront")
+
+	for i := 0; i < 4; i++ {
+		if aid.Config.Fortnite.Season < 14 {
+			break
+		}
+
+		item := Cosmetics.GetRandomItemByType("AthenaCharacter")
+		entry := NewCatalogEntry()
+		entry.SetSection("Daily")
+
+		if !entry.IsNewDisplayAssetValid(item.ID) {
+			i--
+			continue
+		}
+
+		entry.SetNewDisplayAsset(item.ID)
+		entry.SetDisplayAssetPath(item.DisplayAssetPath)
+		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
+		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
+		entry.SetTileSize("Normal")
+		entry.Priority = 1
+
+		daily.Add(*entry)
+	}
+	
+	for i := 0; i < 6; i++ {
+		item := Cosmetics.GetRandomItemByNotType("AthenaCharacter")
+		entry := NewCatalogEntry()
+		entry.SetSection("Daily")
+
+		if !entry.IsNewDisplayAssetValid(item.ID) {
+			i--
+			continue
+		}
+
+		entry.SetNewDisplayAsset(item.ID)
+		entry.SetDisplayAssetPath(item.DisplayAssetPath)
+		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
+		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
+		entry.SetTileSize("Small")
+
+		daily.Add(*entry)
+	}
+
+	setsAdded := 0
+	for len(weekly.CatalogEntries) < 8 || setsAdded < 2 {
+		set := Cosmetics.GetRandomSet()
+		
+		itemsAdded := 0
+		itemsToAdd := []*Entry{}
+		for _, item := range set.Items {
+			entry := NewCatalogEntry()
+			entry.SetSection("Featured")
+			entry.SetPanel(set.BackendName)
+
+			if !entry.IsNewDisplayAssetValid(item.ID) {
+				continue
+			}
+
+			if item.Type.BackendValue == "AthenaCharacter" {
+				entry.SetTileSize("Normal")
+				itemsAdded += 2
+				entry.Priority = 1
+			} else {
+				entry.SetTileSize("Small")
+				itemsAdded += 1
+			}
+
+			entry.SetNewDisplayAsset(item.ID)
+			entry.SetDisplayAssetPath(item.DisplayAssetPath)
+			entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
+			entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
+
+			itemsToAdd = append(itemsToAdd, entry)
+		}
+
+		if itemsAdded % 2 != 0 {
+			itemsToAdd = itemsToAdd[:len(itemsToAdd)-1]
+		}
+
+		for _, entry := range itemsToAdd {
+			weekly.Add(*entry)
+		}
+
+		setsAdded++
+	}
+
+	storefront.Add(daily)
+	storefront.Add(weekly)
+	
+	StaticCatalog = storefront
 }

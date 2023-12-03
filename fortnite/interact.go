@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/storage"
 )
 
 type FortniteAPI struct {
@@ -86,6 +87,7 @@ type FAPI_Cosmetic struct {
 type Set struct {
 	Items map[string]FAPI_Cosmetic `json:"items"`
 	Name string `json:"name"`
+	BackendName string `json:"backendName"`
 }
 
 type CosmeticData struct {
@@ -106,6 +108,44 @@ func (c *CosmeticData) GetRandomItem() FAPI_Cosmetic {
 	}
 
 	return c.GetRandomItem()
+}
+
+func (c *CosmeticData) GetRandomItemByType(itemType string) FAPI_Cosmetic {
+	randomInt := rand.Intn(len(c.Items))
+
+	i := 0
+	for _, item := range c.Items {
+		if item.Type.BackendValue != itemType {
+			continue
+		}
+
+		if i == randomInt {
+			return item
+		}
+
+		i++
+	}
+
+	return c.GetRandomItemByType(itemType)
+}
+
+func (c *CosmeticData) GetRandomItemByNotType(itemType string) FAPI_Cosmetic {
+	randomInt := rand.Intn(len(c.Items))
+
+	i := 0
+	for _, item := range c.Items {
+		if item.Type.BackendValue == itemType {
+			continue
+		}
+
+		if i == randomInt {
+			return item
+		}
+
+		i++
+	}
+
+	return c.GetRandomItemByNotType(itemType)
 }
 
 func (c *CosmeticData) GetRandomSet() Set {
@@ -129,6 +169,7 @@ var (
 		Items: make(map[string]FAPI_Cosmetic),
 		Sets: make(map[string]Set),
 	}
+	KnownDisplayAssets = make(map[string]bool)
 )
 
 func NewFortniteAPI() *FortniteAPI {
@@ -173,6 +214,8 @@ func (f *FortniteAPI) GetAllCosmetics() ([]FAPI_Cosmetic, error) {
 }
 
 func PreloadCosmetics(max int) error {
+	aid.Print("Fortnite Assets from", "https://fortnite-api.com")
+
 	list, err := StaticAPI.GetAllCosmetics()
 	if err != nil {
 		return err
@@ -190,6 +233,7 @@ func PreloadCosmetics(max int) error {
 				Cosmetics.Sets[item.Set.BackendValue] = Set{
 					Items: make(map[string]FAPI_Cosmetic),
 					Name: item.Set.Value,
+					BackendName: item.Set.BackendValue,
 				}
 			}
 
@@ -225,7 +269,24 @@ func PreloadCosmetics(max int) error {
 		Cosmetics.Sets[character.Set.BackendValue].Items[characterId] = character
 	}
 
-	aid.Print("Could not find", len(notFound), "items with backpacks")
+	if len(notFound) > 0 {
+		aid.Print("Couldn't find", len(notFound), "backpacks for characters:", notFound)
+	}
+
+	DAv2 := *storage.Asset("assets.json")
+	if DAv2 == nil {
+		aid.Print("Couldn't find DAv2.json")
+	}
+
+	var DAv2Data map[string]bool
+	err = json.Unmarshal(DAv2, &DAv2Data)
+	if err != nil {
+		return err
+	}
+
+	KnownDisplayAssets = DAv2Data
+
+	aid.Print("Preloaded", len(KnownDisplayAssets), "display assets")
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -29,7 +28,6 @@ func GetLightswitchBulkStatus(c *fiber.Ctx) error {
 
 func GetFortniteTimeline(c *fiber.Ctx) error {
 	userAgent := c.Get("User-Agent")
-	fmt.Println(userAgent)
 	if !strings.Contains(userAgent, "++Fortnite") {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("No User Agent"))
 	}

@@ -1,7 +1,6 @@
 package person
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ectrc/snow/aid"
@@ -150,7 +149,6 @@ func (l *Loadout) GetAttribute(attribute string) interface{} {
 		}
 	}
 
-	fmt.Println(attribute)
 
 	switch attribute {
 	case "locker_name":
