@@ -7,6 +7,7 @@ type PersonSnapshot struct {
 	CommonCoreProfile   ProfileSnapshot
 	CommonPublicProfile ProfileSnapshot
 	Profile0Profile     ProfileSnapshot
+	CollectionsProfile  ProfileSnapshot
 }
 
 type ProfileSnapshot struct {

@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 var (
-	profileActions = map[string]func(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+	profileActions = map[string]func(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 		"QueryProfile": PostQueryProfileAction,
 		"ClientQuestLogin": PostQueryProfileAction,
 		"MarkItemSeen": PostMarkItemSeenAction,
@@ -22,6 +23,7 @@ var (
 		"SetBattleRoyaleBanner": PostSetBattleRoyaleBannerAction,
 		"SetCosmeticLockerSlot": PostSetCosmeticLockerSlotAction,
 		"SetCosmeticLockerBanner": PostSetCosmeticLockerBannerAction,
+		"PurchaseCatalogEntry": PostPurchaseCatalogEntryAction,
 	}
 )
 
@@ -32,27 +34,74 @@ func PostProfileAction(c *fiber.Ctx) error {
 	}
 
 	profile := person.GetProfileFromType(c.Query("profileId"))
-	if action, ok := profileActions[c.Params("action")]; ok && profile != nil {
-		defer profile.ClearProfileChanges()
-		before := profile.Snapshot()
-		if err := action(c, person, profile); err != nil {
+	if profile == nil {
+		return c.Status(404).JSON(aid.ErrorBadRequest("No Profile Found"))
+	}
+	defer profile.ClearProfileChanges()
+
+	profileSnapshots := map[string]*p.ProfileSnapshot{
+		"athena": nil,
+		"common_core": nil,
+		"common_public": nil,
+	}
+
+	for key := range profileSnapshots {
+		profileSnapshots[key] = person.GetProfileFromType(key).Snapshot()
+	}
+
+	notifications := []aid.JSON{}
+
+	action, ok := profileActions[c.Params("action")];
+	if ok && profile != nil {
+		if err := action(c, person, profile, &notifications); err != nil {
 			return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
 		}
-		profile.Diff(before)
+	}
+
+	for key, profileSnapshot := range profileSnapshots {
+		profile := person.GetProfileFromType(key)
+		if profile == nil {
+			continue
+		}
+
+		if profileSnapshot == nil {
+			continue
+		}
+
+		profile.Diff(profileSnapshot)
 	}
 	
 	revision, _ := strconv.Atoi(c.Query("rvn"))
-	if revision == -1 && profile == nil {
-		revision = 1
-	}
-	if revision == -1 && profile != nil {
+	if revision == -1 {
 		revision = profile.Revision
 	}
 	revision++
+	profile.Revision = revision
+	profile.Save()
+	delete(profileSnapshots, profile.Type)
 
-	changes := []interface{}{}
-	if profile != nil {
-		changes = profile.Changes
+	multiUpdate := []aid.JSON{}
+	for key := range profileSnapshots {
+		profile := person.GetProfileFromType(key)
+		if profile == nil {
+			continue
+		}
+		profile.Revision++
+
+		if len(profile.Changes) == 0 {
+			continue
+		}
+
+		multiUpdate = append(multiUpdate, aid.JSON{
+			"profileId": profile.Type,
+			"profileRevision": profile.Revision,
+			"profileCommandRevision": profile.Revision,
+			"profileChangesBaseRevision": profile.Revision - 1,
+			"profileChanges": profile.Changes,
+		})
+
+		profile.ClearProfileChanges()
+		profile.Save()
 	}
 
 	return c.Status(200).JSON(aid.JSON{
@@ -60,20 +109,20 @@ func PostProfileAction(c *fiber.Ctx) error {
 		"profileRevision": revision,
 		"profileCommandRevision": revision,
 		"profileChangesBaseRevision": revision - 1,
-		"profileChanges": changes,
-		"multiUpdate": []aid.JSON{},
-		"notifications": []aid.JSON{},
+		"profileChanges": profile.Changes,
+		"multiUpdate": multiUpdate,
+		"notifications": notifications,
 		"responseVersion": 1,
 		"serverTime": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})
 }
 
-func PostQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+func PostQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	profile.CreateFullProfileUpdateChange()
 	return nil
 }
 
-func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		ItemIds []string `json:"itemIds"`
 	}
@@ -96,7 +145,7 @@ func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) 
 	return nil
 }
 
-func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		SlotName string `json:"slotName" binding:"required"`
 		ItemToSlot string `json:"itemToSlot"`
@@ -141,7 +190,7 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 	return nil
 }
 
-func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		HomebaseBannerColorID string `json:"homebaseBannerColorId" binding:"required"`
 		HomebaseBannerIconID string `json:"homebaseBannerIconId" binding:"required"`
@@ -182,7 +231,7 @@ func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.
 	return nil
 }
 
-func PostSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error {
+func PostSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		ItemIds []string `json:"itemIds" binding:"required"`
 		Favorite []bool `json:"itemFavStatus" binding:"required"`
@@ -206,7 +255,7 @@ func PostSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profil
 	return nil
 }
 
-func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error { 
+func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
 	var body struct {
 		Category string `json:"category" binding:"required"` // item type e.g. Character
 		ItemToSlot string `json:"itemToSlot" binding:"required"` // template id
@@ -275,7 +324,7 @@ func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.
 	return nil
 }
 
-func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile) error { 
+func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
 	var body struct {
 		LockerItem string `json:"lockerItem" binding:"required"` // locker id
 		BannerColorTemplateName string `json:"bannerColorTemplateName" binding:"required"` // template id
@@ -294,7 +343,6 @@ func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *
 
 	icon := profile.Items.GetItemByTemplateID("HomebaseBannerIcon:" + body.BannerIconTemplateName)
 	if icon == nil {
-		// return fmt.Errorf("icon item not found")
 		icon = &p.Item{
 			ID: body.BannerIconTemplateName,
 		}
@@ -309,5 +357,82 @@ func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *
 	currentLocker.BannerID = icon.ID
 
 	go currentLocker.Save()
+	return nil
+}
+
+func PostPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct{
+		OfferID string `json:"offerId" binding:"required"`
+		PurchaseQuantity int `json:"purchaseQuantity" binding:"required"`
+		ExpectedTotalPrice int `json:"expectedTotalPrice" binding:"required"`
+	}
+
+	err := c.BodyParser(&body)
+	if err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	offer := fortnite.StaticCatalog.GetOfferById(body.OfferID)
+	if offer == nil {
+		return fmt.Errorf("offer not found")
+	}
+
+	if offer.Price != body.ExpectedTotalPrice {
+		return fmt.Errorf("invalid price")
+	}
+
+	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if vbucks == nil {
+		return fmt.Errorf("vbucks not found")
+	}
+
+	profile0Vbucks := person.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if profile0Vbucks == nil {
+		return fmt.Errorf("profile0vbucks not found")
+	}
+
+	if vbucks.Quantity < body.ExpectedTotalPrice {
+		return fmt.Errorf("not enough vbucks")
+	}
+
+	vbucks.Quantity -= body.ExpectedTotalPrice
+
+	go func() {
+		profile0Vbucks.Quantity = vbucks.Quantity // for season 2 and lower
+		vbucks.Save()
+		profile0Vbucks.Save()
+	}()
+
+	if offer.ProfileType != "athena" {
+		return fmt.Errorf("save the world not implemeted yet!")
+	}
+
+	loot := []aid.JSON{}
+	for i := 0; i < body.PurchaseQuantity; i++ {
+		for _, grant := range offer.Grants {
+			if profile.Items.GetItemByTemplateID(grant) != nil {
+				continue
+			}
+
+			item := p.NewItem(grant, 1)
+			person.AthenaProfile.Items.AddItem(item)
+
+			loot = append(loot, aid.JSON{
+				"itemType": item.TemplateID,
+				"itemGuid": item.ID,
+				"quantity": item.Quantity,
+				"itemProfile": offer.ProfileType,
+			})
+		}
+	}
+
+	*notifications = append(*notifications, aid.JSON{
+		"type": "CatalogPurchase",
+		"lootResult": aid.JSON{
+			"items": loot,
+		},
+		"primary": true,
+	})
+
 	return nil
 }

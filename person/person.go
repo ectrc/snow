@@ -13,6 +13,7 @@ type Person struct {
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
 	Profile0Profile *Profile
+	CollectionsProfile *Profile
 }
 
 type Option struct {
@@ -29,6 +30,7 @@ func NewPerson() *Person {
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
 		Profile0Profile: NewProfile("profile0"),
+		CollectionsProfile: NewProfile("collections"),
 	}
 }
 
@@ -73,6 +75,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 	commonCoreProfile := NewProfile("common_core")
 	commonPublicProfile := NewProfile("common_public")
 	profile0 := NewProfile("profile0")
+	collectionsProfile := NewProfile("collections")
 
 	for _, profile := range databasePerson.Profiles {
 		if profile.Type == "athena" {
@@ -94,6 +97,11 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 			profile0.ID = profile.ID
 			profile0 = FromDatabaseProfile(&profile)
 		}
+
+		if profile.Type == "collections" {
+			collectionsProfile.ID = profile.ID
+			collectionsProfile = FromDatabaseProfile(&profile)
+		}
 	}
 
 	person := &Person{
@@ -104,6 +112,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
 		Profile0Profile: profile0,
+		CollectionsProfile: collectionsProfile,
 	}
 
 	cache.SavePerson(person)
@@ -144,6 +153,8 @@ func (p *Person) GetProfileFromType(profileType string) *Profile {
 		return p.CommonPublicProfile
 	case "profile0":
 		return p.Profile0Profile
+	case "collections":
+		return p.CollectionsProfile
 	}
 
 	return nil
@@ -167,6 +178,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		"athena": p.AthenaProfile,
 		"common_public": p.CommonPublicProfile,
 		"profile0": p.Profile0Profile,
+		"collections": p.CollectionsProfile,
 	}
 
 	for profileType, profile := range profilesToConvert {
@@ -234,5 +246,6 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
 		CommonPublicProfile: *p.CommonPublicProfile.Snapshot(),
 		Profile0Profile: *p.Profile0Profile.Snapshot(),
+		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 	}
 } 

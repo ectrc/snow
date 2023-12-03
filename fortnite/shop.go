@@ -58,7 +58,7 @@ func (c *Catalog) GenerateFortniteCatalog(p *person.Person) aid.JSON {
 	return json
 }
 
-func (c *Catalog) IsDuplicate(entry Entry) bool {
+func (c *Catalog) CheckIfOfferIsDuplicate(entry Entry) bool {
 	for _, storefront := range c.Storefronts {
 		for _, catalogEntry := range storefront.CatalogEntries {
 			if catalogEntry.Grants[0] == entry.Grants[0] {
@@ -68,6 +68,18 @@ func (c *Catalog) IsDuplicate(entry Entry) bool {
 	}
 
 	return false
+}
+
+func (c *Catalog) GetOfferById(id string) *Entry {
+	for _, storefront := range c.Storefronts {
+		for _, catalogEntry := range storefront.CatalogEntries {
+			if catalogEntry.ID == id {
+				return &catalogEntry
+			}
+		}
+	}
+
+	return nil
 }
 
 type Storefront struct {
@@ -111,12 +123,14 @@ type Entry struct {
 	NewDisplayAssetPath string
 	Title string
 	ShortDescription string
+	ProfileType string
 }
 
-func NewCatalogEntry(meta ...aid.JSON) *Entry {
+func NewCatalogEntry(profile string, meta ...aid.JSON) *Entry {
 	return &Entry{
 		ID: uuid.New().String(),
 		Meta: meta,
+		ProfileType: profile,
 	}
 }
 
@@ -305,7 +319,7 @@ func GenerateStorefront() {
 		}
 
 		item := Cosmetics.GetRandomItemByType("AthenaCharacter")
-		entry := NewCatalogEntry()
+		entry := NewCatalogEntry("athena")
 		entry.SetSection("Daily")
 
 		if !entry.IsNewDisplayAssetValid(item.ID) {
@@ -322,7 +336,11 @@ func GenerateStorefront() {
 		entry.SetTileSize("Normal")
 		entry.Priority = 1
 
-		if storefront.IsDuplicate(*entry) {
+		if item.Backpack != "" {
+			entry.AddGrant("AthenaBackpack:" + item.Backpack)
+		}
+
+		if storefront.CheckIfOfferIsDuplicate(*entry) {
 			continue
 		}
 
@@ -331,7 +349,7 @@ func GenerateStorefront() {
 	
 	for i := 0; i < 6; i++ {
 		item := Cosmetics.GetRandomItemByNotType("AthenaCharacter")
-		entry := NewCatalogEntry()
+		entry := NewCatalogEntry("athena")
 		entry.SetSection("Daily")
 
 		if !entry.IsNewDisplayAssetValid(item.ID) {
@@ -347,7 +365,7 @@ func GenerateStorefront() {
 		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 		entry.SetTileSize("Small")
 
-		if storefront.IsDuplicate(*entry) {
+		if storefront.CheckIfOfferIsDuplicate(*entry) {
 			continue
 		}
 
@@ -366,7 +384,7 @@ func GenerateStorefront() {
 		itemsAdded := 0
 		itemsToAdd := []*Entry{}
 		for _, item := range set.Items {
-			entry := NewCatalogEntry()
+			entry := NewCatalogEntry("athena")
 			entry.SetSection("Featured")
 			entry.SetPanel(set.BackendName)
 
@@ -402,7 +420,7 @@ func GenerateStorefront() {
 		}
 
 		for _, entry := range itemsToAdd {
-			if storefront.IsDuplicate(*entry) {
+			if storefront.CheckIfOfferIsDuplicate(*entry) {
 				continue
 			}
 
@@ -416,4 +434,5 @@ func GenerateStorefront() {
 	storefront.Add(weekly)
 	
 	StaticCatalog = storefront
+	aid.Print("Generated new random storefront")
 }

@@ -28,7 +28,9 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 	person.AccessKey = key
 
 	for _, item := range defaultAthenaItems {
-		person.AthenaProfile.Items.AddItem(p.NewItem(item, 1))
+		item := p.NewItem(item, 1)
+		item.HasSeen = true
+		person.AthenaProfile.Items.AddItem(item)
 	}
 
 	for _, item := range defaultCommonCoreItems {
@@ -51,10 +53,8 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 		}
 
 		if item == "Currency:MtxPurchased" {
-			item := p.NewItem(item, 0)
-			item.HasSeen = true
-			person.CommonCoreProfile.Items.AddItem(item).Save()
-			person.Profile0Profile.Items.AddItem(item).Save()
+			person.CommonCoreProfile.Items.AddItem(p.NewItem(item, 9999)).Save()
+			person.Profile0Profile.Items.AddItem(p.NewItem(item, 9999)).Save()
 			continue
 		}
 

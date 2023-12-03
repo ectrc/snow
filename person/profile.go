@@ -32,9 +32,9 @@ func NewProfile(profile string) *Profile {
 		Quests:	NewQuestMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Attributes: NewAttributeMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Loadouts: NewLoadoutMutex(&storage.DB_Profile{ID: id, Type: profile}),
-		Type:			 profile,
+		Type: profile,
 		Revision: 0,
-		Changes: 	 []interface{}{},
+		Changes: []interface{}{},
 	}
 }
 
@@ -129,7 +129,7 @@ func (p *Profile) GenerateFortniteProfileEntry() aid.JSON {
 }
 
 func (p *Profile) Save() {
-	// storage.Repo.SaveProfile(p.ToDatabase())
+	storage.Repo.SaveProfile(p.ToDatabase())
 }
 
 func (p *Profile) Snapshot() *ProfileSnapshot {
@@ -398,4 +398,45 @@ func (p *Profile) CreateFullProfileUpdateChange() {
 
 func (p *Profile) ClearProfileChanges() {
 	p.Changes = []interface{}{}
+}
+
+func (p *Profile) ToDatabase() *storage.DB_Profile {
+	dbProfile := storage.DB_Profile{
+		ID: p.ID,
+		PersonID: p.PersonID,
+		Type: p.Type,
+		Items: []storage.DB_Item{},
+		Gifts: []storage.DB_Gift{},
+		Quests: []storage.DB_Quest{},
+		Loadouts: []storage.DB_Loadout{},
+		Attributes: []storage.DB_PAttribute{},
+		Revision: p.Revision,
+	}
+
+	// p.Items.RangeItems(func(id string, item *Item) bool {
+	// 	dbProfile.Items = append(dbProfile.Items, *item.ToDatabase(dbProfile.PersonID))
+	// 	return true
+	// })
+
+	p.Gifts.RangeGifts(func(id string, gift *Gift) bool {
+		dbProfile.Gifts = append(dbProfile.Gifts, *gift.ToDatabase(dbProfile.PersonID))
+		return true
+	})
+
+	p.Quests.RangeQuests(func(id string, quest *Quest) bool {
+		dbProfile.Quests = append(dbProfile.Quests, *quest.ToDatabase(dbProfile.PersonID))
+		return true
+	})
+
+	p.Attributes.RangeAttributes(func(key string, value *Attribute) bool {
+		dbProfile.Attributes = append(dbProfile.Attributes, *value.ToDatabase(dbProfile.PersonID))
+		return true
+	})
+
+	p.Loadouts.RangeLoadouts(func(id string, loadout *Loadout) bool {
+		dbProfile.Loadouts = append(dbProfile.Loadouts, *loadout.ToDatabase(dbProfile.PersonID))
+		return true
+	})
+
+	return &dbProfile
 }
