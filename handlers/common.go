@@ -57,12 +57,12 @@ func GetContentPages(c *fiber.Ctx) error {
 	seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
 	
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
-		"battlepassaboutmessages": aid.JSON{
-			"news": aid.JSON{
-				"messages": []aid.JSON{},
-			},
-			"lastModified": "0000-00-00T00:00:00.000Z",
-		},
+		// "battlepassaboutmessages": aid.JSON{
+		// 	"news": aid.JSON{
+		// 		"messages": []aid.JSON{},
+		// 	},
+		// 	"lastModified": "0000-00-00T00:00:00.000Z",
+		// },
 		"subgameselectdata": aid.JSON{
 			"saveTheWorldUnowned": aid.JSON{
 				"message": aid.JSON{
@@ -158,40 +158,6 @@ func GetContentPages(c *fiber.Ctx) error {
             "sectionId": "Battlepass",
             "bShowTimer": false,
             "sectionDisplayName": "Battle Pass",
-            "bShowIneligibleOffers": false,
-          },
-          {
-            "bSortOffersByOwnership": false,
-            "bShowIneligibleOffersIfGiftable": false,
-            "bEnableToastNotification": false,
-            "background":  aid.JSON{
-              "stage": "default",
-              "_type": "DynamicBackground",
-              "key": "vault",
-            },
-            "_type": "ShopSection",
-            "landingPriority": 3,
-            "bHidden": false,
-            "sectionId": "SnowSection",
-            "bShowTimer": false,
-            "sectionDisplayName": "Snow Specials",
-            "bShowIneligibleOffers": false,
-          },
-          {
-            "bSortOffersByOwnership": false,
-            "bShowIneligibleOffersIfGiftable": false,
-            "bEnableToastNotification": false,
-            "background":  aid.JSON{
-              "stage": "default",
-              "_type": "DynamicBackground",
-              "key": "vault",
-            },
-            "_type": "ShopSection",
-            "landingPriority": 3,
-            "bHidden": false,
-            "sectionId": "OGBundles",
-            "bShowTimer": false,
-            "sectionDisplayName": "OG Bundles",
             "bShowIneligibleOffers": false,
           },
         },

@@ -56,7 +56,18 @@ func (c *Catalog) GenerateFortniteCatalog(p *person.Person) aid.JSON {
 	}
 
 	return json
+}
 
+func (c *Catalog) IsDuplicate(entry Entry) bool {
+	for _, storefront := range c.Storefronts {
+		for _, catalogEntry := range storefront.CatalogEntries {
+			if catalogEntry.Grants[0] == entry.Grants[0] {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 type Storefront struct {
@@ -108,7 +119,6 @@ func NewCatalogEntry(meta ...aid.JSON) *Entry {
 		Meta: meta,
 	}
 }
-
 
 func (e *Entry) AddGrant(templateId string) *Entry {
 	e.Grants = append(e.Grants, templateId)
@@ -170,7 +180,10 @@ func (e *Entry) SetNewDisplayAsset(asset string) *Entry {
 }
 
 func (e *Entry) SetDisplayAssetPath(path string) *Entry {
-	e.DisplayAssetPath = strings.ReplaceAll(path, "FortniteGame/Content", "/Game")
+	paths := strings.Split(path, "/")
+	id := paths[len(paths)-1]
+
+	e.DisplayAssetPath = "/Game/Catalog/DisplayAssets/" + id + "." + id
 	return e
 }
 
@@ -301,11 +314,17 @@ func GenerateStorefront() {
 		}
 
 		entry.SetNewDisplayAsset(item.ID)
-		entry.SetDisplayAssetPath(item.DisplayAssetPath)
+		if item.DisplayAssetPath != "" {
+			entry.SetDisplayAssetPath(item.DisplayAssetPath)
+		}
 		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
 		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 		entry.SetTileSize("Normal")
 		entry.Priority = 1
+
+		if storefront.IsDuplicate(*entry) {
+			continue
+		}
 
 		daily.Add(*entry)
 	}
@@ -321,16 +340,27 @@ func GenerateStorefront() {
 		}
 
 		entry.SetNewDisplayAsset(item.ID)
-		entry.SetDisplayAssetPath(item.DisplayAssetPath)
+		if item.DisplayAssetPath != "" {
+			entry.SetDisplayAssetPath(item.DisplayAssetPath)
+		}
 		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
 		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 		entry.SetTileSize("Small")
 
+		if storefront.IsDuplicate(*entry) {
+			continue
+		}
+
 		daily.Add(*entry)
 	}
 
+	minimum := 8
+	if aid.Config.Fortnite.Season < 14 {
+		minimum = 3
+	}
+
 	setsAdded := 0
-	for len(weekly.CatalogEntries) < 8 || setsAdded < 2 {
+	for len(weekly.CatalogEntries) < minimum || setsAdded < 2 {
 		set := Cosmetics.GetRandomSet()
 		
 		itemsAdded := 0
@@ -346,7 +376,11 @@ func GenerateStorefront() {
 
 			if item.Type.BackendValue == "AthenaCharacter" {
 				entry.SetTileSize("Normal")
-				itemsAdded += 2
+				if aid.Config.Fortnite.Season < 14 {
+					itemsAdded += 1
+				} else {
+					itemsAdded += 2
+				}
 				entry.Priority = 1
 			} else {
 				entry.SetTileSize("Small")
@@ -354,7 +388,9 @@ func GenerateStorefront() {
 			}
 
 			entry.SetNewDisplayAsset(item.ID)
-			entry.SetDisplayAssetPath(item.DisplayAssetPath)
+			if item.DisplayAssetPath != "" {
+				entry.SetDisplayAssetPath(item.DisplayAssetPath)
+			}
 			entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
 			entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 
@@ -366,6 +402,10 @@ func GenerateStorefront() {
 		}
 
 		for _, entry := range itemsToAdd {
+			if storefront.IsDuplicate(*entry) {
+				continue
+			}
+
 			weekly.Add(*entry)
 		}
 
