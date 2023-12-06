@@ -307,7 +307,7 @@ func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 	return json
 }
 
-func GenerateStorefront() {
+func GenerateRandomStorefront() {
 	storefront := NewCatalog()
 
 	daily := NewStorefront("BRDailyStorefront")

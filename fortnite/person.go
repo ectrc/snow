@@ -53,8 +53,8 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 		}
 
 		if item == "Currency:MtxPurchased" {
-			person.CommonCoreProfile.Items.AddItem(p.NewItem(item, 9999)).Save()
-			person.Profile0Profile.Items.AddItem(p.NewItem(item, 9999)).Save()
+			person.CommonCoreProfile.Items.AddItem(p.NewItem(item, 0)).Save()
+			person.Profile0Profile.Items.AddItem(p.NewItem(item, 0)).Save()
 			continue
 		}
 

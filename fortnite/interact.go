@@ -82,6 +82,7 @@ type FAPI_Cosmetic struct {
 	Path string `json:"path"`
 	Added string `json:"added"`
 	ShopHistory []string `json:"shopHistory"`
+	BattlePass bool `json:"battlePass"`
 }
 
 type Set struct {
@@ -214,16 +215,22 @@ func (f *FortniteAPI) GetAllCosmetics() ([]FAPI_Cosmetic, error) {
 }
 
 func PreloadCosmetics(max int) error {
-	aid.Print("Fortnite Assets from", "https://fortnite-api.com")
+	aid.Print("Fortnite Assets from", StaticAPI.URL)
 
 	list, err := StaticAPI.GetAllCosmetics()
 	if err != nil {
 		return err
 	}
 
+	battlePassSkins := make([]FAPI_Cosmetic, 0)
 	for _, item := range list {
 		if item.Introduction.BackendValue > max {
 			continue
+		}
+
+		if len(item.ShopHistory) == 0 && item.Type.Value == "outfit" {
+			item.BattlePass = true
+			battlePassSkins = append(battlePassSkins, item)
 		}
 
 		Cosmetics.Items[item.ID] = item
@@ -243,14 +250,20 @@ func PreloadCosmetics(max int) error {
 
 	aid.Print("Preloaded", len(Cosmetics.Items), "cosmetics")
 	aid.Print("Preloaded", len(Cosmetics.Sets), "sets")
+	aid.Print("Preloaded", len(battlePassSkins), "battle pass skins")
 
-	notFound := make([]string, 0)
+	found := make([]string, 0)
+	characters := make([]string, 0)
 	for id, item := range Cosmetics.Items {
-		if item.ItemPreviewHeroPath == "" {
+		if item.Type.Value == "outfit" {
+			characters = append(characters, id)
+		}
+
+		if item.Type.Value != "backpack" {
 			continue
 		}
 
-		if item.Type.Value != "AthenaBackpack" {
+		if item.ItemPreviewHeroPath == "" {
 			continue
 		}
 
@@ -259,19 +272,24 @@ func PreloadCosmetics(max int) error {
 
 		character, ok := Cosmetics.Items[characterId]
 		if !ok {
-			notFound = append(notFound, characterId)
 			continue
 		}
-
 		character.Backpack = id
-
 		Cosmetics.Items[characterId] = character
+		if _, ok := Cosmetics.Sets[character.Set.BackendValue]; !ok {
+			Cosmetics.Sets[character.Set.BackendValue] = Set{
+				Items: make(map[string]FAPI_Cosmetic),
+				Name: character.Set.Value,
+				BackendName: character.Set.BackendValue,
+			}
+		}
+
 		Cosmetics.Sets[character.Set.BackendValue].Items[characterId] = character
+		found = append(found, id)
 	}
 
-	if len(notFound) > 0 {
-		aid.Print("Couldn't find", len(notFound), "backpacks for characters:", notFound)
-	}
+	// print the perecentage of backpacks that have a character
+	aid.Print("Preloaded", len(found), "backpacks with characters", "(", float64(len(found))/float64(len(characters))*100, "% )")
 
 	DAv2 := *storage.Asset("assets.json")
 	if DAv2 == nil {

@@ -404,13 +404,17 @@ func PostPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.P
 	}()
 
 	if offer.ProfileType != "athena" {
-		return fmt.Errorf("save the world not implemeted yet!")
+		return fmt.Errorf("save the world not implemeted yet")
 	}
 
 	loot := []aid.JSON{}
 	for i := 0; i < body.PurchaseQuantity; i++ {
 		for _, grant := range offer.Grants {
 			if profile.Items.GetItemByTemplateID(grant) != nil {
+				item := profile.Items.GetItemByTemplateID(grant)
+				item.Quantity++
+				go item.Save()
+
 				continue
 			}
 

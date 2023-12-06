@@ -29,7 +29,7 @@ func init() {
 
 func init() {
 	fortnite.PreloadCosmetics(aid.Config.Fortnite.Season)
-	fortnite.GenerateStorefront()
+	fortnite.GenerateRandomStorefront()
 	
 	if aid.Config.Database.DropAllTables {
 		fortnite.NewFortnitePerson("ac", "1")
