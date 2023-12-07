@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/fortnite"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -70,17 +73,18 @@ func createPlaylist(mnemonic string, image string) aid.JSON {
 }
 
 func PostDiscovery(c *fiber.Ctx) error {
+	results := []aid.JSON{}
+	for playlist := range fortnite.PlaylistImages {
+		results = append(results, createPlaylist(playlist, "http://" + aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png"))
+	}
+	results = append(results, createPlaylist("Playlist_DefaultSolo", "http://bucket.retrac.site/55737fa15677cd57fab9e7f4499d62f89cfde320.png"))
+
 	return c.Status(200).JSON(aid.JSON{
 		"Panels": []aid.JSON{
 			{
 				"PanelName": "1",
 				"Pages": []aid.JSON{{
-					"results": []aid.JSON{
-						createPlaylist("playlist_defaultsolo", "https://cdn2.unrealengine.com/solo-1920x1080-1920x1080-bc0a5455ce20.jpg"),
-						createPlaylist("playlist_defaultduo", "https://cdn2.unrealengine.com/duos-1920x1080-1920x1080-5a411fe07b21.jpg"),
-						createPlaylist("playlist_trios", "https://cdn2.unrealengine.com/trios-1920x1080-1920x1080-d5054bb9691a.jpg"),
-						createPlaylist("playlist_defaultsquad", "https://cdn2.unrealengine.com/squads-1920x1080-1920x1080-095c0732502e.jpg"),
-					},
+					"results": results,
 					"hasMore": false,
 				}},
 			},
@@ -144,5 +148,138 @@ func PostAssets(c *fiber.Ctx) error {
 				},
 			},
 		},
+	})
+}
+
+func GetContentPages(c *fiber.Ctx) error {
+	seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
+	playlists := []aid.JSON{}
+	for playlist := range fortnite.PlaylistImages {
+		playlists = append(playlists, aid.JSON{
+			"image": "http://" + aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png",
+			"playlist_name": playlist,
+			"hidden": false,
+		})
+	}
+	
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{
+		"subgameselectdata": aid.JSON{
+			"saveTheWorldUnowned": aid.JSON{
+				"message": aid.JSON{
+					"title": "Co-op PvE",
+					"body": "Cooperative PvE storm-fighting adventure!",
+					"spotlight": false,
+					"hidden": true,
+					"messagetype": "normal",
+				},
+			},
+			"battleRoyale": aid.JSON{
+				"message": aid.JSON{
+					"title": "100 Player PvP",
+					"body": "100 Player PvP Battle Royale.\n\nPvE progress does not affect Battle Royale.",
+					"spotlight": false,
+					"hidden": true,
+					"messagetype": "normal",
+				},
+			},
+			"creative": aid.JSON{
+				"message": aid.JSON{
+					"title": "New Featured Islands!",
+					"body": "Your Island. Your Friends. Your Rules.\n\nDiscover new ways to play Fortnite, play community made games with friends and build your dream island.",
+					"spotlight": false,
+					"hidden": true,
+					"messagetype": "normal",
+				},
+			},
+			"lastModified": "0000-00-00T00:00:00.000Z",
+		},
+		"dynamicbackgrounds": aid.JSON{
+			"backgrounds": aid.JSON{"backgrounds": []aid.JSON{
+				{
+					"key": "lobby",
+					"stage": "season" + seasonString,
+				},
+				{
+					"key": "vault",
+					"stage": "season" + seasonString,
+				},
+			}},
+			"lastModified": "0000-00-00T00:00:00.000Z",
+		},
+		"shopSections": aid.JSON{
+			"sectionList": aid.JSON{
+				"sections": []aid.JSON{
+          {
+            "bSortOffersByOwnership": false,
+            "bShowIneligibleOffersIfGiftable": false,
+            "bEnableToastNotification": true,
+            "background":  aid.JSON{
+              "stage": "default",
+              "_type": "DynamicBackground",
+              "key": "vault",
+            },
+            "_type": "ShopSection",
+            "landingPriority": 0,
+            "bHidden": false,
+            "sectionId": "Featured",
+            "bShowTimer": true,
+            "sectionDisplayName": "Featured",
+            "bShowIneligibleOffers": true,
+          },
+          {
+            "bSortOffersByOwnership": false,
+            "bShowIneligibleOffersIfGiftable": false,
+            "bEnableToastNotification": true,
+            "background":  aid.JSON{
+              "stage": "default",
+              "_type": "DynamicBackground",
+              "key": "vault",
+            },
+            "_type": "ShopSection",
+            "landingPriority": 1,
+            "bHidden": false,
+            "sectionId": "Daily",
+            "bShowTimer": true,
+            "sectionDisplayName": "Daily",
+            "bShowIneligibleOffers": true,
+          },
+          {
+            "bSortOffersByOwnership": false,
+            "bShowIneligibleOffersIfGiftable": false,
+            "bEnableToastNotification": false,
+            "background":  aid.JSON{
+              "stage": "default",
+              "_type": "DynamicBackground",
+              "key": "vault",
+            },
+            "_type": "ShopSection",
+            "landingPriority": 2,
+            "bHidden": false,
+            "sectionId": "Battlepass",
+            "bShowTimer": false,
+            "sectionDisplayName": "Battle Pass",
+            "bShowIneligibleOffers": false,
+          },
+        },
+			},
+			"lastModified": "0000-00-00T00:00:00.000Z",
+		},
+		"playlistinformation": aid.JSON{
+			"conversion_config": aid.JSON{
+				"enableReferences": true,
+				"containerName": "playlist_info",
+				"contentName": "playlists",
+			},
+			"playlist_info": aid.JSON{
+				"playlists": playlists,
+			},
+			"is_tile_hidden": false,
+			"show_ad_violator": false,
+			"frontend_matchmaking_header_style": "Basic",
+			"frontend_matchmaking_header_text_description": "Watch @ 3PM EST",
+			"frontend_matchmaking_header_text": "ECS Qualifiers",
+			"lastModified": "0000-00-00T00:00:00.000Z",
+		},
+		"lastModified": "0000-00-00T00:00:00.000Z",
 	})
 }

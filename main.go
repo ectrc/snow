@@ -38,6 +38,8 @@ func init() {
 	if aid.Config.Database.DropAllTables {
 		fortnite.NewFortnitePerson("ac", "1")
 	}
+
+	fortnite.GenerateSoloImage()
 }
 
 func main() {
@@ -105,10 +107,11 @@ func main() {
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
 
 	snow := r.Group("/snow")
-	snow.Get("/cosmetics", handlers.GetPrelaodedCosmetics)
+	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
+	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
 
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {
-		aid.Print("Listening on " + ld.Host + ":" + ld.Port)
+		aid.Print("Listening on " + "0.0.0.0:" + ld.Port)
 		return nil
 	})
 	

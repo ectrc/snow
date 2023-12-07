@@ -214,6 +214,10 @@ func (f *FortniteAPI) GetAllCosmetics() ([]FAPI_Cosmetic, error) {
 	return resp.Data, nil
 }
 
+func (f *FortniteAPI) GetPlaylistImage(playlist string) (any, error) {
+	return nil, nil
+}
+
 func PreloadCosmetics(max int) error {
 	aid.Print("Fortnite Assets from", StaticAPI.URL)
 
