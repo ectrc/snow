@@ -248,10 +248,6 @@ func PreloadCosmetics(max int) error {
 		}
 	}
 
-	aid.Print("Preloaded", len(Cosmetics.Items), "cosmetics")
-	aid.Print("Preloaded", len(Cosmetics.Sets), "sets")
-	aid.Print("Preloaded", len(battlePassSkins), "battle pass skins")
-
 	found := make([]string, 0)
 	characters := make([]string, 0)
 	for id, item := range Cosmetics.Items {
@@ -288,7 +284,6 @@ func PreloadCosmetics(max int) error {
 		found = append(found, id)
 	}
 
-	// print the perecentage of backpacks that have a character
 	aid.Print("Preloaded", len(found), "backpacks with characters", "(", float64(len(found))/float64(len(characters))*100, "% )")
 
 	DAv2 := *storage.Asset("assets.json")
@@ -303,8 +298,6 @@ func PreloadCosmetics(max int) error {
 	}
 
 	KnownDisplayAssets = DAv2Data
-
-	aid.Print("Preloaded", len(KnownDisplayAssets), "display assets")
-
+	
 	return nil
 }

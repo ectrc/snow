@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
@@ -22,6 +24,8 @@ func init() {
 		}
 		postgresStorage.MigrateAll()
 		device = postgresStorage
+	default:
+		panic("Invalid database type: " + aid.Config.Database.Type)
 	}
 
 	storage.Repo = storage.NewStorage(device)
@@ -107,7 +111,11 @@ func main() {
 		aid.Print("Listening on " + ld.Host + ":" + ld.Port)
 		return nil
 	})
-
+	
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
-	r.Listen(aid.Config.API.Host + aid.Config.API.Port)
+	
+	err := r.Listen(aid.Config.API.Host + aid.Config.API.Port)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to listen: %v", err))
+	}
 }
