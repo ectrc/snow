@@ -35,6 +35,7 @@ func PostProfileAction(c *fiber.Ctx) error {
 
 	profile := person.GetProfileFromType(c.Query("profileId"))
 	if profile == nil {
+		aid.Print(c.Query("profileId"), "not found")
 		return c.Status(404).JSON(aid.ErrorBadRequest("No Profile Found"))
 	}
 	defer profile.ClearProfileChanges()
