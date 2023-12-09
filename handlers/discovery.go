@@ -76,7 +76,7 @@ func createPlaylist(mnemonic string, image string) aid.JSON {
 func PostDiscovery(c *fiber.Ctx) error {
 	results := []aid.JSON{}
 	for playlist := range fortnite.PlaylistImages {
-		results = append(results, createPlaylist(playlist, "http://" + aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png?cache="+strconv.Itoa(rand.Intn(9999))))
+		results = append(results, createPlaylist(playlist, aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png?cache="+strconv.Itoa(rand.Intn(9999))))
 	}
 	results = append(results, createPlaylist("Playlist_DefaultSolo", "http://bucket.retrac.site/55737fa15677cd57fab9e7f4499d62f89cfde320.png"))
 
@@ -157,7 +157,7 @@ func GetContentPages(c *fiber.Ctx) error {
 	playlists := []aid.JSON{}
 	for playlist := range fortnite.PlaylistImages {
 		playlists = append(playlists, aid.JSON{
-			"image": "http://" + aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png?cache="+strconv.Itoa(rand.Intn(9999)),
+			"image": aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png?cache="+strconv.Itoa(rand.Intn(9999)),
 			"playlist_name": playlist,
 			"hidden": false,
 		})

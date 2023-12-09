@@ -13,6 +13,11 @@ type CS struct {
 		Type string
 		DropAllTables bool
 	}
+	Discord struct {
+		ID string
+		Secret string
+		Token string
+	}
 	Output struct {
 		Level string
 	}
@@ -59,6 +64,21 @@ func LoadConfig(file []byte) {
 
 	if Config.Output.Level != "dev" && Config.Output.Level != "prod" && Config.Output.Level != "time" && Config.Output.Level != "info" {
 		panic("Output Level must be either dev or prod")
+	}
+
+	Config.Discord.ID = cfg.Section("discord").Key("id").String()
+	if Config.Discord.ID == "" {
+		panic("Discord Client ID is empty")
+	}
+
+	Config.Discord.Secret = cfg.Section("discord").Key("secret").String()
+	if Config.Discord.Secret == "" {
+		panic("Discord Client Secret is empty")
+	}
+
+	Config.Discord.Token = cfg.Section("discord").Key("token").String()
+	if Config.Discord.Token == "" {
+		panic("Discord Bot Token is empty")
 	}
 
 	Config.API.Host = cfg.Section("api").Key("host").String()

@@ -8,8 +8,8 @@ import (
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
 	"github.com/ectrc/snow/storage"
-	"github.com/goccy/go-json"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -70,7 +70,7 @@ func main() {
 	account.Get("/public/account/:accountId/externalAuths", handlers.GetPublicAccountExternalAuths)
 	account.Get("/public/account/displayName/:displayName", handlers.GetPublicAccountByDisplayName)
 	account.Get("/oauth/verify", handlers.GetOAuthVerify)
-	account.Post("/oauth/token", handlers.PostOAuthToken)
+	account.Post("/oauth/token", handlers.PostFortniteToken)
 	account.Delete("/oauth/sessions/kill", handlers.DeleteOAuthSessions)
 
 	fortnite := r.Group("/fortnite/api")
@@ -79,7 +79,7 @@ func main() {
 	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
 
 	storefront := fortnite.Group("/storefront/v2")
-	storefront.Use(handlers.OAuthMiddleware)
+	storefront.Use(handlers.FortniteMiddleware)
 	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
 	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
 
@@ -92,7 +92,7 @@ func main() {
 	storage.Get("/system/:fileName", handlers.GetCloudStorageFile)
 
 	user := storage.Group("/user")
-	user.Use(handlers.OAuthMiddleware)
+	user.Use(handlers.FortniteMiddleware)
 	user.Get("/:accountId", handlers.GetUserStorageFiles)
 	user.Get("/:accountId/:fileName", handlers.GetUserStorageFile)
 	user.Put("/:accountId/:fileName", handlers.PutUserStorageFile)
@@ -105,7 +105,7 @@ func main() {
 	game.Post("/profileToken/verify/:accountId", handlers.AnyNoContent)
 
 	profile := game.Group("/profile/:accountId")
-	profile.Use(handlers.OAuthMiddleware)
+	profile.Use(handlers.FortniteMiddleware)
 	profile.Post("/client/:action", handlers.PostProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
@@ -115,14 +115,21 @@ func main() {
 	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
 	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
 
+	discord := snow.Group("/discord")
+	discord.Get("/", handlers.GetDiscordOAuthURL)
+
+	player := snow.Group("/player")
+	player.Use(handlers.FrontendMiddleware)
+	player.Get("/locker", handlers.GetPlayerLocker)
+
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {
-		aid.Print("Listening on " + "0.0.0.0:" + ld.Port)
+		aid.Print("Listening on " + aid.Config.API.Host + ":" + ld.Port)
 		return nil
 	})
 	
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
 	
-	err := r.Listen(aid.Config.API.Host + aid.Config.API.Port)
+	err := r.Listen("0.0.0.0" + aid.Config.API.Port)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to listen: %v", err))
 	}

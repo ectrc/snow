@@ -10,20 +10,20 @@ import (
 )
 
 var (
-	oauthTokenGrantTypes = map[string]func(c *fiber.Ctx, body *OAuthTokenBody) error{
-		"client_credentials": PostOAuthTokenClientCredentials,
-		"password": PostOAuthTokenPassword,
+	oauthTokenGrantTypes = map[string]func(c *fiber.Ctx, body *FortniteTokenBody) error{
+		"client_credentials": PostTokenClientCredentials,
+		"password": PostTokenPassword,
 	}
 )
 
-type OAuthTokenBody struct {
+type FortniteTokenBody struct {
 	GrantType string `form:"grant_type" binding:"required"`
 	Username string `form:"username"`
 	Password string `form:"password"`
 }
 
-func PostOAuthToken(c *fiber.Ctx) error {
-	var body OAuthTokenBody
+func PostFortniteToken(c *fiber.Ctx) error {
+	var body FortniteTokenBody
 
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Request Body"))	
@@ -36,7 +36,7 @@ func PostOAuthToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Grant Type"))
 }
 
-func PostOAuthTokenClientCredentials(c *fiber.Ctx, body *OAuthTokenBody) error {
+func PostTokenClientCredentials(c *fiber.Ctx, body *FortniteTokenBody) error {
 	credentials, err := aid.JWTSign(aid.JSON{
 		"snow_id": 0, // custom
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
@@ -56,7 +56,7 @@ func PostOAuthTokenClientCredentials(c *fiber.Ctx, body *OAuthTokenBody) error {
 	})
 }
 
-func PostOAuthTokenPassword(c *fiber.Ctx, body *OAuthTokenBody) error {
+func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 	if body.Username == "" || body.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Username/Password is empty"))
 	}
@@ -150,7 +150,7 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 	})
 }
 
-func OAuthMiddleware(c *fiber.Ctx) error {
+func FortniteMiddleware(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
@@ -177,7 +177,39 @@ func OAuthMiddleware(c *fiber.Ctx) error {
 	}
 
 	c.Locals("person", person)
+	return c.Next()
+}
 
+func FrontendMiddleware(c *fiber.Ctx) error {
+	auth := c.Get("Authorization")
+	if auth == "" {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
+	}
+
+	claims, err := aid.JWTVerify(auth)
+	if err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	if claims["snow_id"] == nil {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	if claims["frontend"] == nil {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Claims"))
+	}
+
+	snowId, ok := claims["snow_id"].(string)
+	if !ok {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	person := p.Find(snowId)
+	if person == nil {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+	}
+
+	c.Locals("person", person)
 	return c.Next()
 }
 

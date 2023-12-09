@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ectrc/snow/fortnite"
+	"github.com/ectrc/snow/person"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -25,4 +26,9 @@ func GetPlaylistImage(c *fiber.Ctx) error {
 	
 	c.Set("Content-Type", "image/png")
 	return c.Send(image)
+}
+
+func GetPlayerLocker(c *fiber.Ctx) error {
+	person := c.Locals("person").(*person.Person)
+	return c.JSON(person.AthenaProfile.Items)
 }
