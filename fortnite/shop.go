@@ -372,13 +372,18 @@ func GenerateRandomStorefront() {
 		daily.Add(*entry)
 	}
 
-	minimum := 8
+	minimumItems := 8
 	if aid.Config.Fortnite.Season < 14 {
-		minimum = 3
+		minimumItems = 3
+	}
+
+	minimumSets := 4
+	if aid.Config.Fortnite.Season < 11 {
+		minimumSets = 3
 	}
 
 	setsAdded := 0
-	for len(weekly.CatalogEntries) < minimum || setsAdded < 2 {
+	for len(weekly.CatalogEntries) < minimumItems || setsAdded < minimumSets {
 		set := Cosmetics.GetRandomSet()
 		
 		itemsAdded := 0
