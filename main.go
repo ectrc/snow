@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/ectrc/snow/aid"
@@ -11,8 +12,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 )
+
+//go:embed config.ini
+var configFile []byte
+
 func init() {
-	aid.LoadConfig()
+	aid.LoadConfig(configFile)
 	
 	var device storage.Storage
 	switch aid.Config.Database.Type {

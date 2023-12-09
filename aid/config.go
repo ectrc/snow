@@ -1,7 +1,6 @@
 package aid
 
 import (
-	"os"
 	"strconv"
 	"strings"
 
@@ -35,15 +34,10 @@ var (
 	Config *CS
 )
 
-func LoadConfig() {
+func LoadConfig(file []byte) {
 	Config = &CS{}
-
-	configPath := "config.ini"
-	if _, err := os.Stat(configPath); err != nil {
-		panic("config.ini not found! please rename default.config.ini to config.ini and complete")
-	}
-
-	cfg, err := ini.Load("config.ini")
+	
+	cfg, err := ini.Load(file)
 	if err != nil {
 		panic(err)
 	}
