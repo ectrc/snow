@@ -39,7 +39,7 @@ func init() {
 		fortnite.NewFortnitePerson("ac", "1")
 	}
 
-	fortnite.GenerateSoloImage()
+	fortnite.GeneratePlaylistImages()
 }
 
 func main() {
