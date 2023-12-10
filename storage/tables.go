@@ -11,8 +11,8 @@ type DB_Person struct {
 	DisplayName string
 	AccessKey string
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
+	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
-	DiscordID string
 }
 
 func (DB_Person) TableName() string {
@@ -145,7 +145,7 @@ type DB_TemporaryCode struct {
 }
 
 func (DB_TemporaryCode) TableName() string {
-	return "Exchange"
+	return "Exchanges"
 }
 
 type DB_DiscordPerson struct {
@@ -157,5 +157,21 @@ type DB_DiscordPerson struct {
 }
 
 func (DB_DiscordPerson) TableName() string {
-	return "Discord"
+	return "Discords"
+}
+
+type DB_SeasonStat struct {
+	ID string `gorm:"primary_key"`
+	PersonID string
+	Build string
+	Level int
+	XP int
+	Tier int
+	Stars int
+	LevelClainmed int
+	TierClaimed int
+}
+
+func (DB_SeasonStat) TableName() string {
+	return "Stats"
 }

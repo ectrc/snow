@@ -43,8 +43,9 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Loot{}, "Loot")
 	s.Migrate(&DB_VariantChannel{}, "Variants")
 	s.Migrate(&DB_PAttribute{}, "Attributes")
-	s.Migrate(&DB_TemporaryCode{}, "Exchange")
-	s.Migrate(&DB_DiscordPerson{}, "Discord")
+	s.Migrate(&DB_TemporaryCode{}, "Exchanges")
+	s.Migrate(&DB_DiscordPerson{}, "Discords")
+	s.Migrate(&DB_SeasonStat{}, "Stats")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -63,7 +64,7 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Discord").
+		Preload("Discords").
 		Where("id = ?", personId).
 		Find(&dbPerson)
 
@@ -86,7 +87,7 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Discord").
+		Preload("Discords").
 		Where("display_name = ?", displayName).
 		Find(&dbPerson)
 
@@ -121,7 +122,7 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Discord").
+		Preload("Discords").
 		Find(&dbPersons)
 
 	return dbPersons

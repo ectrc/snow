@@ -202,8 +202,10 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		DisplayName: p.DisplayName,
 		Profiles: []storage.DB_Profile{},
 		AccessKey: p.AccessKey,
-		Discord: *p.Discord,
-		DiscordID: p.Discord.ID,
+	}
+
+	if p.Discord != nil {
+		dbPerson.Discord = *p.Discord
 	}
 
 	profilesToConvert := map[string]*Profile{

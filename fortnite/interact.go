@@ -77,6 +77,7 @@ type FAPI_Cosmetic struct {
 	ShowcaseVideo string `json:"showcaseVideo"`
 	DynamicPakID string `json:"dynamicPakId"`
 	DisplayAssetPath string `json:"displayAssetPath"`
+	DisplayAssetPath2 string
 	ItemPreviewHeroPath string `json:"itemPreviewHeroPath"`
 	Backpack string `json:"backpack"`
 	Path string `json:"path"`
@@ -170,7 +171,6 @@ var (
 		Items: make(map[string]FAPI_Cosmetic),
 		Sets: make(map[string]Set),
 	}
-	KnownDisplayAssets = make(map[string]bool)
 )
 
 func NewFortniteAPI() *FortniteAPI {
@@ -276,6 +276,7 @@ func PreloadCosmetics(max int) error {
 		}
 		character.Backpack = id
 		Cosmetics.Items[characterId] = character
+
 		if _, ok := Cosmetics.Sets[character.Set.BackendValue]; !ok {
 			Cosmetics.Sets[character.Set.BackendValue] = Set{
 				Items: make(map[string]FAPI_Cosmetic),
@@ -283,25 +284,320 @@ func PreloadCosmetics(max int) error {
 				BackendName: character.Set.BackendValue,
 			}
 		}
-
 		Cosmetics.Sets[character.Set.BackendValue].Items[characterId] = character
 		found = append(found, id)
 	}
 
-	aid.Print("Preloaded", len(found), "backpacks with characters", "(", float64(len(found))/float64(len(characters))*100, "% )")
+	aid.Print("Preloaded", len(found), "backpacks with characters", "(", float64(len(found))/float64(len(characters))*100, "% ) coverage")
 
-	DAv2 := *storage.Asset("assets.json")
-	if DAv2 == nil {
-		aid.Print("Couldn't find DAv2.json")
+	assets := storage.HttpAsset("QKnwROGzQjYm1W9xu9uL3VrbSA0tnVj6NJJtEChUdAb3DF8uN.json")
+	if assets == nil {
+		panic("Failed to load assets")
 	}
 
-	var DAv2Data map[string]bool
-	err = json.Unmarshal(DAv2, &DAv2Data)
+	var assetData []string
+	err = json.Unmarshal(*assets, &assetData)
 	if err != nil {
 		return err
 	}
 
-	KnownDisplayAssets = DAv2Data
+	for _, asset := range assetData {
+		asset := strings.ReplaceAll(asset, "DAv2_", "")
+		parts := strings.Split(asset, "_")
+
+		switch {
+		case parts[0] == "CID":
+			addCharacterAsset(parts)
+		case parts[0] == "Character":
+			addCharacterAsset(parts)
+		case parts[0] == "BID":
+			addBackpackAsset(parts)
+		case parts[0] == "EID":
+			addEmoteAsset(parts)
+		case parts[0] == "Emote":
+			addEmoteAsset(parts)
+		case parts[0] == "Pickaxe":
+			addPickaxeAsset(parts)
+		case parts[0] == "Wrap":
+			addWrapAsset(parts)
+		case parts[0] == "Glider":
+			addGliderAsset(parts)
+		case parts[0] == "MusicPack":
+			addMusicAsset(parts)
+		}
+	}
+
+	withDisplayAssets := 0
+	for _, item := range Cosmetics.Items {
+		if item.DisplayAssetPath2 == "" {
+			continue
+		}
+
+		withDisplayAssets++
+	}
+	aid.Print("Preloaded", len(Cosmetics.Items), "cosmetics with", withDisplayAssets, "display assets", "(", float64(withDisplayAssets)/float64(len(assetData))*100, "% ) coverage" )
 	
 	return nil
+}
+
+func addCharacterAsset(parts []string) {
+	character := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "outfit" {
+			continue
+		}
+
+		if parts[0] == "CID" {
+			cid := ""
+			if parts[1] != "A" {
+				cid = parts[0] + "_" + parts[1]
+			}
+
+			if parts[1] == "A" {
+				cid = parts[0] + "_A_" + parts[2]
+			}
+
+			if strings.Contains(item.ID, cid) {
+				character = item
+				break
+			}
+		}
+
+		if parts[0] == "Character" {
+			if strings.Contains(item.ID, parts[1]) {
+				character = item
+				break
+			}
+		}
+	}
+
+	if character.ID == "" {
+		return
+	}
+
+	character.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[character.ID] = character
+
+	if _, ok := Cosmetics.Sets[character.Set.BackendValue]; !ok {
+		Cosmetics.Sets[character.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: character.Set.Value,
+			BackendName: character.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[character.Set.BackendValue].Items[character.ID] = character
+}
+
+func addBackpackAsset(parts []string) {
+	backpack := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "backpack" {
+			continue
+		}
+
+		bid := ""
+		if parts[1] != "A" {
+			bid = parts[0] + "_" + parts[1]
+		}
+
+		if parts[1] == "A" {
+			bid = parts[0] + "_A_" + parts[2]
+		}
+
+		if strings.Contains(item.ID, bid) {
+			backpack = item
+			break
+		}
+	}
+
+	if backpack.ID == "" {
+		return
+	}
+
+	backpack.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[backpack.ID] = backpack
+
+	if _, ok := Cosmetics.Sets[backpack.Set.BackendValue]; !ok {
+		Cosmetics.Sets[backpack.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: backpack.Set.Value,
+			BackendName: backpack.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[backpack.Set.BackendValue].Items[backpack.ID] = backpack
+}
+
+func addEmoteAsset(parts []string) {
+	emote := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "emote" {
+			continue
+		}
+
+		if strings.Contains(item.ID, parts[1]) {
+			emote = item
+			break
+		}
+	}
+
+	if emote.ID == "" {
+		return
+	}
+
+	emote.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[emote.ID] = emote
+
+	if _, ok := Cosmetics.Sets[emote.Set.BackendValue]; !ok {
+		Cosmetics.Sets[emote.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: emote.Set.Value,
+			BackendName: emote.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[emote.Set.BackendValue].Items[emote.ID] = emote
+}
+
+func addPickaxeAsset(parts []string) {
+	pickaxe := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "pickaxe" {
+			continue
+		}
+
+		pickaxeId := ""
+		if parts[1] != "ID" {
+			pickaxeId = parts[0] + "_" + parts[1]
+		}
+
+		if parts[1] == "ID" {
+			pickaxeId = parts[0] + "_ID_" + parts[2]
+		}
+
+		if strings.Contains(item.ID, pickaxeId) {
+			pickaxe = item
+			break
+		}
+	}
+
+	if pickaxe.ID == "" {
+		return
+	}
+
+	pickaxe.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[pickaxe.ID] = pickaxe
+
+	if _, ok := Cosmetics.Sets[pickaxe.Set.BackendValue]; !ok {
+		Cosmetics.Sets[pickaxe.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: pickaxe.Set.Value,
+			BackendName: pickaxe.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[pickaxe.Set.BackendValue].Items[pickaxe.ID] = pickaxe
+}
+
+func addGliderAsset(parts []string) {
+	glider := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "glider" {
+			continue
+		}
+
+		gliderId := ""
+		if parts[1] != "ID" {
+			gliderId = parts[0] + "_" + parts[1]
+		}
+
+		if parts[1] == "ID" {
+			gliderId = parts[0] + "_ID_" + parts[2]
+		}
+
+		if strings.Contains(item.ID, gliderId) {
+			glider = item
+			break
+		}
+	}
+
+	if glider.ID == "" {
+		return
+	}
+
+	glider.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[glider.ID] = glider
+
+	if _, ok := Cosmetics.Sets[glider.Set.BackendValue]; !ok {
+		Cosmetics.Sets[glider.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: glider.Set.Value,
+			BackendName: glider.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[glider.Set.BackendValue].Items[glider.ID] = glider
+}
+
+func addWrapAsset(parts []string) {
+	wrap := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "wrap" {
+			continue
+		}
+
+		if strings.Contains(item.ID, parts[1]) {
+			wrap = item
+			break
+		}
+	}
+
+	if wrap.ID == "" {
+		return
+	}
+
+	wrap.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[wrap.ID] = wrap
+
+	if _, ok := Cosmetics.Sets[wrap.Set.BackendValue]; !ok {
+		Cosmetics.Sets[wrap.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: wrap.Set.Value,
+			BackendName: wrap.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[wrap.Set.BackendValue].Items[wrap.ID] = wrap
+}
+
+func addMusicAsset(parts []string) {
+	music := FAPI_Cosmetic{}
+
+	for _, item := range Cosmetics.Items {
+		if item.Type.Value != "music" {
+			continue
+		}
+
+		if strings.Contains(item.ID, parts[1]) {
+			music = item
+			break
+		}
+	}
+
+	if music.ID == "" {
+		return
+	}
+
+	music.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
+	Cosmetics.Items[music.ID] = music
+
+	if _, ok := Cosmetics.Sets[music.Set.BackendValue]; !ok {
+		Cosmetics.Sets[music.Set.BackendValue] = Set{
+			Items: make(map[string]FAPI_Cosmetic),
+			Name: music.Set.Value,
+			BackendName: music.Set.BackendValue,
+		}
+	}
+	Cosmetics.Sets[music.Set.BackendValue].Items[music.ID] = music
 }

@@ -181,15 +181,8 @@ func (e *Entry) SetDisplayAsset(asset string) *Entry {
 	return e
 }
 
-func (e *Entry) IsNewDisplayAssetValid(asset string) bool {
-	newDisplayAsset := "DAv2_" + strings.ReplaceAll(asset, "Athena_Commando_", "")
-	_, exists := KnownDisplayAssets[newDisplayAsset]
-	return exists
-}
-
 func (e *Entry) SetNewDisplayAsset(asset string) *Entry {
-	newDisplayAsset := "DAv2_" + strings.ReplaceAll(asset, "Athena_Commando_", "")
-	e.NewDisplayAssetPath = "/Game/Catalog/NewDisplayAssets/" + newDisplayAsset + "." + newDisplayAsset
+	e.NewDisplayAssetPath = "/Game/Catalog/NewDisplayAssets/" + asset + "." + asset
 	return e
 }
 
@@ -322,12 +315,12 @@ func GenerateRandomStorefront() {
 		entry := NewCatalogEntry("athena")
 		entry.SetSection("Daily")
 
-		if !entry.IsNewDisplayAssetValid(item.ID) {
+		if item.DisplayAssetPath2 == "" {
 			i--
 			continue
 		}
+		entry.SetNewDisplayAsset(item.DisplayAssetPath2)
 
-		entry.SetNewDisplayAsset(item.ID)
 		if item.DisplayAssetPath != "" {
 			entry.SetDisplayAssetPath(item.DisplayAssetPath)
 		}
@@ -352,12 +345,12 @@ func GenerateRandomStorefront() {
 		entry := NewCatalogEntry("athena")
 		entry.SetSection("Daily")
 
-		if !entry.IsNewDisplayAssetValid(item.ID) {
+		if item.DisplayAssetPath2 == "" {
 			i--
 			continue
 		}
-
-		entry.SetNewDisplayAsset(item.ID)
+		entry.SetNewDisplayAsset(item.DisplayAssetPath2)
+		
 		if item.DisplayAssetPath != "" {
 			entry.SetDisplayAssetPath(item.DisplayAssetPath)
 		}
@@ -393,9 +386,10 @@ func GenerateRandomStorefront() {
 			entry.SetSection("Featured")
 			entry.SetPanel(set.BackendName)
 
-			if !entry.IsNewDisplayAssetValid(item.ID) {
+			if item.DisplayAssetPath2 == "" {
 				continue
 			}
+			entry.SetNewDisplayAsset(item.DisplayAssetPath2)
 
 			if item.Type.BackendValue == "AthenaCharacter" {
 				entry.SetTileSize("Normal")
@@ -410,7 +404,6 @@ func GenerateRandomStorefront() {
 				itemsAdded += 1
 			}
 
-			entry.SetNewDisplayAsset(item.ID)
 			if item.DisplayAssetPath != "" {
 				entry.SetDisplayAssetPath(item.DisplayAssetPath)
 			}
