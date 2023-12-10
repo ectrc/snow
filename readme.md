@@ -31,7 +31,11 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## How do I use this?
 
-It is _technically_ possible to clone the repository and host the backend. However, this is in a very early stage and does not have a lot of features. _For example, you cannot create an account externally._ **I would recommend waiting until the backend is more stable and has more features before using it.**
+- **[Discord OAuth Setup Guide](./wiki/oauth.md)** How to setup Discord OAuth for your backend. This enabled the ability to login to the web app with Discord.
+
+It is becoming more and more possible to quickly setup with backend with each update. Currently, this backend is in a very early stage and it is not optimal to setup however there are guides on the discord server by community members which take you through a step by step process.
+
+**I would recommend waiting until the backend is more stable and has more features before using it.**
 
 ## Contributing
 
