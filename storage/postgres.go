@@ -12,7 +12,7 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage() *PostgresStorage {
-	l := logger.Default.LogMode(logger.Silent)
+	l := logger.Default
 	if aid.Config.Output.Level == "time" {
 		l = logger.Default.LogMode(logger.Info)
 	}
@@ -43,6 +43,8 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Loot{}, "Loot")
 	s.Migrate(&DB_VariantChannel{}, "Variants")
 	s.Migrate(&DB_PAttribute{}, "Attributes")
+	s.Migrate(&DB_TemporaryCode{}, "Exchange")
+	s.Migrate(&DB_DiscordPerson{}, "Discord")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -52,6 +54,7 @@ func (s *PostgresStorage) DropTables() {
 func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 	var dbPerson DB_Person
 	s.Postgres.
+		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
 		Preload("Profiles.Items.Variants").
@@ -60,6 +63,7 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
+		Preload("Discord").
 		Where("id = ?", personId).
 		Find(&dbPerson)
 
@@ -73,6 +77,7 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	var dbPerson DB_Person
 	s.Postgres.
+		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
 		Preload("Profiles.Items.Variants").
@@ -81,6 +86,7 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
+		Preload("Discord").
 		Where("display_name = ?", displayName).
 		Find(&dbPerson)
 
@@ -91,10 +97,22 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	return &dbPerson
 }
 
+func (s *PostgresStorage) GetPersonByDiscordID(discorId string) *DB_Person {
+	var discordEntry DB_DiscordPerson
+	s.Postgres.Model(&DB_DiscordPerson{}).Where("id = ?", discorId).Find(&discordEntry)
+
+	if discordEntry.ID == "" {
+		return nil
+	}
+
+	return s.GetPerson(discordEntry.PersonID)
+}
+
 func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 	var dbPersons []*DB_Person
 
 	s.Postgres.
+		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
 		Preload("Profiles.Items.Variants").
@@ -103,6 +121,7 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
+		Preload("Discord").
 		Find(&dbPersons)
 
 	return dbPersons
@@ -178,4 +197,20 @@ func (s *PostgresStorage) SaveLoadout(loadout *DB_Loadout) {
 
 func (s *PostgresStorage) DeleteLoadout(loadoutId string) {
 	s.Postgres.Delete(&DB_Loadout{}, "id = ?", loadoutId)
+}
+
+func (s *PostgresStorage) SaveTemporaryCode(code *DB_TemporaryCode) {
+	s.Postgres.Save(code)
+}
+
+func (s *PostgresStorage) DeleteTemporaryCode(codeId string) {
+	s.Postgres.Delete(&DB_TemporaryCode{}, "id = ?", codeId)
+}
+
+func (s *PostgresStorage) SaveDiscordPerson(discordPerson *DB_DiscordPerson) {
+	s.Postgres.Save(discordPerson)
+}
+
+func (s *PostgresStorage) DeleteDiscordPerson(discordPersonId string) {
+	s.Postgres.Delete(&DB_DiscordPerson{}, "id = ?", discordPersonId)
 }

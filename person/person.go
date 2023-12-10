@@ -15,6 +15,7 @@ type Person struct {
 	Profile0Profile *Profile
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
+	Discord *storage.DB_DiscordPerson
 }
 
 type Option struct {
@@ -59,14 +60,32 @@ func FindByDisplay(displayName string) *Person {
 		cache = NewPersonsCacheMutex()
 	}
 
+	cachedPerson := cache.GetPersonByDisplay(displayName)
+	if cachedPerson != nil {
+		return cachedPerson
+	}
+
 	person := storage.Repo.GetPersonByDisplayFromDB(displayName)
 	if person == nil {
 		return nil
 	}
 
-	cachedPerson := cache.GetPerson(person.ID)
+	return findHelper(person)
+}
+
+func FindByDiscord(discordId string) *Person {
+	if cache == nil {
+		cache = NewPersonsCacheMutex()
+	}
+
+	cachedPerson := cache.GetPersonByDiscordID(discordId)
 	if cachedPerson != nil {
 		return cachedPerson
+	}
+
+	person := storage.Repo.GetPersonByDiscordIDFromDB(discordId)
+	if person == nil {
+		return nil
 	}
 
 	return findHelper(person)
@@ -122,6 +141,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		Profile0Profile: profile0,
 		CollectionsProfile: collectionsProfile,
 		CreativeProfile: creativeProfile,
+		Discord: &databasePerson.Discord,
 	}
 
 	cache.SavePerson(person)
@@ -182,6 +202,8 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		DisplayName: p.DisplayName,
 		Profiles: []storage.DB_Profile{},
 		AccessKey: p.AccessKey,
+		Discord: *p.Discord,
+		DiscordID: p.Discord.ID,
 	}
 
 	profilesToConvert := map[string]*Profile{
@@ -260,5 +282,6 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		Profile0Profile: *p.Profile0Profile.Snapshot(),
 		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
+		Discord: *p.Discord,
 	}
 } 

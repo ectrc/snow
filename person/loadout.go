@@ -149,7 +149,6 @@ func (l *Loadout) GetAttribute(attribute string) interface{} {
 		}
 	}
 
-
 	switch attribute {
 	case "locker_name":
 		return l.LockerName

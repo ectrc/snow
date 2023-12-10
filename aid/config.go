@@ -24,6 +24,7 @@ type CS struct {
 	API struct {
 		Host string
 		Port string
+		FrontendPort string
 	}
 	JWT struct {
 		Secret string
@@ -89,6 +90,11 @@ func LoadConfig(file []byte) {
 	Config.API.Port = cfg.Section("api").Key("port").String()
 	if Config.API.Port == "" {
 		panic("API Port is empty")
+	}
+
+	Config.API.FrontendPort = cfg.Section("api").Key("frontend_port").String()
+	if Config.API.FrontendPort == "" {
+		Config.API.FrontendPort = Config.API.Port
 	}
 
 	Config.JWT.Secret = cfg.Section("jwt").Key("secret").String()

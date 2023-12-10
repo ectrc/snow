@@ -11,6 +11,8 @@ type DB_Person struct {
 	DisplayName string
 	AccessKey string
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
+	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
+	DiscordID string
 }
 
 func (DB_Person) TableName() string {
@@ -26,7 +28,7 @@ type DB_Profile struct {
 	Attributes []DB_PAttribute `gorm:"foreignkey:ProfileID"`
 	Loadouts []DB_Loadout `gorm:"foreignkey:ProfileID"`
 	Type string
-	Revision	 int
+	Revision int
 }
 
 func (DB_Profile) TableName() string {
@@ -133,4 +135,27 @@ type DB_Loot struct {
 
 func (DB_Loot) TableName() string {
 	return "Loot"
+}
+
+type DB_TemporaryCode struct {
+	ID string `gorm:"primary_key"`
+	Code string
+	ExpiresAt int64
+	PersonID string
+}
+
+func (DB_TemporaryCode) TableName() string {
+	return "Exchange"
+}
+
+type DB_DiscordPerson struct {
+	ID string `gorm:"primary_key"`
+	PersonID string
+	Username string
+	AccessToken string
+	RefreshToken string
+}
+
+func (DB_DiscordPerson) TableName() string {
+	return "Discord"
 }

@@ -1,5 +1,7 @@
 package person
 
+import "github.com/ectrc/snow/storage"
+
 type PersonSnapshot struct {
 	ID                  string
 	DisplayName         string
@@ -9,6 +11,7 @@ type PersonSnapshot struct {
 	Profile0Profile     ProfileSnapshot
 	CollectionsProfile  ProfileSnapshot
 	CreativeProfile     ProfileSnapshot
+	Discord             storage.DB_DiscordPerson
 }
 
 type ProfileSnapshot struct {

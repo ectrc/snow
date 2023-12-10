@@ -65,6 +65,20 @@ func (m *PersonsCache) GetPersonByDisplay(displayName string) *Person {
 	return person
 }
 
+func (m *PersonsCache) GetPersonByDiscordID(discordId string) *Person {
+	var person *Person
+	m.RangeEntry(func(key string, value *CacheEntry) bool {
+		if value.Entry.Discord.ID == discordId {
+			person = value.Entry
+			return false
+		}
+
+		return true
+	})
+
+	return person
+}
+
 func (m *PersonsCache) SavePerson(p *Person) {
 	m.Store(p.ID, &CacheEntry{
 		Entry: p,

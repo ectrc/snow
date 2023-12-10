@@ -117,9 +117,10 @@ func main() {
 
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)
-
+	
 	player := snow.Group("/player")
 	player.Use(handlers.FrontendMiddleware)
+	player.Post("/", handlers.AnyNoContent)
 	player.Get("/locker", handlers.GetPlayerLocker)
 
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {

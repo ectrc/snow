@@ -9,6 +9,7 @@ type Storage interface {
 
 	GetPerson(personId string) *DB_Person
 	GetPersonByDisplay(displayName string) *DB_Person
+	GetPersonByDiscordID(discordId string) *DB_Person
 	GetAllPersons() []*DB_Person
 	SavePerson(person *DB_Person)
 
@@ -35,6 +36,12 @@ type Storage interface {
 
 	SaveLoadout(loadout *DB_Loadout)
 	DeleteLoadout(loadoutId string)
+
+	SaveTemporaryCode(code *DB_TemporaryCode)
+	DeleteTemporaryCode(codeId string)
+
+	SaveDiscordPerson(person *DB_DiscordPerson)
+	DeleteDiscordPerson(personId string)
 }
 
 type Repository struct {
@@ -58,6 +65,15 @@ func (r *Repository) GetPersonFromDB(personId string) *DB_Person {
 
 func (r *Repository) GetPersonByDisplayFromDB(displayName string) *DB_Person {
 	storagePerson := r.Storage.GetPersonByDisplay(displayName)
+	if storagePerson != nil {
+		return storagePerson
+	}
+
+	return nil
+}
+
+func (r *Repository) GetPersonByDiscordIDFromDB(discordId string) *DB_Person {
+	storagePerson := r.Storage.GetPersonByDiscordID(discordId)
 	if storagePerson != nil {
 		return storagePerson
 	}
@@ -135,4 +151,20 @@ func (r *Repository) SaveLoadout(loadout *DB_Loadout) {
 
 func (r *Repository) DeleteLoadout(loadoutId string) {
 	r.Storage.DeleteLoadout(loadoutId)
+}
+
+func (r *Repository) SaveTemporaryCode(code *DB_TemporaryCode) {
+	r.Storage.SaveTemporaryCode(code)
+}
+
+func (r *Repository) DeleteTemporaryCode(codeId string) {
+	r.Storage.DeleteTemporaryCode(codeId)
+}
+
+func (r *Repository) SaveDiscordPerson(person *DB_DiscordPerson) {
+	r.Storage.SaveDiscordPerson(person)
+}
+
+func (r *Repository) DeleteDiscordPerson(personId string) {
+	r.Storage.DeleteDiscordPerson(personId)
 }
