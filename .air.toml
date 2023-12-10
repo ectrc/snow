@@ -1,11 +1,11 @@
 root = "."
 testdata_dir = "testdata"
-tmp_dir = "tmp"
+tmp_dir = "."
 
 [build]
   args_bin = []
-  bin = "tmp\\main.exe"
-  cmd = "clear && go build -o ./tmp/main.exe ."
+  bin = "main.exe"
+  cmd = "clear && go build -o ./main.exe ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -40,5 +40,5 @@ tmp_dir = "tmp"
   clean_on_exit = false
 
 [screen]
-  clear_on_rebuild = false
+  clear_on_rebuild = true
   keep_scroll = true

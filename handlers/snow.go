@@ -3,8 +3,9 @@ package handlers
 import (
 	"strings"
 
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
-	"github.com/ectrc/snow/person"
+	p "github.com/ectrc/snow/person"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -29,6 +30,23 @@ func GetPlaylistImage(c *fiber.Ctx) error {
 }
 
 func GetPlayerLocker(c *fiber.Ctx) error {
-	person := c.Locals("person").(*person.Person)
-	return c.JSON(person.AthenaProfile.Items)
+	person := c.Locals("person").(*p.Person)
+
+	items := make([]p.Item, 0)
+	person.AthenaProfile.Items.RangeItems(func(key string, value *p.Item) bool {
+		items = append(items, *value)
+		return true
+	})
+
+	return c.JSON(items)
+}
+
+func GetPlayer(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+
+	return c.JSON(aid.JSON{
+		"id": person.ID,
+		"displayName": person.DisplayName,
+		"discord": person.Discord,
+	})
 }
