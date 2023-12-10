@@ -23,11 +23,12 @@ Performance first, universal Fortnite private server backend written in Go.
 - **_Chapter 1 Season 2_** `Fortnite+Release-2.5-CL-3889387-Windows` I started with this build of the game as it requires more work to get working, this means snow can support _most_ versions of the game.
 - **_Chapter 1 Season 5_** `Fortnite+Release-5.41-CL-4363240-Windows` This build was used to make sure challenges, variants and lobby backgrounds work.
 - **_Chapter 1 Season 8_** `Fortnite+Release-8.51-CL-6165369-Windows` Fixed the invisible player bug caused by invalid account responses. Also fixed the issue with the item shop spamming the api.
+- **_Chapter 2 Season 2_** `Fortnite+Release-12.41-CL-12905909-Windows` Item Shop length is correct, also Creative profile stopping login has also been fixed.
 - **_Chapter 3 Season 1_** `Fortnite+Release-19.10-CL-Unknown-Windows` This is a very new build of fortnite that introfuces alot of different methods e.g. locker data is now stored as an item. Every MCP action is now fully working and tested. You need to start using easy anticheat otherwise this will not work.
 
 ### Broken
 
-- **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` Does not accept the JWT Token for user authentication. I have some ideas why however not planned for a fix.
+- **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` Does not accept the Access Token for user authentication. I have some ideas why however not planned for a fix.
 
 ## How do I use this?
 
