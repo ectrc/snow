@@ -41,7 +41,11 @@ func init() {
 	fortnite.GenerateRandomStorefront()
 	
 	if aid.Config.Database.DropAllTables {
-		fortnite.NewFortnitePerson("ac", "1")
+		username := aid.RandomString(6)
+		password := aid.RandomString(10)
+		fortnite.NewFortnitePerson(username, password)
+
+		aid.Print("Admin Credentials: username", username, "password", password)
 	}
 
 	fortnite.GeneratePlaylistImages()

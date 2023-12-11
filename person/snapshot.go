@@ -12,6 +12,7 @@ type PersonSnapshot struct {
 	CollectionsProfile  ProfileSnapshot
 	CreativeProfile     ProfileSnapshot
 	Discord             storage.DB_DiscordPerson
+	DiscordID           string
 }
 
 type ProfileSnapshot struct {
