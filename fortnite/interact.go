@@ -300,10 +300,16 @@ func PreloadCosmetics(max int) error {
 	if err != nil {
 		return err
 	}
+	withDisplayAssets := 0
 
 	for _, asset := range assetData {
 		asset := strings.ReplaceAll(asset, "DAv2_", "")
 		parts := strings.Split(asset, "_")
+
+		if strings.Contains(asset, "Bundle") {
+			withDisplayAssets++
+			continue
+		}
 
 		switch {
 		case parts[0] == "CID":
@@ -327,7 +333,6 @@ func PreloadCosmetics(max int) error {
 		}
 	}
 
-	withDisplayAssets := 0
 	for _, item := range Cosmetics.Items {
 		if item.DisplayAssetPath2 == "" {
 			continue

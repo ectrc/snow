@@ -15,7 +15,7 @@ type Person struct {
 	Profile0Profile *Profile
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
-	DiscordID string
+	// DiscordID string
 	Discord *storage.DB_DiscordPerson
 }
 
@@ -143,7 +143,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		CollectionsProfile: collectionsProfile,
 		CreativeProfile: creativeProfile,
 		Discord: &databasePerson.Discord,
-		DiscordID: databasePerson.DiscordID,
+		// DiscordID: databasePerson.DiscordID,
 	}
 
 	cache.SavePerson(person)
@@ -204,7 +204,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		AccessKey: p.AccessKey,
-		DiscordID: p.DiscordID,
+		// DiscordID: p.DiscordID,
 	}
 
 	if p.Discord != nil {
@@ -288,6 +288,6 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
 		Discord: *p.Discord,
-		DiscordID: p.DiscordID,
+		DiscordID: p.Discord.ID,
 	}
 } 

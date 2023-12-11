@@ -8,6 +8,7 @@ import (
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
 	"github.com/ectrc/snow/storage"
+	"github.com/google/uuid"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -41,11 +42,17 @@ func init() {
 	fortnite.GenerateRandomStorefront()
 	
 	if aid.Config.Database.DropAllTables {
-		username := aid.RandomString(6)
-		password := aid.RandomString(10)
-		fortnite.NewFortnitePerson(username, password)
+		person := fortnite.NewFortnitePerson("ac", "1")
 
-		aid.Print("Admin Credentials: username", username, "password", password)
+		discord := &storage.DB_DiscordPerson{
+			ID: uuid.New().String(),
+			PersonID: person.ID,
+		}
+		storage.Repo.SaveDiscordPerson(discord)
+
+		// person.DiscordID = discord.ID
+		person.Discord = discord
+		person.Save()
 	}
 
 	fortnite.GeneratePlaylistImages()

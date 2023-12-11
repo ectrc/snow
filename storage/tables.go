@@ -12,7 +12,7 @@ type DB_Person struct {
 	AccessKey string
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
-	DiscordID string 
+	// DiscordID string 
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
 }
 

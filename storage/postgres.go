@@ -64,7 +64,7 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Discords").
+		Preload("Discord").
 		Where("id = ?", personId).
 		Find(&dbPerson)
 
@@ -87,7 +87,7 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Discords").
+		Preload("Discord").
 		Where("display_name = ?", displayName).
 		Find(&dbPerson)
 
@@ -98,9 +98,9 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	return &dbPerson
 }
 
-func (s *PostgresStorage) GetPersonByDiscordID(discorId string) *DB_Person {
+func (s *PostgresStorage) GetPersonByDiscordID(discordId string) *DB_Person {
 	var discordEntry DB_DiscordPerson
-	s.Postgres.Model(&DB_DiscordPerson{}).Where("id = ?", discorId).Find(&discordEntry)
+	s.Postgres.Model(&DB_DiscordPerson{}).Where("id = ?", discordId).Find(&discordEntry)
 
 	if discordEntry.ID == "" {
 		return nil
@@ -122,7 +122,7 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Preload("Profiles.Items").
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Quests").
-		Preload("Discords").
+		Preload("Discord").
 		Find(&dbPersons)
 
 	return dbPersons
