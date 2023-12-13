@@ -7,11 +7,16 @@ var (
 type Storage interface {
 	Migrate(table interface{}, tableName string)
 
+	GetAllPersons() []*DB_Person
+	GetPersonsCount() int
+
 	GetPerson(personId string) *DB_Person
 	GetPersonByDisplay(displayName string) *DB_Person
 	GetPersonByDiscordID(discordId string) *DB_Person
-	GetAllPersons() []*DB_Person
 	SavePerson(person *DB_Person)
+	DeletePerson(personId string)
+
+	TotalVBucks() int
 
 	SaveProfile(profile *DB_Profile)
 	DeleteProfile(profileId string)
@@ -85,8 +90,20 @@ func (r *Repository) GetAllPersons() []*DB_Person {
 	return r.Storage.GetAllPersons()
 }
 
+func (r *Repository) GetPersonsCount() int {
+	return r.Storage.GetPersonsCount()
+}
+
+func (r *Repository) TotalVBucks() int {
+	return r.Storage.TotalVBucks()
+}
+
 func (r *Repository) SavePerson(person *DB_Person) {
 	r.Storage.SavePerson(person)
+}
+
+func (r *Repository) DeletePerson(personId string) {
+	r.Storage.DeletePerson(personId)
 }
 
 func (r *Repository) SaveProfile(profile *DB_Profile) {

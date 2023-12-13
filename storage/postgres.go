@@ -128,12 +128,35 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 	return dbPersons
 }
 
+func (s *PostgresStorage) GetPersonsCount() int {
+	var count int64
+	s.Postgres.Model(&DB_Person{}).Count(&count)
+	return int(count)
+}
+
+func (s *PostgresStorage) TotalVBucks() int {
+	var total int64
+	s.Postgres.Model(&DB_Item{}).Select("sum(quantity)").Where("template_id = ?", "Currency:MtxPurchased").Find(&total)
+	return int(total)
+}
+
 func (s *PostgresStorage) SavePerson(person *DB_Person) {
 	s.Postgres.Save(person)
 }
 
 func (s *PostgresStorage) DeletePerson(personId string) {
-	s.Postgres.Delete(&DB_Person{}, "id = ?", personId)
+	s.Postgres.
+		Model(&DB_Person{}).
+		Preload("Profiles").
+		Preload("Profiles.Loadouts").
+		Preload("Profiles.Items.Variants").
+		Preload("Profiles.Gifts.Loot").
+		Preload("Profiles.Attributes").
+		Preload("Profiles.Items").
+		Preload("Profiles.Gifts").
+		Preload("Profiles.Quests").
+		Preload("Discord").
+		Delete(&DB_Person{}, "id = ?", personId)
 }
 
 func (s *PostgresStorage) SaveProfile(profile *DB_Profile) {

@@ -22,7 +22,7 @@ var (
 	}
 )
 
-func NewFortnitePerson(displayName string, key string) *p.Person {
+func NewFortnitePerson(displayName string, key string, everything bool) *p.Person {
 	person := p.NewPerson()
 	person.DisplayName = displayName
 	person.AccessKey = key
@@ -115,7 +115,7 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("last_applied_loadout", loadout.ID)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("active_loadout_index", 0)).Save()
 
-	if aid.Config.Fortnite.Everything {
+	if everything {
 		for _, item := range Cosmetics.Items {
 			if strings.Contains(strings.ToLower(item.ID), "random") {
 				continue
@@ -130,4 +130,16 @@ func NewFortnitePerson(displayName string, key string) *p.Person {
 	person.Save()
 
 	return person
+}
+
+func GiveEverything(person *p.Person) {
+	for _, item := range Cosmetics.Items {
+		if strings.Contains(strings.ToLower(item.ID), "random") {
+			continue
+		}
+
+		item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
+		item.HasSeen = true
+		person.AthenaProfile.Items.AddItem(item).Save()
+	}
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/discord"
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
 	"github.com/ectrc/snow/storage"
-	"github.com/google/uuid"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -38,23 +38,9 @@ func init() {
 }
 
 func init() {
+	discord.IntialiseClient()
 	fortnite.PreloadCosmetics(aid.Config.Fortnite.Season)
 	fortnite.GenerateRandomStorefront()
-	
-	if aid.Config.Database.DropAllTables {
-		person := fortnite.NewFortnitePerson("ac", "1")
-
-		discord := &storage.DB_DiscordPerson{
-			ID: uuid.New().String(),
-			PersonID: person.ID,
-		}
-		storage.Repo.SaveDiscordPerson(discord)
-
-		// person.DiscordID = discord.ID
-		person.Discord = discord
-		person.Save()
-	}
-
 	fortnite.GeneratePlaylistImages()
 }
 

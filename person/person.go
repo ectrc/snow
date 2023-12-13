@@ -291,3 +291,7 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		DiscordID: p.Discord.ID,
 	}
 } 
+
+func (p *Person) Delete() {
+	storage.Repo.DeletePerson(p.ID)
+}

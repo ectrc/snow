@@ -17,6 +17,7 @@ type CS struct {
 		ID string
 		Secret string
 		Token string
+		Guild string
 	}
 	Output struct {
 		Level string
@@ -80,6 +81,11 @@ func LoadConfig(file []byte) {
 	Config.Discord.Token = cfg.Section("discord").Key("token").String()
 	if Config.Discord.Token == "" {
 		panic("Discord Bot Token is empty")
+	}
+
+	Config.Discord.Guild = cfg.Section("discord").Key("guild").String()
+	if Config.Discord.Guild == "" {
+		panic("Discord Guild ID is empty")
 	}
 
 	Config.API.Host = cfg.Section("api").Key("host").String()
