@@ -48,7 +48,7 @@ func IntialiseClient() {
 
 	addCommands()
 
-	if len(StaticClient.Commands) < len(StaticClient.GetRegisteredCommands()) {
+	if len(StaticClient.Commands) != len(StaticClient.GetRegisteredCommands()) {
 		StaticClient.UnregisterCommands()
 		StaticClient.RegisterCommands()
 	}
