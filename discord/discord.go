@@ -48,8 +48,9 @@ func IntialiseClient() {
 
 	addCommands()
 
-	for _, command := range StaticClient.Commands {
-		StaticClient.RegisterCommand(command)
+	if len(StaticClient.Commands) < len(StaticClient.GetRegisteredCommands()) {
+		StaticClient.UnregisterCommands()
+		StaticClient.RegisterCommands()
 	}
 
 	err := StaticClient.Client.Open()
@@ -58,17 +59,66 @@ func IntialiseClient() {
 	}
 }
 
-func (c *DiscordClient) RegisterCommand(command *DiscordCommand) {
-	if command.AdminOnly {
-		adminDefaultPermission := int64(discordgo.PermissionAdministrator)
-		command.Command.DefaultMemberPermissions = &adminDefaultPermission
-	}
-
-	_, err := c.Client.ApplicationCommandCreate(aid.Config.Discord.ID, aid.Config.Discord.Guild, command.Command)
-	if err != nil {
-		aid.Print("Failed to register command: " + command.Command.Name)
+func (c *DiscordClient) UnregisterCommands() {
+	commands := c.GetRegisteredCommands()
+	if commands == nil {
 		return
 	}
+
+	for _, command := range commands {
+		err := c.Client.ApplicationCommandDelete(aid.Config.Discord.ID, aid.Config.Discord.Guild, command.ID)
+		if err != nil {
+			aid.Print("Failed to delete command: " + command.Name)
+		}
+	}
+
+	commands = c.GetGlobalRegisteredCommands()
+
+	for _, command := range commands {
+		err := c.Client.ApplicationCommandDelete(aid.Config.Discord.ID, "", command.ID)
+		if err != nil {
+			aid.Print("Failed to delete command: " + command.Name)
+		}
+	}
+}
+
+func (c *DiscordClient) RegisterCommands() {
+	adminPermission := int64(discordgo.PermissionAdministrator)
+
+	update := []*discordgo.ApplicationCommand{}
+	for _, command := range c.Commands {
+		if command.AdminOnly {
+			command.Command.DefaultMemberPermissions = &adminPermission
+		}
+
+		update = append(update, command.Command)
+	}
+
+	_, err := c.Client.ApplicationCommandBulkOverwrite(aid.Config.Discord.ID, aid.Config.Discord.Guild, update)
+	if err != nil {
+		aid.Print("Failed to register commands", err)
+		return
+	}
+}
+
+func (c *DiscordClient) GetRegisteredCommands() []*discordgo.ApplicationCommand {
+	commands, err := c.Client.ApplicationCommands(aid.Config.Discord.ID, aid.Config.Discord.Guild)
+	if err != nil {
+		aid.Print("Failed to get commands")
+		return nil
+	}
+
+	return commands
+}
+
+func (c *DiscordClient) GetGlobalRegisteredCommands() []*discordgo.ApplicationCommand {
+	commands, err := c.Client.ApplicationCommands(aid.Config.Discord.ID, "")
+	if err != nil {
+		aid.Print("Failed to get commands")
+		return nil
+	}
+
+	return commands
 }
 
 func (c *DiscordClient) readyHandler(s *discordgo.Session, event *discordgo.Ready) {

@@ -106,6 +106,7 @@ func main() {
 	profile.Post("/client/:action", handlers.PostProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
+	lightswitch.Use(handlers.FortniteMiddleware)
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
 
 	snow := r.Group("/snow")

@@ -7,17 +7,20 @@ import (
 	"time"
 
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/person"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetLightswitchBulkStatus(c *fiber.Ctx) error {
+	person := c.Locals("person").(*person.Person)
+
 	return c.Status(fiber.StatusOK).JSON([]aid.JSON{{
 		"serviceInstanceId": "fortnite",
 		"status" :"UP",
 		"message": "fortnite is up.",
 		"maintenanceUri": nil,
 		"allowedActions": []string{"PLAY","DOWNLOAD"},
-		"banned":false,
+		"banned": person.IsBanned,
 		"launcherInfoDTO": aid.JSON{
 			"appName":"Fortnite",
 			"catalogItemId":"4fe75bbc5a674f4f9b356b5c90567da5",

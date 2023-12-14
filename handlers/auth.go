@@ -66,14 +66,6 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("No Account Found"))
 	}
 
-	if person.AccessKey == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Activation Required"))
-	}
-
-	if person.AccessKey != body.Password {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid Access Key"))
-	}
-
 	access, err := aid.JWTSign(aid.JSON{
 		"snow_id": person.ID, // custom
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),

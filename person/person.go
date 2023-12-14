@@ -8,14 +8,14 @@ import (
 type Person struct {
 	ID string
 	DisplayName string
-	AccessKey string
+	Permissions []string
+	IsBanned bool
 	AthenaProfile *Profile
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
 	Profile0Profile *Profile
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
-	// DiscordID string
 	Discord *storage.DB_DiscordPerson
 }
 
@@ -28,7 +28,8 @@ func NewPerson() *Person {
 	return &Person{
 		ID: uuid.New().String(),
 		DisplayName: uuid.New().String(),
-		AccessKey: "",
+		Permissions: []string{},
+		IsBanned: false,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
@@ -135,7 +136,8 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 	person := &Person{
 		ID: databasePerson.ID,
 		DisplayName: databasePerson.DisplayName,
-		AccessKey: databasePerson.AccessKey,
+		Permissions: databasePerson.Permissions,
+		IsBanned: databasePerson.IsBanned,
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
@@ -143,7 +145,6 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		CollectionsProfile: collectionsProfile,
 		CreativeProfile: creativeProfile,
 		Discord: &databasePerson.Discord,
-		// DiscordID: databasePerson.DiscordID,
 	}
 
 	cache.SavePerson(person)
@@ -197,14 +198,54 @@ func (p *Person) Save() {
 	storage.Repo.SavePerson(dbPerson)
 }
 
+func (p *Person) Ban() {
+	p.IsBanned = true
+	p.Save()
+}
+
+func (p *Person) Unban() {
+	p.IsBanned = false
+	p.Save()
+}
+
+func (p *Person) AddPermission(permission string) {
+	p.Permissions = append(p.Permissions, permission)
+	p.Save()
+}
+
+func (p *Person) RemovePermission(permission string) {
+	for i, perm := range p.Permissions {
+		if perm == permission {
+			p.Permissions = append(p.Permissions[:i], p.Permissions[i+1:]...)
+			break
+		}
+	}
+	p.Save()
+}
+
+func (p *Person) HasPermission(permission Permission) bool {
+	for _, perm := range p.Permissions {
+		if perm == string(PermissionAll) {
+			return true
+		}
+
+		if perm == string(permission) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *Person) ToDatabase() *storage.DB_Person {
 	dbPerson := storage.DB_Person{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
+		Permissions: p.Permissions,
+		IsBanned: p.IsBanned,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
-		AccessKey: p.AccessKey,
-		// DiscordID: p.DiscordID,
+		Discord: storage.DB_DiscordPerson{},
 	}
 
 	if p.Discord != nil {
@@ -281,6 +322,8 @@ func (p *Person) Snapshot() *PersonSnapshot {
 	return &PersonSnapshot{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
+		Permissions: p.Permissions,
+		IsBanned: p.IsBanned,
 		AthenaProfile: *p.AthenaProfile.Snapshot(),
 		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
 		CommonPublicProfile: *p.CommonPublicProfile.Snapshot(),
@@ -288,7 +331,6 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
 		Discord: *p.Discord,
-		DiscordID: p.Discord.ID,
 	}
 } 
 

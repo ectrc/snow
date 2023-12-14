@@ -5,6 +5,8 @@ import "github.com/ectrc/snow/storage"
 type PersonSnapshot struct {
 	ID                  string
 	DisplayName         string
+	Permissions         []string
+	IsBanned            bool
 	AthenaProfile       ProfileSnapshot
 	CommonCoreProfile   ProfileSnapshot
 	CommonPublicProfile ProfileSnapshot
@@ -12,7 +14,6 @@ type PersonSnapshot struct {
 	CollectionsProfile  ProfileSnapshot
 	CreativeProfile     ProfileSnapshot
 	Discord             storage.DB_DiscordPerson
-	DiscordID           string
 }
 
 type ProfileSnapshot struct {

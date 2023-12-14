@@ -9,10 +9,10 @@ type Tabler interface {
 type DB_Person struct {
 	ID string
 	DisplayName string
-	AccessKey string
+	Permissions pq.StringArray `gorm:"type:text[]"`
+	IsBanned bool
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
-	// DiscordID string 
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
 }
 

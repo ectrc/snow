@@ -22,10 +22,9 @@ var (
 	}
 )
 
-func NewFortnitePerson(displayName string, key string, everything bool) *p.Person {
+func NewFortnitePerson(displayName string, everything bool) *p.Person {
 	person := p.NewPerson()
 	person.DisplayName = displayName
-	person.AccessKey = key
 
 	for _, item := range defaultAthenaItems {
 		item := p.NewItem(item, 1)
