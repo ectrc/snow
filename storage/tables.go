@@ -153,6 +153,8 @@ type DB_DiscordPerson struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
 	Username string
+	Avatar string
+	Banner string
 	AccessToken string
 	RefreshToken string
 }

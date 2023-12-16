@@ -55,6 +55,8 @@ func GetDiscordOAuthURL(c *fiber.Ctx) error {
 	var user struct {
 		ID string `json:"id"`
 		Username string `json:"username"`
+		Avatar string `json:"avatar"`
+		Banner string `json:"banner"`
 	}
 	err = json.NewDecoder(userResponse.Body).Decode(&user)
 	if err != nil {
@@ -63,11 +65,14 @@ func GetDiscordOAuthURL(c *fiber.Ctx) error {
 
 	person := p.FindByDiscord(user.ID)
 	if person == nil {
-		return c.Status(404).JSON(aid.ErrorNotFound)
+		return c.Status(404).JSON(aid.JSON{"error":"Person not found. Please create an account first."})
 	}
 
 	person.Discord.AccessToken = body.AccessToken
 	person.Discord.RefreshToken = body.RenewToken
+	person.Discord.Username = user.Username
+	person.Discord.Avatar = user.Avatar
+	person.Discord.Banner = user.Banner
 	storage.Repo.SaveDiscordPerson(person.Discord)
 
 	access, err := aid.JWTSign(aid.JSON{

@@ -118,7 +118,7 @@ func main() {
 	
 	player := snow.Group("/player")
 	player.Use(handlers.FrontendMiddleware)
-	player.Post("/", handlers.AnyNoContent)
+	player.Get("/", handlers.GetPlayer)
 	player.Get("/locker", handlers.GetPlayerLocker)
 
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {
