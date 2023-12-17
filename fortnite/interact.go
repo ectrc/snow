@@ -165,6 +165,22 @@ func (c *CosmeticData) GetRandomSet() Set {
 	return c.GetRandomSet()
 }
 
+func (c *CosmeticData) AddItem(item FAPI_Cosmetic) {
+	c.Items[item.ID] = item
+
+	if item.Set.BackendValue != "" {
+		if _, ok := Cosmetics.Sets[item.Set.BackendValue]; !ok {
+			Cosmetics.Sets[item.Set.BackendValue] = Set{
+				Items: make(map[string]FAPI_Cosmetic),
+				Name: item.Set.Value,
+				BackendName: item.Set.BackendValue,
+			}
+		}
+
+		Cosmetics.Sets[item.Set.BackendValue].Items[item.ID] = item
+	}
+}
+
 var (
 	StaticAPI = NewFortniteAPI()
 	Cosmetics = CosmeticData{
@@ -226,7 +242,6 @@ func PreloadCosmetics(max int) error {
 		return err
 	}
 
-	battlePassSkins := make([]FAPI_Cosmetic, 0)
 	for _, item := range list {
 		if item.Introduction.BackendValue > max {
 			continue
@@ -234,31 +249,12 @@ func PreloadCosmetics(max int) error {
 
 		if len(item.ShopHistory) == 0 && item.Type.Value == "outfit" {
 			item.BattlePass = true
-			battlePassSkins = append(battlePassSkins, item)
 		}
 
-		Cosmetics.Items[item.ID] = item
-
-		if item.Set.BackendValue != "" {
-			if _, ok := Cosmetics.Sets[item.Set.BackendValue]; !ok {
-				Cosmetics.Sets[item.Set.BackendValue] = Set{
-					Items: make(map[string]FAPI_Cosmetic),
-					Name: item.Set.Value,
-					BackendName: item.Set.BackendValue,
-				}
-			}
-
-			Cosmetics.Sets[item.Set.BackendValue].Items[item.ID] = item
-		}
+		Cosmetics.AddItem(item)
 	}
 
-	found := make([]string, 0)
-	characters := make([]string, 0)
 	for id, item := range Cosmetics.Items {
-		if item.Type.Value == "outfit" {
-			characters = append(characters, id)
-		}
-
 		if item.Type.Value != "backpack" {
 			continue
 		}
@@ -275,20 +271,8 @@ func PreloadCosmetics(max int) error {
 			continue
 		}
 		character.Backpack = id
-		Cosmetics.Items[characterId] = character
-
-		if _, ok := Cosmetics.Sets[character.Set.BackendValue]; !ok {
-			Cosmetics.Sets[character.Set.BackendValue] = Set{
-				Items: make(map[string]FAPI_Cosmetic),
-				Name: character.Set.Value,
-				BackendName: character.Set.BackendValue,
-			}
-		}
-		Cosmetics.Sets[character.Set.BackendValue].Items[characterId] = character
-		found = append(found, id)
+		Cosmetics.AddItem(character)
 	}
-
-	aid.Print("Preloaded", len(found), "backpacks with characters", "(", float64(len(found))/float64(len(characters))*100, "% ) coverage")
 
 	assets := storage.HttpAsset("QKnwROGzQjYm1W9xu9uL3VrbSA0tnVj6NJJtEChUdAb3DF8uN.json")
 	if assets == nil {
@@ -382,16 +366,7 @@ func addCharacterAsset(parts []string) {
 	}
 
 	character.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[character.ID] = character
-
-	if _, ok := Cosmetics.Sets[character.Set.BackendValue]; !ok {
-		Cosmetics.Sets[character.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: character.Set.Value,
-			BackendName: character.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[character.Set.BackendValue].Items[character.ID] = character
+	Cosmetics.AddItem(character)
 }
 
 func addBackpackAsset(parts []string) {
@@ -422,16 +397,7 @@ func addBackpackAsset(parts []string) {
 	}
 
 	backpack.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[backpack.ID] = backpack
-
-	if _, ok := Cosmetics.Sets[backpack.Set.BackendValue]; !ok {
-		Cosmetics.Sets[backpack.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: backpack.Set.Value,
-			BackendName: backpack.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[backpack.Set.BackendValue].Items[backpack.ID] = backpack
+	Cosmetics.AddItem(backpack)
 }
 
 func addEmoteAsset(parts []string) {
@@ -453,16 +419,7 @@ func addEmoteAsset(parts []string) {
 	}
 
 	emote.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[emote.ID] = emote
-
-	if _, ok := Cosmetics.Sets[emote.Set.BackendValue]; !ok {
-		Cosmetics.Sets[emote.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: emote.Set.Value,
-			BackendName: emote.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[emote.Set.BackendValue].Items[emote.ID] = emote
+	Cosmetics.AddItem(emote)
 }
 
 func addPickaxeAsset(parts []string) {
@@ -493,16 +450,7 @@ func addPickaxeAsset(parts []string) {
 	}
 
 	pickaxe.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[pickaxe.ID] = pickaxe
-
-	if _, ok := Cosmetics.Sets[pickaxe.Set.BackendValue]; !ok {
-		Cosmetics.Sets[pickaxe.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: pickaxe.Set.Value,
-			BackendName: pickaxe.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[pickaxe.Set.BackendValue].Items[pickaxe.ID] = pickaxe
+	Cosmetics.AddItem(pickaxe)
 }
 
 func addGliderAsset(parts []string) {
@@ -533,16 +481,7 @@ func addGliderAsset(parts []string) {
 	}
 
 	glider.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[glider.ID] = glider
-
-	if _, ok := Cosmetics.Sets[glider.Set.BackendValue]; !ok {
-		Cosmetics.Sets[glider.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: glider.Set.Value,
-			BackendName: glider.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[glider.Set.BackendValue].Items[glider.ID] = glider
+	Cosmetics.AddItem(glider)
 }
 
 func addWrapAsset(parts []string) {
@@ -564,16 +503,7 @@ func addWrapAsset(parts []string) {
 	}
 
 	wrap.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[wrap.ID] = wrap
-
-	if _, ok := Cosmetics.Sets[wrap.Set.BackendValue]; !ok {
-		Cosmetics.Sets[wrap.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: wrap.Set.Value,
-			BackendName: wrap.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[wrap.Set.BackendValue].Items[wrap.ID] = wrap
+	Cosmetics.AddItem(wrap)
 }
 
 func addMusicAsset(parts []string) {
@@ -595,14 +525,5 @@ func addMusicAsset(parts []string) {
 	}
 
 	music.DisplayAssetPath2 = "DAv2_" + strings.Join(parts, "_")
-	Cosmetics.Items[music.ID] = music
-
-	if _, ok := Cosmetics.Sets[music.Set.BackendValue]; !ok {
-		Cosmetics.Sets[music.Set.BackendValue] = Set{
-			Items: make(map[string]FAPI_Cosmetic),
-			Name: music.Set.Value,
-			BackendName: music.Set.BackendValue,
-		}
-	}
-	Cosmetics.Sets[music.Set.BackendValue].Items[music.ID] = music
+	Cosmetics.AddItem(music)
 }
