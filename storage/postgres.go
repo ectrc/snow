@@ -171,6 +171,10 @@ func (s *PostgresStorage) SaveItem(item *DB_Item) {
 	s.Postgres.Save(item)
 }
 
+func (s *PostgresStorage) BulkCreateItems(items *[]DB_Item) {
+	s.Postgres.Create(items)
+}
+
 func (s *PostgresStorage) DeleteItem(itemId string) {
 	s.Postgres.Delete(&DB_Item{}, "id = ?", itemId)
 }

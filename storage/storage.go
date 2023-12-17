@@ -22,6 +22,7 @@ type Storage interface {
 	DeleteProfile(profileId string)
 
 	SaveItem(item *DB_Item)
+	BulkCreateItems(items *[]DB_Item)
 	DeleteItem(itemId string)
 
 	SaveVariant(variant *DB_VariantChannel)
@@ -116,6 +117,10 @@ func (r *Repository) DeleteProfile(profileId string) {
 
 func (r *Repository) SaveItem(item *DB_Item) {
 	r.Storage.SaveItem(item)
+}
+
+func (r *Repository) BulkCreateItems(items *[]DB_Item) {
+	r.Storage.BulkCreateItems(items)
 }
 
 func (r *Repository) DeleteItem(itemId string) {

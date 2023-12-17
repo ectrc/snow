@@ -172,8 +172,8 @@ func (i *Item) ToDatabase(profileId string) *storage.DB_Item {
 	}
 
 	return &storage.DB_Item{
-		ProfileID: profileId,
 		ID: i.ID,
+		ProfileID: profileId,
 		TemplateID: i.TemplateID,
 		Quantity: i.Quantity,
 		Favorite: i.Favorite,

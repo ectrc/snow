@@ -6,6 +6,7 @@ import (
 
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/storage"
 )
 
 var (
@@ -115,15 +116,7 @@ func NewFortnitePerson(displayName string, everything bool) *p.Person {
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("active_loadout_index", 0)).Save()
 
 	if everything {
-		for _, item := range Cosmetics.Items {
-			if strings.Contains(strings.ToLower(item.ID), "random") {
-				continue
-			}
-
-			item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
-			item.HasSeen = true
-			person.AthenaProfile.Items.AddItem(item).Save()
-		}
+		GiveEverything(person)
 	}
 	
 	person.Save()
@@ -132,13 +125,24 @@ func NewFortnitePerson(displayName string, everything bool) *p.Person {
 }
 
 func GiveEverything(person *p.Person) {
+	items := make([]storage.DB_Item, 0)
+
 	for _, item := range Cosmetics.Items {
 		if strings.Contains(strings.ToLower(item.ID), "random") {
 			continue
 		}
 
+		has := person.AthenaProfile.Items.GetItemByTemplateID(item.ID)
+		if has != nil {
+			continue
+		}
+
 		item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
 		item.HasSeen = true
-		person.AthenaProfile.Items.AddItem(item).Save()
+		person.AthenaProfile.Items.AddItem(item)
+
+		items = append(items, *item.ToDatabase(person.AthenaProfile.ID))
 	}
+
+	storage.Repo.BulkCreateItems(&items)
 }

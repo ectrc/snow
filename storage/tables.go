@@ -171,7 +171,7 @@ type DB_SeasonStat struct {
 	XP int
 	Tier int
 	Stars int
-	LevelClainmed int
+	LevelClaimed int
 	TierClaimed int
 }
 
