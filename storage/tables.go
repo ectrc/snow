@@ -146,7 +146,7 @@ type DB_TemporaryCode struct {
 }
 
 func (DB_TemporaryCode) TableName() string {
-	return "Exchanges"
+	return "ExchangeCodes"
 }
 
 type DB_DiscordPerson struct {
@@ -177,4 +177,16 @@ type DB_SeasonStat struct {
 
 func (DB_SeasonStat) TableName() string {
 	return "Stats"
+}
+
+type DB_GameToken struct {
+	ID string `gorm:"primary_key"`
+	PersonID string
+	AccessToken string
+	Type string
+	ExpiresAt int64	
+}
+
+func (DB_GameToken) TableName() string {
+	return "GameTokens"
 }

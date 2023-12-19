@@ -6,6 +6,7 @@ import (
 
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -37,22 +38,19 @@ func PostFortniteToken(c *fiber.Ctx) error {
 }
 
 func PostTokenClientCredentials(c *fiber.Ctx, body *FortniteTokenBody) error {
-	credentials, err := aid.JWTSign(aid.JSON{
-		"snow_id": 0, // custom
-		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
-	})
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
-	}
+	client, sig := aid.KeyPair.EncryptAndSignB64([]byte(c.IP()))
+	hash := aid.Hash([]byte(client + "." + sig))
 
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
-		"access_token": "eg1~"+credentials,
+		"access_token": hash,
 		"token_type": "bearer",
 		"client_id": c.IP(),
 		"client_service": "fortnite",
 		"internal_client": true,
 		"expires_in": 3600,
 		"expires_at": time.Now().Add(time.Hour).Format("2006-01-02T15:04:05.999Z"),
+		"product_id": "prod-fn",
+		"sandbox_id": "fn",
 	})
 }
 
@@ -66,24 +64,31 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("No Account Found"))
 	}
 
-	access, err := aid.JWTSign(aid.JSON{
-		"snow_id": person.ID, // custom
-		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
-	})
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
-	}
+	access, ac_sig := aid.KeyPair.EncryptAndSignB64([]byte(person.ID))
+	ac_hash := aid.Hash([]byte(access + "." + ac_sig))
 
-	refresh, err := aid.JWTSign(aid.JSON{
-		"snow_id": person.ID,
-		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
-	})
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+	ac_token := &storage.DB_GameToken{
+		ID: ac_hash,
+		PersonID: person.ID,
+		AccessToken: access + "." + ac_sig,
+		Type: "access",
 	}
+	storage.Repo.SaveToken(ac_token)
+
+	refresh, re_sig := aid.KeyPair.EncryptAndSignB64([]byte(person.ID))
+	re_hash := aid.Hash([]byte(refresh + "." + re_sig))
+
+	re_token := &storage.DB_GameToken{
+		ID: re_hash,
+		PersonID: person.ID,
+		AccessToken: refresh + "." + re_sig,
+		Type: "refresh",
+	}
+	storage.Repo.SaveToken(re_token)
 
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
-		"access_token": "eg1~"+access,
+		// "access_token": access + "." + ac_sig,
+		"access_token": ac_hash,
 		"account_id": person.ID,
 		"client_id": c.IP(),
 		"client_service": "fortnite",
@@ -95,8 +100,11 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 		"internal_client": true,
 		"refresh_expires": 86400,
 		"refresh_expires_at": time.Now().Add(time.Hour * 24).Format("2006-01-02T15:04:05.999Z"),
-		"refresh_token": "eg1~"+refresh,
+		// "refresh_token": refresh + "." + re_sig,
+		"refresh_token": re_hash,
 		"token_type": "bearer",
+		"product_id": "prod-fn",
+		"sandbox_id": "fn",
 	})
 }
 
@@ -105,21 +113,13 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
 	}
-	real := strings.ReplaceAll(auth, "bearer eg1~", "")
+	real := strings.ReplaceAll(auth, "bearer ", "")
 
-	claims, err := aid.JWTVerify(real)
-	if err != nil {
+	found := storage.Repo.GetToken(real)
+	if found == nil {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
-
-	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	snowId, ok := claims["snow_id"].(string)
-	if !ok {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
+	snowId := found.PersonID
 
 	person := p.Find(snowId)
 	if person == nil {
@@ -128,7 +128,7 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"app": "fortnite",
-		"token": "eg1~"+real,
+		"token": real,
 		"token_type": "bearer",
 		"expires_at": time.Now().Add(time.Hour * 24).Format("2006-01-02T15:04:05.999Z"),
 		"expires_in": 86400,
@@ -140,6 +140,8 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 		"in_app_id": person.ID,
 		"account_id": person.ID,
 		"displayName": person.DisplayName,
+		"product_id": "prod-fn",
+		"sandbox_id": "fn",	
 	})
 }
 
@@ -148,21 +150,13 @@ func FortniteMiddleware(c *fiber.Ctx) error {
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
 	}
-	real := strings.ReplaceAll(auth, "bearer eg1~", "")
+	real := strings.ReplaceAll(auth, "bearer ", "")
 
-	claims, err := aid.JWTVerify(real)
-	if err != nil {
+	found := storage.Repo.GetToken(real)
+	if found == nil {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
-
-	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	snowId, ok := claims["snow_id"].(string)
-	if !ok {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
+	snowId := found.PersonID
 
 	person := p.Find(snowId)
 	if person == nil {
@@ -179,23 +173,11 @@ func FrontendMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
 	}
 
-	claims, err := aid.JWTVerify(auth)
-	if err != nil {
+	found := storage.Repo.GetToken(auth)
+	if found == nil {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
-
-	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	if claims["frontend"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Claims"))
-	}
-
-	snowId, ok := claims["snow_id"].(string)
-	if !ok {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
+	snowId := found.PersonID
 
 	person := p.Find(snowId)
 	if person == nil {

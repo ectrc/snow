@@ -1,7 +1,7 @@
 package aid
 
 import (
-	"math/rand"
+	m "math/rand"
 	"os"
 	"os/signal"
 	"strconv"
@@ -32,7 +32,7 @@ func RandomString(n int) string {
 
 	s := make([]rune, n)
 	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
+		s[i] = letters[m.Intn(len(letters))]
 	}
 	return string(s)
 }

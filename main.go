@@ -8,6 +8,7 @@ import (
 	"github.com/ectrc/snow/discord"
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
+	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 
 	"github.com/goccy/go-json"
@@ -42,8 +43,11 @@ func init() {
 	fortnite.PreloadCosmetics(aid.Config.Fortnite.Season)
 	fortnite.GenerateRandomStorefront()
 	fortnite.GeneratePlaylistImages()
-}
 
+	if found := person.FindByDisplay("god"); found == nil {
+		fortnite.NewFortnitePerson("god", true)
+	}
+}
 func main() {
 	r := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
