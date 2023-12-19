@@ -145,7 +145,7 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 	})
 }
 
-func FortniteMiddleware(c *fiber.Ctx) error {
+func MiddlewareFortnite(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
@@ -167,7 +167,7 @@ func FortniteMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func FrontendMiddleware(c *fiber.Ctx) error {
+func MiddlewareWeb(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
@@ -188,7 +188,7 @@ func FrontendMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func DeleteOAuthSessions(c *fiber.Ctx) error {
+func DeleteToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
 

@@ -72,7 +72,7 @@ func main() {
 	account.Get("/public/account/displayName/:displayName", handlers.GetPublicAccountByDisplayName)
 	account.Get("/oauth/verify", handlers.GetOAuthVerify)
 	account.Post("/oauth/token", handlers.PostFortniteToken)
-	account.Delete("/oauth/sessions/kill", handlers.DeleteOAuthSessions)
+	account.Delete("/oauth/sessions/kill", handlers.DeleteToken)
 
 	fortnite := r.Group("/fortnite/api")
 	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetFortniteReceipts)
@@ -80,7 +80,7 @@ func main() {
 	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
 
 	storefront := fortnite.Group("/storefront/v2")
-	storefront.Use(handlers.FortniteMiddleware)
+	storefront.Use(handlers.MiddlewareFortnite)
 	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
 	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
 
@@ -93,7 +93,7 @@ func main() {
 	storage.Get("/system/:fileName", handlers.GetCloudStorageFile)
 
 	user := storage.Group("/user")
-	user.Use(handlers.FortniteMiddleware)
+	user.Use(handlers.MiddlewareFortnite)
 	user.Get("/:accountId", handlers.GetUserStorageFiles)
 	user.Get("/:accountId/:fileName", handlers.GetUserStorageFile)
 	user.Put("/:accountId/:fileName", handlers.PutUserStorageFile)
@@ -106,11 +106,11 @@ func main() {
 	game.Post("/profileToken/verify/:accountId", handlers.AnyNoContent)
 
 	profile := game.Group("/profile/:accountId")
-	profile.Use(handlers.FortniteMiddleware)
+	profile.Use(handlers.MiddlewareFortnite)
 	profile.Post("/client/:action", handlers.PostProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
-	lightswitch.Use(handlers.FortniteMiddleware)
+	lightswitch.Use(handlers.MiddlewareFortnite)
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
 
 	snow := r.Group("/snow")
@@ -121,7 +121,7 @@ func main() {
 	discord.Get("/", handlers.GetDiscordOAuthURL)
 	
 	player := snow.Group("/player")
-	player.Use(handlers.FrontendMiddleware)
+	player.Use(handlers.MiddlewareWeb)
 	player.Get("/", handlers.GetPlayer)
 	player.Get("/locker", handlers.GetPlayerLocker)
 
