@@ -154,6 +154,7 @@ func PostAssets(c *fiber.Ctx) error {
 
 func GetContentPages(c *fiber.Ctx) error {
 	seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
+
 	playlists := []aid.JSON{}
 	for playlist := range fortnite.PlaylistImages {
 		playlists = append(playlists, aid.JSON{
@@ -162,7 +163,21 @@ func GetContentPages(c *fiber.Ctx) error {
 			"hidden": false,
 		})
 	}
-	
+
+	backgrounds := []aid.JSON{}
+	switch aid.Config.Fortnite.Season {
+	case 11:
+		backgrounds = append(backgrounds, aid.JSON{
+			"key": "lobby",
+			"stage": "Winter19",
+		})
+	default:
+		backgrounds = append(backgrounds, aid.JSON{
+			"key": "lobby",
+			"stage": "season" + seasonString,
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"subgameselectdata": aid.JSON{
 			"saveTheWorldUnowned": aid.JSON{
@@ -195,16 +210,7 @@ func GetContentPages(c *fiber.Ctx) error {
 			"lastModified": "0000-00-00T00:00:00.000Z",
 		},
 		"dynamicbackgrounds": aid.JSON{
-			"backgrounds": aid.JSON{"backgrounds": []aid.JSON{
-				{
-					"key": "lobby",
-					"stage": "season" + seasonString,
-				},
-				{
-					"key": "vault",
-					"stage": "season" + seasonString,
-				},
-			}},
+			"backgrounds": aid.JSON{"backgrounds": backgrounds},
 			"lastModified": "0000-00-00T00:00:00.000Z",
 		},
 		"shopSections": aid.JSON{

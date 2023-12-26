@@ -46,7 +46,6 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_TemporaryCode{}, "ExchangeCodes")
 	s.Migrate(&DB_DiscordPerson{}, "Discords")
 	s.Migrate(&DB_SeasonStat{}, "Stats")
-	s.Migrate(&DB_GameToken{}, "GameTokens")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -242,23 +241,4 @@ func (s *PostgresStorage) SaveDiscordPerson(discordPerson *DB_DiscordPerson) {
 
 func (s *PostgresStorage) DeleteDiscordPerson(discordPersonId string) {
 	s.Postgres.Delete(&DB_DiscordPerson{}, "id = ?", discordPersonId)
-}
-
-func (s *PostgresStorage) SaveToken(token *DB_GameToken) {
-	s.Postgres.Save(token)
-}
-
-func (s *PostgresStorage) DeleteToken(tokenId string) {
-	s.Postgres.Delete(&DB_GameToken{}, "id = ?", tokenId)
-}
-
-func (s *PostgresStorage) GetToken(tokenId string) *DB_GameToken {
-	var token DB_GameToken
-	s.Postgres.Model(&DB_GameToken{}).Where("id = ?", tokenId).Find(&token)
-
-	if token.ID == "" {
-		return nil
-	}
-
-	return &token
 }

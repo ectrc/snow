@@ -178,15 +178,3 @@ type DB_SeasonStat struct {
 func (DB_SeasonStat) TableName() string {
 	return "Stats"
 }
-
-type DB_GameToken struct {
-	ID string `gorm:"primary_key"`
-	PersonID string
-	AccessToken string
-	Type string
-	ExpiresAt int64	
-}
-
-func (DB_GameToken) TableName() string {
-	return "GameTokens"
-}

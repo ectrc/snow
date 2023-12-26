@@ -46,6 +46,20 @@ func (k *keyPair) DecryptAndVerify(encryptedMessage []byte, signature []byte) []
 	return decryptedMessage
 }
 
+func (k *keyPair) DecryptAndVerifyB64(encryptedMessage string, signature string) ([]byte, bool) {
+	encryptedMessageBytes, err := Base64Decode(encryptedMessage)
+	if err {
+		return []byte{}, true
+	}
+
+	signatureBytes, err := Base64Decode(signature)
+	if err {
+		return []byte{}, true
+	}
+
+	return k.DecryptAndVerify(encryptedMessageBytes, signatureBytes), false
+}
+
 func (k *keyPair) ExportPrivateKey() []byte {
 	privateKey := x509.MarshalPKCS1PrivateKey(&k.PrivateKey)
 	return privateKey

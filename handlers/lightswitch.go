@@ -66,6 +66,20 @@ func GetFortniteTimeline(c *fiber.Ctx) error {
 			"activeSince": "0001-01-01T00:00:00Z",
 			"eventType": "EventFlag.LobbySeason6Halloween",
 		})
+	case 11:
+		events = append(events, aid.JSON{
+			"activeUntil": "9999-01-01T00:00:00.000Z",
+			"activeSince": "0001-01-01T00:00:00Z",
+			"eventType": "EventFlag.LTE_WinterFest2019",
+		}, aid.JSON{
+			"activeUntil": "9999-01-01T00:00:00.000Z",
+			"activeSince": "0001-01-01T00:00:00Z",
+			"eventType": "EventFlag.LTE_WinterFest",
+		}, aid.JSON{
+			"activeUntil": "9999-01-01T00:00:00.000Z",
+			"activeSince": "0001-01-01T00:00:00Z",
+			"eventType": "EventFlag.Winterfest.Tree",
+		})
 	default:
 		events = append(events, aid.JSON{
 			"activeUntil": "9999-12-31T23:59:59.999Z",

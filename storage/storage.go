@@ -48,10 +48,6 @@ type Storage interface {
 
 	SaveDiscordPerson(person *DB_DiscordPerson)
 	DeleteDiscordPerson(personId string)
-
-	SaveToken(token *DB_GameToken)
-	GetToken(tokenId string) *DB_GameToken
-	DeleteToken(tokenId string)
 }
 
 type Repository struct {
@@ -193,16 +189,4 @@ func (r *Repository) SaveDiscordPerson(person *DB_DiscordPerson) {
 
 func (r *Repository) DeleteDiscordPerson(personId string) {
 	r.Storage.DeleteDiscordPerson(personId)
-}
-
-func (r *Repository) SaveToken(token *DB_GameToken) {
-	r.Storage.SaveToken(token)
-}
-
-func (r *Repository) GetToken(tokenId string) *DB_GameToken {
-	return r.Storage.GetToken(tokenId)
-}
-
-func (r *Repository) DeleteToken(tokenId string) {
-	r.Storage.DeleteToken(tokenId)
 }
