@@ -11,7 +11,7 @@ import (
 
 var (
 	oauthTokenGrantTypes = map[string]func(c *fiber.Ctx, body *FortniteTokenBody) error{
-		"client_credentials": PostTokenClientCredentials,
+		// "client_credentials": PostTokenClientCredentials, // spams the api?? like wtf
 		"password": PostTokenPassword,
     "exchange_code": PostTokenExchangeCode,
 	}
