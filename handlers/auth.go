@@ -171,7 +171,7 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 	})
 }
 
-func GetOAuthVerify(c *fiber.Ctx) error {
+func GetTokenVerify(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
 	if auth == "" {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
@@ -214,6 +214,10 @@ func GetOAuthVerify(c *fiber.Ctx) error {
 		"product_id": "prod-fn",
 		"sandbox_id": "fn",	
 	})
+}
+
+func DeleteToken(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
 
 func MiddlewareFortnite(c *fiber.Ctx) error {
@@ -277,10 +281,6 @@ func MiddlewareWeb(c *fiber.Ctx) error {
 
 	c.Locals("person", person)
 	return c.Next()
-}
-
-func DeleteToken(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
 
 func GetPublicAccount(c *fiber.Ctx) error {

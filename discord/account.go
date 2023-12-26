@@ -2,6 +2,7 @@ package discord
 
 import (
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ectrc/snow/aid"
@@ -169,6 +170,36 @@ func meHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 					AddField("Discord Account", "<@"+player.Discord.ID+">", true).
 					AddField("ID",  player.ID, true).
 					SetThumbnail("https://fortnite-api.com/images/cosmetics/br/"+ strings.Split(activeCharacter, ":")[1] +"/icon.png").
+					Build(),
+			},
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+}
+
+func codeHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	player := person.FindByDiscord(i.Member.User.ID)
+	if player == nil {
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
+		return
+	}
+
+	code := player.ID + "=" + time.Now().Format("2006-01-02T15:04:05.999Z")
+	encrypted, sig := aid.KeyPair.EncryptAndSignB64([]byte(code))
+	decrypt, err := aid.KeyPair.DecryptAndVerifyB64(encrypted, sig)
+
+	if err || string(decrypt) != code {
+		aid.Print("Failed to verify code that was just generated so we're not going to send it")
+		return
+	}
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{
+				NewEmbedBuilder().
+					SetColor(0x2b2d31).
+					SetDescription("`" + encrypted + "`").
 					Build(),
 			},
 			Flags: discordgo.MessageFlagsEphemeral,

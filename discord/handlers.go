@@ -33,6 +33,30 @@ func addCommands() {
 
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
+			Name: "me",
+			Description: "Lookup your own information.",
+		},
+		Handler: meHandler,
+	})
+
+	addCommand(&DiscordCommand{
+		Command: &discordgo.ApplicationCommand{
+			Name: "delete",
+			Description: "Delete your account with the bot.",
+		},
+		Handler: deleteHandler,
+	})
+
+	addCommand(&DiscordCommand{
+		Command: &discordgo.ApplicationCommand{
+			Name: "code",
+			Description: "Generate a one-time use code to link your account.",
+		},
+		Handler: codeHandler,
+	})
+
+	addCommand(&DiscordCommand{
+		Command: &discordgo.ApplicationCommand{
 			Name: "information",
 			Description: "Useful information about this server's activity! Admin Only.",
 		},
@@ -61,22 +85,6 @@ func addCommands() {
 		},
 		Handler: whoHandler,
 		AdminOnly: true,
-	})
-
-	addCommand(&DiscordCommand{
-		Command: &discordgo.ApplicationCommand{
-			Name: "me",
-			Description: "Lookup your own information.",
-		},
-		Handler: meHandler,
-	})
-
-	addCommand(&DiscordCommand{
-		Command: &discordgo.ApplicationCommand{
-			Name: "delete",
-			Description: "Delete your account with the bot.",
-		},
-		Handler: deleteHandler,
 	})
 
 	addCommand(&DiscordCommand{

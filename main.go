@@ -70,7 +70,7 @@ func main() {
 	account.Get("/public/account/:accountId", handlers.GetPublicAccount)
 	account.Get("/public/account/:accountId/externalAuths", handlers.GetPublicAccountExternalAuths)
 	account.Get("/public/account/displayName/:displayName", handlers.GetPublicAccountByDisplayName)
-	account.Get("/oauth/verify", handlers.GetOAuthVerify)
+	account.Get("/oauth/verify", handlers.GetTokenVerify)
 	account.Post("/oauth/token", handlers.PostFortniteToken)
 	account.Delete("/oauth/sessions/kill", handlers.DeleteToken)
 
