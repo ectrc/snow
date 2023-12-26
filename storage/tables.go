@@ -138,17 +138,6 @@ func (DB_Loot) TableName() string {
 	return "Loot"
 }
 
-type DB_TemporaryCode struct {
-	ID string `gorm:"primary_key"`
-	Code string
-	ExpiresAt int64
-	PersonID string
-}
-
-func (DB_TemporaryCode) TableName() string {
-	return "ExchangeCodes"
-}
-
 type DB_DiscordPerson struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
@@ -167,11 +156,11 @@ type DB_SeasonStat struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
 	Build string
-	Level int
 	XP int
-	Tier int
-	Stars int
+	Level int
 	LevelClaimed int
+	Stars int
+	Tier int
 	TierClaimed int
 }
 

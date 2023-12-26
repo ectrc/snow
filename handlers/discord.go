@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
@@ -74,14 +75,18 @@ func GetDiscordOAuthURL(c *fiber.Ctx) error {
 	person.Discord.Banner = user.Banner
 	storage.Repo.SaveDiscordPerson(person.Discord)
 
-	access, sig := aid.KeyPair.EncryptAndSignB64([]byte(person.ID + ".frontend"))
+	access, err := aid.JWTSign(aid.JSON{
+		"snow_id": person.ID, // custom
+		"frontend": true,
+		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
 	}
 
 	c.Cookie(&fiber.Cookie{
 		Name: "access_token",
-		Value: access + "." + sig,
+		Value: access,
 	})
 	return c.Redirect(aid.Config.API.Host + aid.Config.API.FrontendPort + "/attempt")
 }

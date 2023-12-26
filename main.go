@@ -76,7 +76,7 @@ func main() {
 
 	fortnite := r.Group("/fortnite/api")
 	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetFortniteReceipts)
-	fortnite.Get("/v2/versioncheck/*", handlers.GetFortniteVersion)
+	fortnite.Get("/v2/versioncheck/:version", handlers.GetFortniteVersion)
 	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
 
 	storefront := fortnite.Group("/storefront/v2")

@@ -43,7 +43,6 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Loot{}, "Loot")
 	s.Migrate(&DB_VariantChannel{}, "Variants")
 	s.Migrate(&DB_PAttribute{}, "Attributes")
-	s.Migrate(&DB_TemporaryCode{}, "ExchangeCodes")
 	s.Migrate(&DB_DiscordPerson{}, "Discords")
 	s.Migrate(&DB_SeasonStat{}, "Stats")
 }
@@ -225,14 +224,6 @@ func (s *PostgresStorage) SaveLoadout(loadout *DB_Loadout) {
 
 func (s *PostgresStorage) DeleteLoadout(loadoutId string) {
 	s.Postgres.Delete(&DB_Loadout{}, "id = ?", loadoutId)
-}
-
-func (s *PostgresStorage) SaveTemporaryCode(code *DB_TemporaryCode) {
-	s.Postgres.Save(code)
-}
-
-func (s *PostgresStorage) DeleteTemporaryCode(codeId string) {
-	s.Postgres.Delete(&DB_TemporaryCode{}, "id = ?", codeId)
 }
 
 func (s *PostgresStorage) SaveDiscordPerson(discordPerson *DB_DiscordPerson) {

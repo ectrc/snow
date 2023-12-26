@@ -43,9 +43,6 @@ type Storage interface {
 	SaveLoadout(loadout *DB_Loadout)
 	DeleteLoadout(loadoutId string)
 
-	SaveTemporaryCode(code *DB_TemporaryCode)
-	DeleteTemporaryCode(codeId string)
-
 	SaveDiscordPerson(person *DB_DiscordPerson)
 	DeleteDiscordPerson(personId string)
 }
@@ -173,14 +170,6 @@ func (r *Repository) SaveLoadout(loadout *DB_Loadout) {
 
 func (r *Repository) DeleteLoadout(loadoutId string) {
 	r.Storage.DeleteLoadout(loadoutId)
-}
-
-func (r *Repository) SaveTemporaryCode(code *DB_TemporaryCode) {
-	r.Storage.SaveTemporaryCode(code)
-}
-
-func (r *Repository) DeleteTemporaryCode(codeId string) {
-	r.Storage.DeleteTemporaryCode(codeId)
 }
 
 func (r *Repository) SaveDiscordPerson(person *DB_DiscordPerson) {
