@@ -5,6 +5,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 )
@@ -129,6 +130,33 @@ func banHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: player.DisplayName + " has been banned.",
+		},
+	})
+}
+
+func GiveFLHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	looker := person.FindByDiscord(i.Member.User.ID)
+	if looker == nil {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if !looker.HasPermission(person.PermissionBan) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	if player == nil {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
+		return
+	}
+
+	fortnite.GiveEverything(player)
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: player.DisplayName + " has been granted everything.",
 		},
 	})
 }
