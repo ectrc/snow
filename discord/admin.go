@@ -152,13 +152,13 @@ func GiveFLHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	fortnite.GiveEverything(player)
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: player.DisplayName + " has been granted everything.",
 		},
 	})
+	fortnite.GiveEverything(player)
 }
 
 func unbanHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
