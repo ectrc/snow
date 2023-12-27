@@ -144,13 +144,78 @@ func GetCloudStorageFile(c *fiber.Ctx) error {
 }
 
 func GetUserStorageFiles(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON([]aid.JSON{})
-}
-
-func GetUserStorageFile(c *fiber.Ctx) error {
+	basePath := "UserStorage/" + c.Params("accountId") + "/"
+	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(basePath, 0755); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+		}
+	} else {
+		filePath := basePath
+		fileContent, err := os.ReadFile(filePath + "ClientSettings.Sav")
+		if err != nil {
+			return c.Status(fiber.StatusOK).JSON(aid.JSON{})
+		}
+		settingsHash := sha1.Sum(fileContent)
+		settingsHash256 := sha1.Sum(fileContent)
+		return c.Status(fiber.StatusOK).JSON(aid.JSON{
+			"uniqueFilename": "ClientSettings.Sav",
+			"filename":       "ClientSettings.Sav",
+			"hash":           hex.EncodeToString(settingsHash[:]),
+			"hash256":        hex.EncodeToString(settingsHash256[:]),
+			"length":         len(fileContent),
+			"contentType":    "application/octet-stream",
+			"uploaded":       "2021-01-01T00:00:00.000Z",
+			"storageType":    "S3",
+			"doNotCache":     false,
+			"storageIds":     []string{"primary"},
+		})
+	}
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
 
+func GetUserStorageFile(c *fiber.Ctx) error {
+	basePath := "UserStorage/" + c.Params("accountId") + "/"
+	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(basePath, 0755); err != nil {
+			return c.Status(fiber.StatusOK).JSON(aid.JSON{})
+		}
+	} else {
+		filePath := basePath + c.Params("fileName")
+		_, err := os.Stat(filePath)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorNotFound)
+		} else {
+			return c.Status(fiber.StatusOK).SendFile(filePath)
+		}
+
+	}
+	return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+}
+
 func PutUserStorageFile(c *fiber.Ctx) error {
+	bytes := string(c.BodyRaw())
+
+	if c.Request().Header.ContentLength() > 400000 || strings.ToLower(c.Params("fileName")) != "clientsettings.sav" {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Invalid File"))
+	}
+
+	filePath := "UserStorage/" + c.Params("accountId") + "/"
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(filePath, 0755); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+		}
+	}
+
+	file, err := os.Create(filePath + c.Params("fileName"))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, strings.NewReader(bytes))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+	}
+
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
