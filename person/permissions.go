@@ -10,6 +10,7 @@ const (
 	PermissionGiveItem    Permission = "give_item"
 	PermissionTakeItem    Permission = "take_item"
 	PermissionReset       Permission = "reset"
+	PermissionFullLocker  Permission = "full_locker"
 
 	PermissionAll Permission = "all"
 )

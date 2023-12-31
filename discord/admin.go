@@ -134,33 +134,6 @@ func banHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func GiveFLHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	looker := person.FindByDiscord(i.Member.User.ID)
-	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
-		return
-	}
-
-	if !looker.HasPermission(person.PermissionBan) {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
-		return
-	}
-
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
-	if player == nil {
-		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
-		return
-	}
-
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: player.DisplayName + " has been granted everything.",
-		},
-	})
-	fortnite.GiveEverything(player)
-}
-
 func unbanHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
@@ -318,5 +291,39 @@ func takeItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Data: &discordgo.InteractionResponseData{
 			Content: str,
 		},
+	})
+}
+
+func giveEverythingHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	looker := person.FindByDiscord(i.Member.User.ID)
+	if looker == nil {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if !looker.HasPermission(person.PermissionGiveItem) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	if player == nil {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
+		return
+	}
+
+	if !player.HasPermission(person.PermissionFullLocker) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+	
+	s.InteractionResponseEdit(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDefferedChannelMessageWithSource,
+	})
+
+	fortnite.GiveEverything(player)
+
+	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: player.DisplayName + " has been granted everything.",
 	})
 }
