@@ -30,11 +30,10 @@ Performance first, universal Fortnite private server backend written in Go.
 
 - **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` I cannot get JWT Tokens to correcly work. I need to supplt a KID for the JWT Token to work however I cannot find a way to get the KID from the game. If you know how to get the KID from the game please open an issue or pull request.
 
-## How do I use this?
+## Support
 
-- **[Discord OAuth Setup Guide](oauth.md)** How to setup Discord OAuth for your backend. This enabled the ability to login to the web app with Discord.
-
-**I would recommend waiting until the backend is more stable and has more features before using it.**
+- **[Github Wiki](https://github.com/ectrc/snow/wiki)** View all of the setup guides and usefull information on how to setup the backend.
+- **[Discord Server](discord.gg/kBefMZA4Qp)** Get help from community members on anything else!
 
 ## Contributing
 
