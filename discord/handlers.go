@@ -109,6 +109,29 @@ func addCommands() {
 		Handler: banHandler,
 		AdminOnly: true,
 	})
+	
+	addCommand(&DiscordCommand{
+		Command: &discordgo.ApplicationCommand{
+			Name: "give-everything",
+			Description: "Give a player full locker",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type: discordgo.ApplicationCommandOptionUser,
+					Name: "discord",
+					Description: "The discord account of the player.",
+					Required: false,
+				},
+				{
+					Type: discordgo.ApplicationCommandOptionString,
+					Name: "display",
+					Description: "The display name of the player.",
+					Required: false,
+				},
+			},
+		},
+		Handler: GiveFLHandler,
+		AdminOnly: true,
+	})
 
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{

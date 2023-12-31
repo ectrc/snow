@@ -20,7 +20,7 @@ var configFile []byte
 
 func init() {
 	aid.LoadConfig(configFile)
-	
+
 	var device storage.Storage
 	switch aid.Config.Database.Type {
 	case "postgres":
@@ -97,7 +97,7 @@ func main() {
 	user.Get("/:accountId", handlers.GetUserStorageFiles)
 	user.Get("/:accountId/:fileName", handlers.GetUserStorageFile)
 	user.Put("/:accountId/:fileName", handlers.PutUserStorageFile)
-	
+
 	game := fortnite.Group("/game/v2")
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
 	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostGamePlatform)
@@ -108,6 +108,7 @@ func main() {
 	profile := game.Group("/profile/:accountId")
 	profile.Use(handlers.MiddlewareFortnite)
 	profile.Post("/client/:action", handlers.PostProfileAction)
+	profile.Post("/dedicated_server/:action", handlers.PostProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
 	lightswitch.Use(handlers.MiddlewareFortnite)
@@ -119,7 +120,7 @@ func main() {
 
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)
-	
+
 	player := snow.Group("/player")
 	player.Use(handlers.MiddlewareWeb)
 	player.Get("/", handlers.GetPlayer)
@@ -129,9 +130,9 @@ func main() {
 		aid.Print("Listening on " + aid.Config.API.Host + ":" + ld.Port)
 		return nil
 	})
-	
+
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
-	
+
 	err := r.Listen("0.0.0.0" + aid.Config.API.Port)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to listen: %v", err))

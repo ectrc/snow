@@ -148,7 +148,7 @@ func GetUserStorageFiles(c *fiber.Ctx) error {
 }
 
 func GetUserStorageFile(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(aid.JSON{})
+			return c.Status(fiber.StatusOK).JSON(aid.JSON{})
 }
 
 func PutUserStorageFile(c *fiber.Ctx) error {
