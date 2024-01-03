@@ -16,7 +16,7 @@ func Print(v ...interface{}) {
 }
 
 func PrintJSON(v interface{}) {
-	if Config.Output.Level == "prod" || Config.Output.Level == "time" {
+	if Config.Output.Level == "prod" {
 		return
 	}
 
