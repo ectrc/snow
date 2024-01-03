@@ -10,6 +10,7 @@ type Person struct {
 	DisplayName string
 	Permissions []string
 	IsBanned bool
+	Friends []string
 	AthenaProfile *Profile
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
@@ -19,17 +20,29 @@ type Person struct {
 	Discord *storage.DB_DiscordPerson
 }
 
-type Option struct {
-	Key string
-	Value string
-}
-
 func NewPerson() *Person {
 	return &Person{
 		ID: uuid.New().String(),
 		DisplayName: uuid.New().String(),
 		Permissions: []string{},
 		IsBanned: false,
+		Friends: []string{},
+		AthenaProfile: NewProfile("athena"),
+		CommonCoreProfile: NewProfile("common_core"),
+		CommonPublicProfile: NewProfile("common_public"),
+		Profile0Profile: NewProfile("profile0"),
+		CollectionsProfile: NewProfile("collections"),
+		CreativeProfile: NewProfile("creative"),
+	}
+}
+
+func NewPersonWithCustomID(id string) *Person {
+	return &Person{
+		ID: id,
+		DisplayName: uuid.New().String(),
+		Permissions: []string{},
+		IsBanned: false,
+		Friends: []string{},
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
@@ -138,6 +151,7 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		DisplayName: databasePerson.DisplayName,
 		Permissions: databasePerson.Permissions,
 		IsBanned: databasePerson.IsBanned,
+		Friends: databasePerson.Friends,
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
@@ -237,12 +251,71 @@ func (p *Person) HasPermission(permission Permission) bool {
 	return false
 }
 
+func (p *Person) AddFriend(friendId string) {
+	p.Friends = append(p.Friends, friendId)
+	p.Save()
+}
+
+func (p *Person) RemoveFriend(friendId string) {
+	for i, friend := range p.Friends {
+		if friend == friendId {
+			p.Friends = append(p.Friends[:i], p.Friends[i+1:]...)
+			break
+		}
+	}
+	p.Save()
+}
+
+func (p *Person) GetFriend(friendId string) *Friend {
+	friend := Find(friendId)
+	if friend == nil {
+		return nil
+	}
+
+	if p.IsFriendInFriendList(friendId) {
+		if friend.IsFriendInFriendList(p.ID) {
+			return &Friend{
+				Person: friend,
+				Status: "ACCEPTED",
+				Direction: "BOTH",
+			}
+		}
+
+		return &Friend{
+			Person: friend,
+			Status: "PENDING",
+			Direction: "OUTBOUND",
+		}
+	}
+
+	if friend.IsFriendInFriendList(p.ID) {
+		return &Friend{
+			Person: friend,
+			Status: "PENDING",
+			Direction: "INBOUND",
+		}
+	}
+
+	return nil
+}
+
+func (p *Person) IsFriendInFriendList(friendId string) bool {
+	for _, idA := range p.Friends {
+		if idA == friendId {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *Person) ToDatabase() *storage.DB_Person {
 	dbPerson := storage.DB_Person{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: p.Permissions,
 		IsBanned: p.IsBanned,
+		Friends: p.Friends,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},

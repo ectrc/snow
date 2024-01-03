@@ -45,7 +45,8 @@ func init() {
 	fortnite.GeneratePlaylistImages()
 
 	if found := person.FindByDisplay("god"); found == nil {
-		fortnite.NewFortnitePerson("god", true)
+		god := fortnite.NewFortnitePerson("god", true)
+		god.AddPermission("all")
 	}
 }
 func main() {
@@ -63,6 +64,7 @@ func main() {
 	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/region", handlers.GetRegion)
 	r.Put("/profile/play_region", handlers.AnyNoContent)
+	r.Get("/api/v1/search/:accountId", handlers.GetPersonSearch)
 	r.Post("/api/v1/assets/Fortnite/:versionId/:assetName", handlers.PostAssets)
 
 	account := r.Group("/account/api")
@@ -97,6 +99,14 @@ func main() {
 	user.Get("/:accountId", handlers.GetUserStorageFiles)
 	user.Get("/:accountId/:fileName", handlers.GetUserStorageFile)
 	user.Put("/:accountId/:fileName", handlers.PutUserStorageFile)
+
+	friends := r.Group("/friends/api")
+	friends.Use(handlers.MiddlewareFortnite)
+	friends.Get("/public/friends/:accountId", handlers.GetFriendList)
+	friends.Post("/public/friends/:accountId/:wanted", handlers.PostCreateFriend)
+	friends.Delete("/public/friends/:accountId/:wanted", handlers.DeleteFriend)
+	friends.Get("/:version/:accountId/summary", handlers.GetFriendListSummary)
+	friends.Get("/:version/:accountId/friends/:wanted", handlers.PostCreateFriend)
 
 	game := fortnite.Group("/game/v2")
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)

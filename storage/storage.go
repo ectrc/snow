@@ -10,13 +10,16 @@ type Storage interface {
 	GetAllPersons() []*DB_Person
 	GetPersonsCount() int
 
+	TotalVBucks() int
+
 	GetPerson(personId string) *DB_Person
 	GetPersonByDisplay(displayName string) *DB_Person
+	GetPersonsByPartialDisplay(displayName string) []*DB_Person
 	GetPersonByDiscordID(discordId string) *DB_Person
 	SavePerson(person *DB_Person)
 	DeletePerson(personId string)
 
-	TotalVBucks() int
+	GetFriendsForPerson(personId string) []*DB_Person
 
 	SaveProfile(profile *DB_Profile)
 	DeleteProfile(profileId string)
@@ -75,6 +78,15 @@ func (r *Repository) GetPersonByDisplayFromDB(displayName string) *DB_Person {
 	return nil
 }
 
+func (r *Repository) GetPersonsByPartialDisplayFromDB(displayName string) []*DB_Person {
+	storagePerson := r.Storage.GetPersonsByPartialDisplay(displayName)
+	if storagePerson != nil {
+		return storagePerson
+	}
+
+	return nil
+}
+
 func (r *Repository) GetPersonByDiscordIDFromDB(discordId string) *DB_Person {
 	storagePerson := r.Storage.GetPersonByDiscordID(discordId)
 	if storagePerson != nil {
@@ -82,6 +94,10 @@ func (r *Repository) GetPersonByDiscordIDFromDB(discordId string) *DB_Person {
 	}
 
 	return nil
+}
+
+func (r *Repository) TotalVBucks() int {
+	return r.Storage.TotalVBucks()
 }
 
 func (r *Repository) GetAllPersons() []*DB_Person {
@@ -92,8 +108,8 @@ func (r *Repository) GetPersonsCount() int {
 	return r.Storage.GetPersonsCount()
 }
 
-func (r *Repository) TotalVBucks() int {
-	return r.Storage.TotalVBucks()
+func (r *Repository) GetFriendsForPerson(personId string) []*DB_Person {
+	return r.Storage.GetFriendsForPerson(personId)
 }
 
 func (r *Repository) SavePerson(person *DB_Person) {

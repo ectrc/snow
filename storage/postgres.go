@@ -97,6 +97,29 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	return &dbPerson
 }
 
+func (s *PostgresStorage) GetPersonsByPartialDisplay(displayName string) []*DB_Person {
+	var dbPersons []*DB_Person
+	s.Postgres.
+		Model(&DB_Person{}).
+		Preload("Profiles").
+		Preload("Profiles.Loadouts").
+		Preload("Profiles.Items.Variants").
+		Preload("Profiles.Gifts.Loot").
+		Preload("Profiles.Attributes").
+		Preload("Profiles.Items").
+		Preload("Profiles.Gifts").
+		Preload("Profiles.Quests").
+		Preload("Discord").
+		Where("display_name LIKE ?", "%" + displayName + "%").
+		Find(&dbPersons)
+
+	if len(dbPersons) == 0 {
+		return nil
+	}
+
+	return dbPersons
+}
+
 func (s *PostgresStorage) GetPersonByDiscordID(discordId string) *DB_Person {
 	var discordEntry DB_DiscordPerson
 	s.Postgres.Model(&DB_DiscordPerson{}).Where("id = ?", discordId).Find(&discordEntry)
@@ -131,6 +154,42 @@ func (s *PostgresStorage) GetPersonsCount() int {
 	var count int64
 	s.Postgres.Model(&DB_Person{}).Count(&count)
 	return int(count)
+}
+
+func (s *PostgresStorage) GetFriendsForPerson(personId string) []*DB_Person {
+	person := s.GetPerson(personId)
+
+	var mine []*DB_Person
+	s.Postgres.
+		Model(&DB_Person{}).
+		Preload("Profiles").
+		Preload("Profiles.Loadouts").
+		Preload("Profiles.Items.Variants").
+		Preload("Profiles.Gifts.Loot").
+		Preload("Profiles.Attributes").
+		Preload("Profiles.Items").
+		Preload("Profiles.Gifts").
+		Preload("Profiles.Quests").
+		Preload("Discord").
+		Where("id IN (?)", person.Friends).
+		Find(&mine)
+
+	var theirs []*DB_Person
+	s.Postgres.
+		Model(&DB_Person{}).
+		Preload("Profiles").
+		Preload("Profiles.Loadouts").
+		Preload("Profiles.Items.Variants").
+		Preload("Profiles.Gifts.Loot").
+		Preload("Profiles.Attributes").
+		Preload("Profiles.Items").
+		Preload("Profiles.Gifts").
+		Preload("Profiles.Quests").
+		Preload("Discord").
+		Where("? = ?", person.ID, gorm.Expr("ANY(friends)")).
+		Find(&theirs)
+
+	return append(mine, theirs...)
 }
 
 func (s *PostgresStorage) TotalVBucks() int {

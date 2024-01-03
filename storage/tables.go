@@ -13,6 +13,7 @@ type DB_Person struct {
 	IsBanned bool
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
+	Friends pq.StringArray `gorm:"type:text[]"`
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
 }
 
