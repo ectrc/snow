@@ -68,7 +68,7 @@ func (c *DiscordClient) UnregisterCommands() {
 	for _, command := range commands {
 		err := c.Client.ApplicationCommandDelete(aid.Config.Discord.ID, aid.Config.Discord.Guild, command.ID)
 		if err != nil {
-			aid.Print("Failed to delete command: " + command.Name)
+			aid.Print("(discord) failed to delete command: " + command.Name)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (c *DiscordClient) UnregisterCommands() {
 	for _, command := range commands {
 		err := c.Client.ApplicationCommandDelete(aid.Config.Discord.ID, "", command.ID)
 		if err != nil {
-			aid.Print("Failed to delete command: " + command.Name)
+			aid.Print("(discord) failed to delete command: " + command.Name)
 		}
 	}
 }
@@ -96,7 +96,7 @@ func (c *DiscordClient) RegisterCommands() {
 
 	_, err := c.Client.ApplicationCommandBulkOverwrite(aid.Config.Discord.ID, aid.Config.Discord.Guild, update)
 	if err != nil {
-		aid.Print("Failed to register commands", err)
+		aid.Print("(discord) failed to register commands", err)
 		return
 	}
 }
@@ -104,7 +104,7 @@ func (c *DiscordClient) RegisterCommands() {
 func (c *DiscordClient) GetRegisteredCommands() []*discordgo.ApplicationCommand {
 	commands, err := c.Client.ApplicationCommands(aid.Config.Discord.ID, aid.Config.Discord.Guild)
 	if err != nil {
-		aid.Print("Failed to get commands")
+		aid.Print("(discord) failed to get commands")
 		return nil
 	}
 
@@ -114,7 +114,7 @@ func (c *DiscordClient) GetRegisteredCommands() []*discordgo.ApplicationCommand 
 func (c *DiscordClient) GetGlobalRegisteredCommands() []*discordgo.ApplicationCommand {
 	commands, err := c.Client.ApplicationCommands(aid.Config.Discord.ID, "")
 	if err != nil {
-		aid.Print("Failed to get commands")
+		aid.Print("(discord) failed to get commands")
 		return nil
 	}
 
@@ -122,7 +122,7 @@ func (c *DiscordClient) GetGlobalRegisteredCommands() []*discordgo.ApplicationCo
 }
 
 func (c *DiscordClient) readyHandler(s *discordgo.Session, event *discordgo.Ready) {
-	aid.Print("Discord bot is ready")
+	aid.Print("(discord) bot is ready")
 }
 
 func (c *DiscordClient) interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {

@@ -41,19 +41,16 @@ func createHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 func createModalHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	data := i.ModalSubmitData()
 	if len(data.Components) <= 0 {
-		aid.Print("No components found")
 		return
 	}
 
 	components, ok := data.Components[0].(*discordgo.ActionsRow)
 	if !ok {
-		aid.Print("Failed to assert TextInput")
 		return
 	}
 
 	display, ok := components.Components[0].(*discordgo.TextInput)
 	if !ok {
-		aid.Print("Failed to assert TextInput")
 		return
 	}
 
@@ -189,7 +186,6 @@ func codeHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	decrypt, err := aid.KeyPair.DecryptAndVerifyB64(encrypted, sig)
 
 	if err || string(decrypt) != code {
-		aid.Print("Failed to verify code that was just generated so we're not going to send it")
 		return
 	}
 

@@ -145,6 +145,5 @@ func GiveEverything(person *p.Person) {
 	}
 
 	storage.Repo.BulkCreateItems(&items)
-	aid.Print("Gave everything to " + person.DisplayName)
 	person.Save()
 }

@@ -116,7 +116,6 @@ func (g *Gift) ToDatabase(profileId string) *storage.DB_Gift {
 
 func (g *Gift) Save() {
 	if g.ProfileID == "" {
-		aid.Print("error saving gift", g.ID, "no profile id")
 		return
 	}
 

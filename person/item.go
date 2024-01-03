@@ -184,7 +184,6 @@ func (i *Item) ToDatabase(profileId string) *storage.DB_Item {
 
 func (i *Item) Save() {
 	if i.ProfileID == "" {
-		aid.Print("error saving item", i.ID, "no profile id")
 		return
 	}
 

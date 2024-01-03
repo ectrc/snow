@@ -51,7 +51,6 @@ func (a *Attribute) Delete() {
 
 func (a *Attribute) Save() {
 	if a.ProfileID == "" {
-		aid.Print("error saving attribute", a.Key, "profile id is empty")
 		return
 	}
 	storage.Repo.SaveAttribute(a.ToDatabase(a.ProfileID))

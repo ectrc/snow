@@ -432,5 +432,5 @@ func GenerateRandomStorefront() {
 	storefront.Add(weekly)
 	
 	StaticCatalog = storefront
-	aid.Print("Generated new random storefront")
+	aid.Print("(snow) generated random storefront")
 }

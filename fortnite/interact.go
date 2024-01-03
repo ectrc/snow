@@ -235,7 +235,7 @@ func (f *FortniteAPI) GetPlaylistImage(playlist string) (any, error) {
 }
 
 func PreloadCosmetics(max int) error {
-	aid.Print("Fortnite Assets from", StaticAPI.URL)
+	aid.Print("(snow) assets from", StaticAPI.URL)
 
 	list, err := StaticAPI.GetAllCosmetics()
 	if err != nil {
@@ -324,7 +324,7 @@ func PreloadCosmetics(max int) error {
 
 		withDisplayAssets++
 	}
-	aid.Print("Preloaded", len(Cosmetics.Items), "cosmetics with", withDisplayAssets, "display assets", "(", float64(withDisplayAssets)/float64(len(assetData))*100, "% ) coverage" )
+	aid.Print("(snow) preloaded", len(Cosmetics.Items), "cosmetics")
 	
 	return nil
 }

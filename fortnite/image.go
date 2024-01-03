@@ -345,5 +345,5 @@ func GeneratePlaylistImages() {
 	GenerateTrioImage()
 	GenerateSquadImage()
 
-	aid.Print("Generated playlist images")
+	aid.Print("(snow) generated playlist images")
 }

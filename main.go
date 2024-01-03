@@ -26,8 +26,8 @@ func init() {
 	case "postgres":
 		postgresStorage := storage.NewPostgresStorage()
 		if aid.Config.Database.DropAllTables {
-			aid.Print("Dropping all tables")
 			postgresStorage.DropTables()
+			aid.Print("(snow) all tables dropped and reset")
 		}
 		postgresStorage.MigrateAll()
 		device = postgresStorage
@@ -127,7 +127,7 @@ func main() {
 	player.Get("/locker", handlers.GetPlayerLocker)
 
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {
-		aid.Print("Listening on " + aid.Config.API.Host + ":" + ld.Port)
+		aid.Print("(fiber) listening on " + aid.Config.API.Host + ":" + ld.Port)
 		return nil
 	})
 
