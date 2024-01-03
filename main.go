@@ -107,8 +107,8 @@ func main() {
 
 	profile := game.Group("/profile/:accountId")
 	profile.Use(handlers.MiddlewareFortnite)
-	profile.Post("/client/:action", handlers.PostProfileAction)
-	profile.Post("/dedicated_server/:action", handlers.PostProfileAction)
+	profile.Post("/client/:action", handlers.PostClientProfileAction)
+	profile.Post("/dedicated_server/:action", handlers.PostServerProfileAction)
 
 	lightswitch := r.Group("/lightswitch/api")
 	lightswitch.Use(handlers.MiddlewareFortnite)

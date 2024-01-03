@@ -317,13 +317,14 @@ func giveEverythingHandler(s *discordgo.Session, i *discordgo.InteractionCreate)
 		return
 	}
 	
-	s.InteractionResponseEdit(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDefferedChannelMessageWithSource,
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 	})
 
 	fortnite.GiveEverything(player)
 
+	str := player.DisplayName + "has been granted everything." 
 	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-		Content: player.DisplayName + " has been granted everything.",
+		Content: &str,
 	})
 }

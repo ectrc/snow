@@ -14,21 +14,21 @@ import (
 )
 
 var (
-	profileActions = map[string]func(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
-		"QueryProfile": PostQueryProfileAction,
-		"ClientQuestLogin": PostQueryProfileAction,
-		"MarkItemSeen": PostMarkItemSeenAction,
-		"SetItemFavoriteStatusBatch": PostSetItemFavoriteStatusBatchAction,
-		"EquipBattleRoyaleCustomization": PostEquipBattleRoyaleCustomizationAction,
-		"SetBattleRoyaleBanner": PostSetBattleRoyaleBannerAction,
-		"SetCosmeticLockerSlot": PostSetCosmeticLockerSlotAction,
-		"SetCosmeticLockerBanner": PostSetCosmeticLockerBannerAction,
-		"PurchaseCatalogEntry": PostPurchaseCatalogEntryAction,
+	clientActions = map[string]func(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+		"QueryProfile": clientQueryProfileAction,
+		"ClientQuestLogin": clientQueryProfileAction,
+		"MarkItemSeen": clientMarkItemSeenAction,
+		"SetItemFavoriteStatusBatch": clientSetItemFavoriteStatusBatchAction,
+		"EquipBattleRoyaleCustomization": clientEquipBattleRoyaleCustomizationAction,
+		"SetBattleRoyaleBanner": clientSetBattleRoyaleBannerAction,
+		"SetCosmeticLockerSlot": clientSetCosmeticLockerSlotAction,
+		"SetCosmeticLockerBanner": clientSetCosmeticLockerBannerAction,
+		"PurchaseCatalogEntry": clientPurchaseCatalogEntryAction,
 	}
 )
 
-func PostProfileAction(c *fiber.Ctx) error {
-	person := p.Find(c.Params("accountId"))
+func PostClientProfileAction(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
 	if person == nil {
 		return c.Status(404).JSON(aid.ErrorBadRequest("No Account Found"))
 	}
@@ -52,7 +52,7 @@ func PostProfileAction(c *fiber.Ctx) error {
 
 	notifications := []aid.JSON{}
 
-	action, ok := profileActions[c.Params("action")];
+	action, ok := clientActions[c.Params("action")];
 	if ok && profile != nil {
 		if err := action(c, person, profile, &notifications); err != nil {
 			return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
@@ -107,9 +107,9 @@ func PostProfileAction(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(aid.JSON{
 		"profileId": c.Query("profileId"),
-		"profileRevision": revision,
-		"profileCommandRevision": revision,
-		"profileChangesBaseRevision": revision - 1,
+		"profileRevision": profile.Revision,
+		"profileCommandRevision": profile.Revision,
+		"profileChangesBaseRevision": profile.Revision - 1,
 		"profileChanges": profile.Changes,
 		"multiUpdate": multiUpdate,
 		"notifications": notifications,
@@ -118,12 +118,12 @@ func PostProfileAction(c *fiber.Ctx) error {
 	})
 }
 
-func PostQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+func clientQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	profile.CreateFullProfileUpdateChange()
 	return nil
 }
 
-func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+func clientMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		ItemIds []string `json:"itemIds"`
 	}
@@ -146,7 +146,7 @@ func PostMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, 
 	return nil
 }
 
-func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		SlotName string `json:"slotName" binding:"required"`
 		ItemToSlot string `json:"itemToSlot"`
@@ -191,7 +191,7 @@ func PostEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, pr
 	return nil
 }
 
-func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+func clientSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		HomebaseBannerColorID string `json:"homebaseBannerColorId" binding:"required"`
 		HomebaseBannerIconID string `json:"homebaseBannerIconId" binding:"required"`
@@ -232,7 +232,7 @@ func PostSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *p.
 	return nil
 }
 
-func PostSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+func clientSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		ItemIds []string `json:"itemIds" binding:"required"`
 		Favorite []bool `json:"itemFavStatus" binding:"required"`
@@ -256,7 +256,7 @@ func PostSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, profil
 	return nil
 }
 
-func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
+func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
 	var body struct {
 		Category string `json:"category" binding:"required"` // item type e.g. Character
 		ItemToSlot string `json:"itemToSlot" binding:"required"` // template id
@@ -325,7 +325,7 @@ func PostSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.
 	return nil
 }
 
-func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
+func clientSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
 	var body struct {
 		LockerItem string `json:"lockerItem" binding:"required"` // locker id
 		BannerColorTemplateName string `json:"bannerColorTemplateName" binding:"required"` // template id
@@ -361,7 +361,7 @@ func PostSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile *
 	return nil
 }
 
-func PostPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct{
 		OfferID string `json:"offerId" binding:"required"`
 		PurchaseQuantity int `json:"purchaseQuantity" binding:"required"`
