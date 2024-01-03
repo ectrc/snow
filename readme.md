@@ -37,11 +37,4 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or pull request if you would like to contribute. Make sure to follow the same format (2 space indents) and style!
-
-### Commits
-
-Keep commits on a per feature level e.g. do not commit 17 files at once under the name `add`, rather commit every add or change with the format below so that it is easy to track and understand any commits to the repository.#
-
-- **Feature** `feat: commit message here`
-- **Refactor** `refact: commit message here`
+Contributions are welcome! Please open an issue or pull request if you would like to contribute. Make sure to follow the same format (2 space indents) and style! Make sure to keep commits concise and readable e.g. do not change formating to mess up code review!
