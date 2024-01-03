@@ -145,6 +145,6 @@ func main() {
 
 	err := r.Listen("0.0.0.0" + aid.Config.API.Port)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to listen: %v", err))
+		panic(fmt.Sprintf("(fiber) ailed to listen: %v", err))
 	}
 }
