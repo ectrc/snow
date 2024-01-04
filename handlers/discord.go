@@ -16,7 +16,7 @@ import (
 func GetDiscordOAuthURL(c *fiber.Ctx) error {
 	code := c.Query("code")
 	if code == "" {
-		return c.Status(200).SendString("https://discord.com/oauth2/authorize?client_id="+ aid.Config.Discord.ID +"&redirect_uri="+ url.QueryEscape(aid.Config.API.Host + aid.Config.API.Port +"/snow/discord") + "&response_type=code&scope=identify")
+		return c.Status(200).SendString("https://discord.com/oauth2/authorize?client_id="+ aid.Config.Discord.ID +"&redirect_uri="+ url.QueryEscape("http://" + aid.Config.API.Host + aid.Config.API.Port +"/snow/discord") + "&response_type=code&scope=identify")
 	}
 
 	client := &http.Client{}
@@ -26,7 +26,7 @@ func GetDiscordOAuthURL(c *fiber.Ctx) error {
 		"client_secret": {aid.Config.Discord.Secret},
 		"grant_type": {"authorization_code"},
 		"code": {code},
-		"redirect_uri": {aid.Config.API.Host + aid.Config.API.Port +"/snow/discord"},
+		"redirect_uri": {"http://" + aid.Config.API.Host + aid.Config.API.Port +"/snow/discord"},
 	})
 	if err != nil {
 		return c.Status(500).JSON(aid.JSON{"error":err.Error()})
@@ -88,5 +88,5 @@ func GetDiscordOAuthURL(c *fiber.Ctx) error {
 		Name: "access_token",
 		Value: access,
 	})
-	return c.Redirect(aid.Config.API.Host + aid.Config.API.FrontendPort + "/attempt")
+	return c.Redirect("http://" + aid.Config.API.Host + aid.Config.API.FrontendPort + "/attempt")
 }
