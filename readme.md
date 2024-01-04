@@ -6,6 +6,7 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## Features
 
+- **Single File** It will embed all of the external files inside of one executable! This allows the backend to be ran anywhere with no setup _(after initial config)_!
 - **Blazingly Fast** Written in Go and build on Fast HTTP, it is extremely fast and can handle any profile action in milliseconds with its caching system.
 - **Profile Changes** Automatically keeps track of profile changes exactly so any external changes are displayed in-game on the next action.
 - **Universal Database** It is possible to add new database types to satisfy your needs. Currently, it only supports `postgresql`.
