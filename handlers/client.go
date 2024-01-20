@@ -101,7 +101,7 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 		})
 
 		profile.ClearProfileChanges()
-		profile.Save()
+		go profile.Save()
 	}
 
 	return c.Status(200).JSON(aid.JSON{

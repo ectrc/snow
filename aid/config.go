@@ -34,6 +34,7 @@ type CS struct {
 		Season int
 		Build float64
 		Everything bool
+		Password bool
 	}
 }
 
@@ -132,4 +133,5 @@ func LoadConfig(file []byte) {
 
 	Config.Fortnite.Season = parsedSeason
 	Config.Fortnite.Everything = cfg.Section("fortnite").Key("everything").MustBool(false)
+	Config.Fortnite.Password = cfg.Section("fortnite").Key("password").MustBool(false)
 }
