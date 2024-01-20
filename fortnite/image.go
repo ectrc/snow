@@ -93,6 +93,16 @@ func getRandomCharacterImage() image.Image {
 			continue
 		}
 
+		for _, tag := range character.GameplayTags {
+			if strings.Contains(tag, "StarterPack") {
+				continueLoop = true
+				break
+			}
+		}
+		if continueLoop {
+			continue
+		}
+
 		// newDisplayAsset := "DAv2_" + strings.ReplaceAll(character.ID, "Athena_Commando_", "")
 		// if !KnownDisplayAssets[newDisplayAsset] {
 		// 	continue
