@@ -61,10 +61,10 @@ func main() {
 	r.Use(aid.FiberLimiter())
 	r.Use(aid.FiberCors())
 
-	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
-	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/region", handlers.GetRegion)
 	r.Put("/profile/play_region", handlers.AnyNoContent)
+	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
+	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/api/v1/search/:accountId", handlers.GetPersonSearch)
 	r.Post("/api/v1/assets/Fortnite/:versionId/:assetName", handlers.PostAssets)
 	

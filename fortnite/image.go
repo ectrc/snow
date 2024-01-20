@@ -103,11 +103,6 @@ func getRandomCharacterImage() image.Image {
 			continue
 		}
 
-		// newDisplayAsset := "DAv2_" + strings.ReplaceAll(character.ID, "Athena_Commando_", "")
-		// if !KnownDisplayAssets[newDisplayAsset] {
-		// 	continue
-		// }
-
 		found = true
 	}
 

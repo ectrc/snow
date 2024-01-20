@@ -8,13 +8,24 @@ import (
 	"github.com/google/uuid"
 )
 
+type SocketType string
+var (
+	SocketTypeXmpp SocketType = "xmpp"
+	SocketTypeUnknown SocketType = "unknown"
+)
+
 type Socket struct {
 	ID string
+	Type SocketType
 	Connection *websocket.Conn
 	Person *person.Person
 }
 
 var (
+	handles = map[SocketType]func(string) {
+		SocketTypeXmpp: handlePresenceSocket,
+	}
+
 	sockets = aid.GenericSyncMap[Socket]{}
 )
 
@@ -23,34 +34,33 @@ func MiddlewareWebsocket(c *fiber.Ctx) error {
 		return fiber.ErrUpgradeRequired
 	}
 
-	c.Locals("protocol", c.Get("Sec-WebSocket-Protocol"))
+	var protocol SocketType
+	switch c.Get("Sec-WebSocket-Protocol") {
+	case "xmpp":
+		protocol = SocketTypeXmpp
+	default:
+		protocol = SocketTypeUnknown
+	}
+
 	c.Locals("uuid", uuid.New().String())
+	c.Locals("protocol", protocol)
 	return c.Next()
 }
 
 func WebsocketConnection(c *websocket.Conn) {
-	protocol := c.Locals("protocol").(string)
+	protocol := c.Locals("protocol").(SocketType)
 	uuid := c.Locals("uuid").(string)
 
 	sockets.Add(uuid, &Socket{
 		ID: uuid,
+		Type: protocol,
 		Connection: c,
 	})
 	defer close(uuid)
 
-	switch protocol {
-	case "xmpp":
-		aid.Print("(xmpp) new connection: ", uuid)
-	default:
-		aid.Print("(unknown) new connection: ", uuid)
-	}
-
-	for {
-		_, _, err := c.ReadMessage()
-		if err != nil {
-			break
-		}
-	}
+	if handle, ok := handles[protocol]; ok {
+		handle(uuid)
+	} 
 }
 
 func close(id string) {
