@@ -14,7 +14,7 @@ func GetCloudStorageFiles(c *fiber.Ctx) error {
 	sum := sha1.Sum(storage.GetDefaultEngine())
 	more := sha256.Sum256(storage.GetDefaultEngine())
 
-	return c.Status(fiber.StatusOK).JSON([]aid.JSON{
+	return c.Status(fiber.StatusOK).JSON([]fiber.Map{
 		{
 			"uniqueFilename": "DefaultEngine.ini",
 			"filename": "DefaultEngine.ini",
@@ -22,22 +22,25 @@ func GetCloudStorageFiles(c *fiber.Ctx) error {
 			"hash256": hex.EncodeToString(more[:]),
 			"length": len(storage.GetDefaultEngine()),
 			"contentType": "application/octet-stream",
-			"uploaded": "0000-00-00T00:00:00.000Z",
+			"uploaded": aid.TimeStartOfDay(),
 			"storageType": "S3",
+			"storageIds": fiber.Map{
+				"primary": "primary",
+			},
 			"doNotCache": false,
 		},
 	})
 }
 
 func GetCloudStorageConfig(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(aid.JSON{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"enumerateFilesPath": "/api/cloudstorage/system",
 		"enableMigration": true,
 		"enableWrites": true,
 		"epicAppName": "Live",
 		"isAuthenticated": true,
 		"disableV2": true,
-		"lastUpdated": "0000-00-00T00:00:00.000Z",
+		"lastUpdated": aid.TimeStartOfDay(),
 		"transports": []string{},
 	})
 }
@@ -45,7 +48,10 @@ func GetCloudStorageConfig(c *fiber.Ctx) error {
 func GetCloudStorageFile(c *fiber.Ctx) error {
 	switch c.Params("fileName") {
 	case "DefaultEngine.ini":
-		return c.Status(fiber.StatusOK).Send(storage.GetDefaultEngine())
+		c.Set("Content-Type", "application/octet-stream")
+		c.Status(fiber.StatusOK)
+		c.Send(storage.GetDefaultEngine())
+		return nil
 	}
 
 	return c.Status(400).JSON(aid.ErrorBadRequest)

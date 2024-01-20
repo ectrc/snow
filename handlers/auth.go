@@ -11,7 +11,7 @@ import (
 
 var (
 	oauthTokenGrantTypes = map[string]func(c *fiber.Ctx, body *FortniteTokenBody) error{
-		// "client_credentials": PostTokenClientCredentials, // spams the api?? like wtf
+		"client_credentials": PostTokenClientCredentials, // spams the api?? like wtf
 		"password": PostTokenPassword,
     "exchange_code": PostTokenExchangeCode,
 	}
@@ -40,13 +40,10 @@ func PostFortniteToken(c *fiber.Ctx) error {
 }
 
 func PostTokenClientCredentials(c *fiber.Ctx, body *FortniteTokenBody) error {
-	client, sig := aid.KeyPair.EncryptAndSignB64([]byte(c.IP()))
-	hash := aid.Hash([]byte(client + "." + sig))
-
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
-		"access_token": "eg1~" + hash,
+		"access_token": "snow",
 		"token_type": "bearer",
-		"client_id": c.IP(),
+		"client_id": aid.Hash([]byte(c.IP())),
 		"client_service": "fortnite",
 		"internal_client": true,
 		"expires_in": 3600,
