@@ -77,7 +77,7 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 	}
 	revision++
 	profile.Revision = revision
-	profile.Save()
+	go profile.Save()
 	delete(profileSnapshots, profile.Type)
 
 	multiUpdate := []aid.JSON{}
