@@ -168,7 +168,7 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 		}
 	}
 
-	attr := profile.Attributes.GetAttributeByKey("favorite_" + strings.ToLower(body.SlotName))
+	attr := profile.Attributes.GetAttributeByKey("favorite_" + strings.ReplaceAll(strings.ToLower(body.SlotName), "wrap", "wraps"))
 	if attr == nil {
 		return fmt.Errorf("attribute not found")
 	}
@@ -180,6 +180,10 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 		attr.ValueJSON = aid.JSONStringify(value)
 	case "ItemWrap":
 		value := aid.JSONParse(attr.ValueJSON)
+		if body.IndexWithinSlot == -1 {
+			attr.ValueJSON = aid.JSONStringify([]any{item.ID,item.ID,item.ID,item.ID,item.ID,item.ID,item.ID})
+			break
+		}
 		value.([]any)[body.IndexWithinSlot] = item.ID
 		attr.ValueJSON = aid.JSONStringify(value)
 	default:
