@@ -7,9 +7,10 @@ Performance first, universal Fortnite private server backend written in Go.
 ## Features
 
 - **Single File** It will embed all of the external files inside of one executable! This allows the backend to be ran anywhere with no setup _(after initial config)_!
-- **Blazingly Fast** Written in Go and build on Fast HTTP, it is extremely fast and can handle any profile action in milliseconds with its caching system.
+- **Blazingly Fast** Written in Go and built upon Fast HTTP, it is extremely fast and can handle any profile action in milliseconds with its caching system.
 - **Profile Changes** Automatically keeps track of profile changes exactly so any external changes are displayed in-game on the next action.
 - **Universal Database** It is possible to add new database types to satisfy your needs. Currently, it only supports `postgresql`.
+- **Production Ready** Optimised and tested to be ran in production environments. It is also possible to run multiple instances of the backend to scale it horizontally.
 
 ## What's next?
 
@@ -29,12 +30,11 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ### Not Supported
 
-- **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` I cannot get JWT Tokens to correcly work. I need to supplt a KID for the JWT Token to work however I cannot find a way to get the KID from the game. If you know how to get the KID from the game please open an issue or pull request.
+- **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` I cannot get JWT Tokens to correctly work. I need to supply a key id header for the JWT Token to work however I cannot find the proper kids. If you know how to get the kid from the game please open an issue or pull request.
 
 ## Support
 
-- **[Github Wiki](https://github.com/ectrc/snow/wiki)** View all of the setup guides and usefull information on how to setup the backend.
-- **[Discord Server](discord.gg/kBefMZA4Qp)** Get help from community members on anything else!
+- **[Discord Server](https://discord.gg/kBefMZA4Qp)** Get help from community members!
 
 ## Contributing
 
