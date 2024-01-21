@@ -9,18 +9,53 @@ import (
 )
 
 var (
-	Rarities = map[string]int{
-		"EFortRarity::Legendary": 2000,
-		"EFortRarity::Epic": 1500,
-		"EFortRarity::Rare": 1200,
-		"EFortRarity::Uncommon": 800,
-		"EFortRarity::Common": 500,
+	Rarities = map[string]map[string]int{
+		"EFortRarity::Legendary": map[string]int{
+			"AthenaCharacter": 2000,
+			"AthenaBackpack": 1500,
+			"AthenaPickaxe": 1500,
+			"AthenaGlider": 1800,
+			"AthenaDance": 500,
+			"AthenaItemWrap": 800,
+		},
+		"EFortRarity::Epic": map[string]int{
+			"AthenaCharacter": 1500,
+			"AthenaBackpack": 1200,
+			"AthenaPickaxe": 1200,
+			"AthenaGlider": 1500,
+			"AthenaDance": 800,
+			"AthenaItemWrap": 800,
+		},
+		"EFortRarity::Rare": map[string]int{
+			"AthenaCharacter": 1200,
+			"AthenaBackpack": 800,
+			"AthenaPickaxe": 800,
+			"AthenaGlider": 800,
+			"AthenaDance": 500,
+			"AthenaItemWrap": 600,
+		},
+		"EFortRarity::Uncommon": map[string]int{
+			"AthenaCharacter": 800,
+			"AthenaBackpack": 200,
+			"AthenaPickaxe": 500,
+			"AthenaGlider": 500,
+			"AthenaDance": 200,
+			"AthenaItemWrap": 300,
+		},
+		"EFortRarity::Common": map[string]int{
+			"AthenaCharacter": 500,
+			"AthenaBackpack": 200,
+			"AthenaPickaxe": 500,
+			"AthenaGlider": 500,
+			"AthenaDance": 200,
+			"AthenaItemWrap": 300,
+		},
 	}
 	StaticCatalog = NewCatalog() 
 )
 
-func GetPriceForRarity(rarity string) int {
-	return Rarities[rarity]
+func GetPriceForRarity(rarity string, backendType string) int {
+	return Rarities[rarity][backendType]
 }
 
 type Catalog struct {
@@ -324,7 +359,7 @@ func GenerateRandomStorefront() {
 		if item.DisplayAssetPath != "" {
 			entry.SetDisplayAssetPath(item.DisplayAssetPath)
 		}
-		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
+		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue, item.Type.BackendValue))
 		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 		entry.SetTileSize("Normal")
 		entry.Priority = 1
@@ -354,7 +389,7 @@ func GenerateRandomStorefront() {
 		if item.DisplayAssetPath != "" {
 			entry.SetDisplayAssetPath(item.DisplayAssetPath)
 		}
-		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
+		entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue, item.Type.BackendValue))
 		entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 		entry.SetTileSize("Small")
 
@@ -407,7 +442,7 @@ func GenerateRandomStorefront() {
 			if item.DisplayAssetPath != "" {
 				entry.SetDisplayAssetPath(item.DisplayAssetPath)
 			}
-			entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue))
+			entry.SetPrice(GetPriceForRarity(item.Rarity.BackendValue, item.Type.BackendValue))
 			entry.AddGrant(item.Type.BackendValue + ":" + item.ID)
 
 			itemsToAdd = append(itemsToAdd, entry)

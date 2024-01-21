@@ -124,7 +124,7 @@ func PostTokenExchangeCode(c *fiber.Ctx, body *FortniteTokenBody) error {
 
 func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 	if aid.Config.Fortnite.Password {
-		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Password Login is disabled for security reasons. Please use an Exchange Code given by the discord bot."))
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Username and password authentication is disabled for security reasons. Please use an exchange code given by the discord bot."))
 	}
 
 	if body.Username == "" || body.Password == "" {
