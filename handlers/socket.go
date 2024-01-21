@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/person"
 	"github.com/gofiber/contrib/websocket"
@@ -16,13 +17,39 @@ var (
 
 type Socket struct {
 	ID string
+	JID string
 	Type SocketType
 	Connection *websocket.Conn
 	Person *person.Person
 }
 
+type MessageToWrite struct {
+	Socket *Socket
+	Message []byte
+}
+
+func (s *Socket) Write(message []byte) {
+	socketWriteQueue <- MessageToWrite{
+		Socket: s,
+		Message: message,
+	}
+}
+
+func (s *Socket) WriteTree(message *etree.Document) {
+	bytes, err := message.WriteToBytes()
+	if err != nil {
+		return
+	}
+
+	socketWriteQueue <- MessageToWrite{
+		Socket: s,
+		Message: bytes,
+	}
+}
+
 var (
-	handles = map[SocketType]func(string) {
+	socketWriteQueue = make(chan MessageToWrite, 1000)
+	socketHandlers = map[SocketType]func(string) {
 		SocketTypeXmpp: handlePresenceSocket,
 	}
 
@@ -56,19 +83,35 @@ func WebsocketConnection(c *websocket.Conn) {
 		Type: protocol,
 		Connection: c,
 	})
-	defer close(uuid)
+	defer func() {
+		socket, ok := sockets.Get(uuid)
+		if !ok {
+			return
+		}
+		socket.Connection.Close()
+		sockets.Delete(uuid)
+		aid.Print("(xmpp) connection closed", uuid)
+	}()
 
-	if handle, ok := handles[protocol]; ok {
+	if handle, ok := socketHandlers[protocol]; ok {
 		handle(uuid)
 	} 
 }
 
-func close(id string) {
-	socket, ok := sockets.Get(id)
-	if !ok {
-		return
-	}
-	socket.Connection.Close()
-	sockets.Delete(id)
-	aid.Print("(xmpp) connection closed", id)
+func init() {
+	go func() {
+		for {
+			if aid.Config != nil {
+				break
+			}
+		}
+
+		aid.Print("(socket) write queue started")
+
+		for {
+			message := <-socketWriteQueue
+			aid.Print("(socket) message sent", message.Socket.ID, string(message.Message))
+			message.Socket.Connection.WriteMessage(websocket.TextMessage, message.Message)
+		}
+	}()
 }
