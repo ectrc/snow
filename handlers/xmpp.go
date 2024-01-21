@@ -98,7 +98,7 @@ func presenceSocketHandle(id string) {
 		friendPresence.CreateElement("status").SetText(aid.JSONStringify(aid.JSON{}))
 		friendPresence.CreateElement("show").SetText("away")
 
-		friendSocket.WriteTree(friendDocument)
+		friendSocket.PresenceWrite(friendDocument)
 	}
 
 	for _, party := range socket.PresenceState.ParsedStatus.Properties {
@@ -127,7 +127,7 @@ func presenceSocketHandle(id string) {
 				},
 			}))
 
-			recieverSocket.WriteTree(document)
+			recieverSocket.PresenceWrite(document)
 			return true
 		})
 	}
@@ -141,7 +141,7 @@ func presenceSocketOpenEvent(socket *Socket, tree *etree.Document) error {
 	open.Attr = append(open.Attr, etree.Attr{Key: "version", Value: "1.0"})
 	open.Attr = append(open.Attr, etree.Attr{Key: "id", Value: socket.ID})
 
-	socket.WriteTree(document)
+	socket.PresenceWrite(document)
 	return nil
 }
 
@@ -199,8 +199,8 @@ func presenceSocketIqSetEvent(socket *Socket, tree *etree.Document) error {
 	iq.Attr = append(iq.Attr, etree.Attr{Key: "id", Value: "_xmpp_auth1"})
 	iq.Attr = append(iq.Attr, etree.Attr{Key: "from", Value: "prod.ol.epicgames.com"})
 
-	socket.WriteTree(document)
-	SendPresenceSocketStatusToFriends(socket)
+	socket.PresenceWrite(document)
+	socket.PresenceWriteStatus()
 	return nil
 }
 
@@ -214,7 +214,7 @@ func presenceSocketIqGetEvent(socket *Socket, tree *etree.Document) error {
 	ping := iq.CreateElement("ping")
 	ping.Attr = append(ping.Attr, etree.Attr{Key: "xmlns", Value: "urn:xmpp:ping"})
 
-	socket.WriteTree(document)
+	socket.PresenceWrite(document)
 	return nil
 }
 
@@ -237,7 +237,7 @@ func presenceSocketMessageEvent(socket *Socket, tree *etree.Document) error {
 	message.Attr = append(message.Attr, etree.Attr{Key: "xmlns", Value: "jabber:client"})
 	message.CreateElement("body").SetText(tree.Root().SelectElement("body").Text())
 
-	recieverSocket.WriteTree(document)
+	recieverSocket.PresenceWrite(document)
 	return nil
 }
 
@@ -249,14 +249,23 @@ func presenceSocketPresenceEvent(socket *Socket, tree *etree.Document) error {
 
 	socket.PresenceState.RawStatus = status.Text()
 	json.NewDecoder(strings.NewReader(status.Text())).Decode(&socket.PresenceState.ParsedStatus)
+	socket.PresenceWriteStatus()
 
-	SendPresenceSocketStatusToFriends(socket)
 	return nil
 }
 
-func SendPresenceSocketStatusToFriends(socket *Socket) {
-	for _, partial := range storage.Repo.GetFriendsForPerson(socket.Person.ID) {
-		friend := socket.Person.GetFriend(partial.ID)
+func (s *Socket) PresenceWrite(message *etree.Document) {
+	bytes, err := message.WriteToBytes()
+	if err != nil {
+		return
+	}
+
+	s.Write(bytes)
+}
+
+func (s *Socket) PresenceWriteStatus() {
+	for _, partial := range storage.Repo.GetFriendsForPerson(s.Person.ID) {
+		friend := s.Person.GetFriend(partial.ID)
 		if friend == nil {
 			continue
 		}
@@ -268,22 +277,48 @@ func SendPresenceSocketStatusToFriends(socket *Socket) {
 
 		friendDocument := etree.NewDocument()
 		friendPresence := friendDocument.CreateElement("presence")
-		friendPresence.Attr = append(friendPresence.Attr, etree.Attr{Key: "from", Value: socket.PresenceState.JID})
+		friendPresence.Attr = append(friendPresence.Attr, etree.Attr{Key: "from", Value: s.PresenceState.JID})
 		friendPresence.Attr = append(friendPresence.Attr, etree.Attr{Key: "to", Value: friendSocket.PresenceState.JID})
 		friendPresence.Attr = append(friendPresence.Attr, etree.Attr{Key: "type", Value: "available"})
 		friendPresence.Attr = append(friendPresence.Attr, etree.Attr{Key: "xmlns", Value: "jabber:client"})
-		friendPresence.CreateElement("status").SetText(socket.PresenceState.RawStatus)
-		friendSocket.WriteTree(friendDocument)
+		friendPresence.CreateElement("status").SetText(s.PresenceState.RawStatus)
+		friendSocket.PresenceWrite(friendDocument)
 
 		document := etree.NewDocument()
 		presence := document.CreateElement("presence")
 		presence.Attr = append(presence.Attr, etree.Attr{Key: "from", Value: friendSocket.PresenceState.JID})
-		presence.Attr = append(presence.Attr, etree.Attr{Key: "to", Value: socket.PresenceState.JID})
+		presence.Attr = append(presence.Attr, etree.Attr{Key: "to", Value: s.PresenceState.JID})
 		presence.Attr = append(presence.Attr, etree.Attr{Key: "type", Value: "available"})
 		presence.Attr = append(presence.Attr, etree.Attr{Key: "xmlns", Value: "jabber:client"})
 		presence.CreateElement("status").SetText(friendSocket.PresenceState.RawStatus)
-		socket.WriteTree(document)
+		s.PresenceWrite(document)
 	}
+}
+
+func (s *Socket) PresenceWriteJSON(body aid.JSON) {
+	document := etree.NewDocument()
+	message := document.CreateElement("message")
+	message.Attr = append(message.Attr, etree.Attr{Key: "id", Value: uuid.New().String()})
+	message.Attr = append(message.Attr, etree.Attr{Key: "from", Value: "prod.ol.epicgames.com"})
+	message.Attr = append(message.Attr, etree.Attr{Key: "to", Value: s.PresenceState.JID})
+	message.Attr = append(message.Attr, etree.Attr{Key: "xmlns", Value: "jabber:client"})
+	message.CreateElement("body").SetText(aid.JSONStringify(body))
+	s.PresenceWrite(document)
+}
+
+func (s *Socket) PresenceWriteGiftReceived() {
+	document := etree.NewDocument()
+	message := document.CreateElement("message")
+	message.Attr = append(message.Attr, etree.Attr{Key: "id", Value: uuid.New().String()})
+	message.Attr = append(message.Attr, etree.Attr{Key: "from", Value: "prod.ol.epicgames.com"})
+	message.Attr = append(message.Attr, etree.Attr{Key: "to", Value: s.PresenceState.JID})
+	message.Attr = append(message.Attr, etree.Attr{Key: "xmlns", Value: "jabber:client"})
+	message.CreateElement("body").SetText(aid.JSONStringify(aid.JSON{
+		"type": "com.epicgames.gift.received",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"payload": aid.JSON{},
+	}))
+	s.PresenceWrite(document)
 }
 
 func init() {
@@ -310,7 +345,7 @@ func init() {
 				ping := iq.CreateElement("ping")
 				ping.Attr = append(iq.Attr, etree.Attr{Key: "xmlns", Value: "urn:xmpp:ping"})
 
-				socket.WriteTree(document)
+				socket.PresenceWrite(document)
 				return true
 			})
 		}

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/person"
 	"github.com/gofiber/contrib/websocket"
@@ -31,18 +30,6 @@ func (s *Socket) Write(message []byte) {
 	socketWriteQueue <- MessageToWrite{
 		Socket: s,
 		Message: message,
-	}
-}
-
-func (s *Socket) WriteTree(message *etree.Document) {
-	bytes, err := message.WriteToBytes()
-	if err != nil {
-		return
-	}
-
-	socketWriteQueue <- MessageToWrite{
-		Socket: s,
-		Message: bytes,
 	}
 }
 
