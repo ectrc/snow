@@ -10,17 +10,16 @@ import (
 )
 
 type SocketType string
-var (
-	SocketTypeXmpp SocketType = "xmpp"
-	SocketTypeUnknown SocketType = "unknown"
-)
+const SocketTypeXmpp SocketType = "xmpp"
+const	SocketTypeUnknown SocketType = "unknown"
 
 type Socket struct {
 	ID string
-	JID string
-	Type SocketType
 	Connection *websocket.Conn
 	Person *person.Person
+	
+	Type SocketType
+	PresenceState *PresenceState
 }
 
 type MessageToWrite struct {
@@ -50,7 +49,7 @@ func (s *Socket) WriteTree(message *etree.Document) {
 var (
 	socketWriteQueue = make(chan MessageToWrite, 1000)
 	socketHandlers = map[SocketType]func(string) {
-		SocketTypeXmpp: handlePresenceSocket,
+		SocketTypeXmpp: presenceSocketHandle,
 	}
 
 	sockets = aid.GenericSyncMap[Socket]{}
@@ -98,6 +97,24 @@ func WebsocketConnection(c *websocket.Conn) {
 	} 
 }
 
+func GetSocketByPerson(person *person.Person) *Socket {
+	var recieverSocket *Socket
+	sockets.Range(func(key string, value *Socket) bool {
+		if value.Person == nil {
+			return true
+		}
+
+		if value.Person.ID == person.ID {
+			recieverSocket = value
+			return false
+		}
+
+		return true
+	})
+	
+	return recieverSocket
+}
+
 func init() {
 	go func() {
 		for {
@@ -110,7 +127,7 @@ func init() {
 
 		for {
 			message := <-socketWriteQueue
-			aid.Print("(socket) message sent", message.Socket.ID, string(message.Message))
+			aid.Print("(socket) writing message to", message.Socket.ID, string(message.Message))
 			message.Socket.Connection.WriteMessage(websocket.TextMessage, message.Message)
 		}
 	}()
