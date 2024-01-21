@@ -131,6 +131,7 @@ func main() {
 	snow := r.Group("/snow")
 	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
 	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
+	snow.Get("/sockets", handlers.GetAllSockets)
 
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)

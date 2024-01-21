@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
@@ -30,15 +32,28 @@ func GetFriendList(c *fiber.Ctx) error {
 
 func PostCreateFriend(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
-	wanted := c.Params("wanted")
+	friendId := c.Params("wanted")
 
-	existing := person.GetFriend(wanted)
+	existing := person.GetFriend(friendId)
 	if existing != nil && (existing.Direction == "BOTH" || existing.Direction == "OUTGOING") {
 		return c.Status(400).JSON(aid.ErrorBadRequest("already active friend request"))
 	}
 
-	person.AddFriend(wanted)
-	// send xmpp message to disply a popup
+	person.AddFriend(friendId)
+	
+	socket := FindSocketForPerson(person)
+	socket.PresenceWriteJSON(aid.JSON{
+		"payload": person.GetFriend(friendId).GenerateFriendResponse(),
+		"type": "com.epicgames.friends.core.apiobjects.Friend",
+		"timestamp": time.Now().Format(time.RFC3339),
+	})
+
+	friendSocket := FindSocketForPerson(p.Find(friendId))
+	friendSocket.PresenceWriteJSON(aid.JSON{
+		"payload": friendSocket.Person.GetFriend(person.ID).GenerateFriendResponse(),
+		"type": "com.epicgames.friends.core.apiobjects.Friend",
+		"timestamp": time.Now().Format(time.RFC3339),
+	})
 
 	return c.SendStatus(204)
 }
@@ -52,9 +67,8 @@ func DeleteFriend(c *fiber.Ctx) error {
 		return c.Status(400).JSON(aid.ErrorBadRequest("not friends"))
 	}
 
-	existing.Person.RemoveFriend(wanted)
 	person.RemoveFriend(wanted)
-	// send xmpp message to disply a popup
+	existing.Person.RemoveFriend(person.ID)
 
 	return c.SendStatus(204)
 }
@@ -83,13 +97,13 @@ func GetFriendListSummary(c *fiber.Ctx) error {
 
 	for _, friend := range all {
 		switch friend.Status {
-		case "ACCEPTED":
+		case p.FriendStatusAccepted:
 			result["friends"] = append(result["friends"].([]aid.JSON), friend.GenerateSummaryResponse())
-		case "PENDING":
+		case p.FriendStatusPending:
 			switch friend.Direction {
-			case "INCOMING":
+			case p.FriendDirectionIncoming:
 				result["incoming"] = append(result["incoming"].([]aid.JSON), friend.GenerateSummaryResponse())
-			case "OUTGOING":
+			case p.FriendDirectionOutgoing:
 				result["outgoing"] = append(result["outgoing"].([]aid.JSON), friend.GenerateSummaryResponse())
 			}
 		}

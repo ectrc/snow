@@ -81,10 +81,21 @@ func WebsocketConnection(c *websocket.Conn) {
 
 	if handle, ok := socketHandlers[protocol]; ok {
 		handle(uuid)
-	} 
+	}
 }
 
-func GetSocketByPerson(person *person.Person) *Socket {
+func GetAllSockets(c *fiber.Ctx) error {
+	result := []any{}
+
+	sockets.Range(func(key string, socket *Socket) bool {
+		result = append(result, *socket)
+		return true
+	})
+
+	return c.Status(200).JSON(result)
+}
+
+func FindSocketForPerson(person *person.Person) *Socket {
 	var recieverSocket *Socket
 	sockets.Range(func(key string, value *Socket) bool {
 		if value.Person == nil {
@@ -109,8 +120,6 @@ func init() {
 				break
 			}
 		}
-
-		aid.Print("(socket) write queue started")
 
 		for {
 			message := <-socketWriteQueue

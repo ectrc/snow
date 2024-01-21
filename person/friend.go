@@ -6,10 +6,20 @@ import (
 	"github.com/ectrc/snow/aid"
 )
 
+type FriendDirection string
+var FriendDirectionBoth FriendDirection = "BOTH"
+var FriendDirectionIncoming FriendDirection = "INCOMING"
+var FriendDirectionOutgoing FriendDirection = "OUTGOING"
+
+type FriendStatus string
+var FriendStatusPending FriendStatus = "PENDING"
+var FriendStatusAccepted FriendStatus = "ACCEPTED"
+var FriendStatusDeleted FriendStatus = "DELETED"
+
 type Friend struct {
 	Person    *Person
-	Status    string
-	Direction string
+	Status    FriendStatus
+	Direction FriendDirection
 }
 
 func (f *Friend) GenerateSummaryResponse() aid.JSON {

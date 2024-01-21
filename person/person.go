@@ -276,23 +276,23 @@ func (p *Person) GetFriend(friendId string) *Friend {
 		if friend.IsFriendInFriendList(p.ID) {
 			return &Friend{
 				Person: friend,
-				Status: "ACCEPTED",
-				Direction: "BOTH",
+				Status: FriendStatusAccepted,
+				Direction: FriendDirectionBoth,
 			}
 		}
 
 		return &Friend{
 			Person: friend,
-			Status: "PENDING",
-			Direction: "OUTBOUND",
+			Status: FriendStatusPending,
+			Direction: FriendDirectionOutgoing,
 		}
 	}
 
 	if friend.IsFriendInFriendList(p.ID) {
 		return &Friend{
 			Person: friend,
-			Status: "PENDING",
-			Direction: "INBOUND",
+			Status: FriendStatusPending,
+			Direction: FriendDirectionIncoming,
 		}
 	}
 

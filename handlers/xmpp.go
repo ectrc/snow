@@ -84,7 +84,7 @@ func presenceSocketHandle(id string) {
 			continue
 		}
 
-		friendSocket := GetSocketByPerson(friend.Person)
+		friendSocket := FindSocketForPerson(friend.Person)
 		if friendSocket == nil {
 			continue
 		}
@@ -224,7 +224,7 @@ func presenceSocketMessageEvent(socket *Socket, tree *etree.Document) error {
 		return nil
 	}
 
-	recieverSocket := GetSocketByPerson(reciever)
+	recieverSocket := FindSocketForPerson(reciever)
 	if recieverSocket == nil {
 		return nil
 	}
@@ -270,7 +270,7 @@ func (s *Socket) PresenceWriteStatus() {
 			continue
 		}
 
-		friendSocket := GetSocketByPerson(friend.Person)
+		friendSocket := FindSocketForPerson(friend.Person)
 		if friendSocket == nil {
 			continue
 		}
@@ -296,10 +296,12 @@ func (s *Socket) PresenceWriteStatus() {
 }
 
 func (s *Socket) PresenceWriteJSON(body aid.JSON) {
+	aid.PrintJSON(body)
+
 	document := etree.NewDocument()
 	message := document.CreateElement("message")
 	message.Attr = append(message.Attr, etree.Attr{Key: "id", Value: uuid.New().String()})
-	message.Attr = append(message.Attr, etree.Attr{Key: "from", Value: "prod.ol.epicgames.com"})
+	message.Attr = append(message.Attr, etree.Attr{Key: "from", Value: "xmpp-admin@prod.ol.epicgames.com"})
 	message.Attr = append(message.Attr, etree.Attr{Key: "to", Value: s.PresenceState.JID})
 	message.Attr = append(message.Attr, etree.Attr{Key: "xmlns", Value: "jabber:client"})
 	message.CreateElement("body").SetText(aid.JSONStringify(body))
