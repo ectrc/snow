@@ -1,6 +1,7 @@
 package aid
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -17,7 +18,7 @@ type keyPair struct {
 var KeyPair = GeneratePublicPrivateKeyPair()
 
 func GeneratePublicPrivateKeyPair() keyPair {
-	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 4096)
 	publicKey := privateKey.PublicKey
 
 	return keyPair{
@@ -28,7 +29,7 @@ func GeneratePublicPrivateKeyPair() keyPair {
 
 func (k *keyPair) EncryptAndSign(message []byte) ([]byte, []byte) {
 	encryptedMessage, _ := rsa.EncryptPKCS1v15(rand.Reader, &k.PublicKey, message)
-	signature, _ := rsa.SignPKCS1v15(rand.Reader, &k.PrivateKey, 0, encryptedMessage)
+	signature, _ := rsa.SignPKCS1v15(rand.Reader, &k.PrivateKey, crypto.SHA256, HashBytes(message))
 
 	return encryptedMessage, signature
 }
@@ -85,4 +86,9 @@ func Base64Decode(input string) ([]byte, bool) {
 func Hash(input []byte) string {
 	shaBytes := sha256.Sum256(input)
 	return hex.EncodeToString(shaBytes[:])
+}
+
+func HashBytes(input []byte) []byte {
+	shaBytes := sha256.Sum256(input)
+	return shaBytes[:]
 }

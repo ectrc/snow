@@ -195,7 +195,7 @@ func codeHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			Embeds: []*discordgo.MessageEmbed{
 				NewEmbedBuilder().
 					SetColor(0x2b2d31).
-					SetDescription("`" + encrypted + "`").
+					SetDescription("`" + encrypted + "." + sig + "`").
 					Build(),
 			},
 			Flags: discordgo.MessageFlagsEphemeral,
