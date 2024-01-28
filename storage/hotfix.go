@@ -9,12 +9,12 @@ func GetDefaultEngine() []byte {
 [OnlineSubsystemMcp.Xmpp]
 bUseSSL=false
 Protocol=ws
-ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`"
+ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?"
 
 [OnlineSubsystemMcp.Xmpp Prod]
 bUseSSL=false
 Protocol=ws
-ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`"
+ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?"
 
 [OnlineSubsystemMcp]
 bUsePartySystemV2=false

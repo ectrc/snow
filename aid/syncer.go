@@ -8,7 +8,7 @@ type GenericSyncMap[T any] struct {
 	m sync.Map
 }
 
-func (s *GenericSyncMap[T]) Add(key string, value *T) {
+func (s *GenericSyncMap[T]) Set(key string, value *T) {
 	s.m.Store(key, value)
 }
 

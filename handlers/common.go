@@ -5,6 +5,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func RedirectSocket(c *fiber.Ctx) error {
+	return c.Redirect("/socket")
+}
+
 func AnyNoContent(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }

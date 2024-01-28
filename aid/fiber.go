@@ -1,7 +1,6 @@
 package aid
 
 import (
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +13,7 @@ func FiberLogger() fiber.Handler {
 	return logger.New(logger.Config{
 		Format: "(${method}) (${status}) (${latency}) ${path}\n",
 		Next: func(c *fiber.Ctx) bool {
-			return strings.Contains(c.Path(), "//")
+			return c.Response().StatusCode() == 302
 		},
 	})
 }

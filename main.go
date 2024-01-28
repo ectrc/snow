@@ -12,6 +12,7 @@ import (
 	"github.com/ectrc/snow/storage"
 
 	"github.com/goccy/go-json"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -67,8 +68,8 @@ func main() {
 	r.Get("/api/v1/search/:accountId", handlers.GetPersonSearch)
 	r.Post("/api/v1/assets/Fortnite/:versionId/:assetName", handlers.PostAssets)
 	
-	r.Get("//", func(c *fiber.Ctx) error { return c.Redirect("/socket") })
-	// r.Get("/socket", handlers.MiddlewareWebsocket, websocket.New(handlers.WebsocketConnection))
+	r.Get("/", handlers.RedirectSocket)
+	r.Get("/socket", handlers.MiddlewareWebsocket, websocket.New(handlers.WebsocketConnection))
 
 	account := r.Group("/account/api")
 	account.Get("/public/account", handlers.GetPublicAccounts)
