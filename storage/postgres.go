@@ -57,7 +57,7 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
+		// Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
@@ -80,7 +80,7 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
+		// Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
@@ -103,7 +103,7 @@ func (s *PostgresStorage) GetPersonsByPartialDisplay(displayName string) []*DB_P
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
+		// Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
@@ -138,7 +138,7 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
+		// Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
@@ -156,42 +156,6 @@ func (s *PostgresStorage) GetPersonsCount() int {
 	return int(count)
 }
 
-func (s *PostgresStorage) GetFriendsForPerson(personId string) []*DB_Person {
-	person := s.GetPerson(personId)
-
-	var mine []*DB_Person
-	s.Postgres.
-		Model(&DB_Person{}).
-		Preload("Profiles").
-		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Quests").
-		Preload("Discord").
-		Where("id IN (?)", person.Friends).
-		Find(&mine)
-
-	var theirs []*DB_Person
-	s.Postgres.
-		Model(&DB_Person{}).
-		Preload("Profiles").
-		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Quests").
-		Preload("Discord").
-		Where("? = ?", person.ID, gorm.Expr("ANY(friends)")).
-		Find(&theirs)
-
-	return append(mine, theirs...)
-}
-
 func (s *PostgresStorage) TotalVBucks() int {
 	var total int64
 	s.Postgres.Model(&DB_Item{}).Select("sum(quantity)").Where("template_id = ?", "Currency:MtxPurchased").Find(&total)
@@ -207,7 +171,7 @@ func (s *PostgresStorage) DeletePerson(personId string) {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		Preload("Profiles.Items.Variants").
+		// Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").

@@ -35,6 +35,7 @@ type CS struct {
 		Build float64
 		Everything bool
 		Password bool
+		DisableClientCredentials bool
 	}
 }
 
@@ -134,4 +135,5 @@ func LoadConfig(file []byte) {
 	Config.Fortnite.Season = parsedSeason
 	Config.Fortnite.Everything = cfg.Section("fortnite").Key("everything").MustBool(false)
 	Config.Fortnite.Password = cfg.Section("fortnite").Key("password").MustBool(false)
+	Config.Fortnite.DisableClientCredentials = cfg.Section("fortnite").Key("disable_client_credentials").MustBool(false)
 }

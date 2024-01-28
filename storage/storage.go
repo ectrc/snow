@@ -19,8 +19,6 @@ type Storage interface {
 	SavePerson(person *DB_Person)
 	DeletePerson(personId string)
 
-	GetFriendsForPerson(personId string) []*DB_Person
-
 	SaveProfile(profile *DB_Profile)
 	DeleteProfile(profileId string)
 
@@ -106,10 +104,6 @@ func (r *Repository) GetAllPersons() []*DB_Person {
 
 func (r *Repository) GetPersonsCount() int {
 	return r.Storage.GetPersonsCount()
-}
-
-func (r *Repository) GetFriendsForPerson(personId string) []*DB_Person {
-	return r.Storage.GetFriendsForPerson(personId)
 }
 
 func (r *Repository) SavePerson(person *DB_Person) {

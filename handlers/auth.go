@@ -40,6 +40,10 @@ func PostFortniteToken(c *fiber.Ctx) error {
 }
 
 func PostTokenClientCredentials(c *fiber.Ctx, body *FortniteTokenBody) error {
+	if aid.Config.Fortnite.DisableClientCredentials {
+		return c.Status(fiber.StatusBadRequest).JSON(aid.ErrorBadRequest("Client Credentials is disabled."))
+	}
+
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"access_token": "snow",
 		"token_type": "bearer",
