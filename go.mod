@@ -3,6 +3,7 @@ module github.com/ectrc/snow
 go 1.21.3
 
 require (
+	github.com/beevik/etree v1.3.0
 	github.com/bwmarrin/discordgo v0.27.1
 	github.com/goccy/go-json v0.10.2
 	github.com/gofiber/contrib/websocket v1.3.0

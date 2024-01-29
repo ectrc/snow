@@ -1,12 +1,94 @@
 package socket
 
-import "github.com/ectrc/snow/aid"
+import (
+	"fmt"
+
+	"github.com/beevik/etree"
+	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/person"
+	"github.com/gofiber/contrib/websocket"
+)
+
+type JabberData struct {
+	JabberID string
+}
+
+var jabberHandlers = map[string]func(*Socket[JabberData], *etree.Document) error {
+	"open": jabberOpenHandler,
+	"iq": jabberIqRootHandler,
+}
 
 func HandleNewJabberSocket(identifier string) {
-	_, ok := JabberSockets.Get(identifier)
+	socket, ok := JabberSockets.Get(identifier)
 	if !ok {
 		return
 	}
+	defer JabberSockets.Delete(identifier)
 
-	aid.Print("New jabber socket: " + identifier)
+	for {
+		_, message, failed := socket.Connection.ReadMessage()
+		if failed != nil {
+			break
+		}
+
+		aid.Print(string(message))
+	
+		parsed := etree.NewDocument()
+		if err := parsed.ReadFromBytes(message); err != nil {
+			return
+		}
+
+		if handler, ok := jabberHandlers[parsed.Root().Tag]; ok {
+			if err := handler(socket, parsed); err != nil {
+				socket.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, err.Error()))
+				return
+			}
+		}
+	}
+}
+
+func jabberOpenHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	socket.Connection.WriteMessage(websocket.TextMessage, []byte(`<open xmlns="urn:ietf:params:xml:ns:xmpp-framing" from="prod.ol.epicgames.com" version="1.0" id="`+ socket.ID +`" />`))
+	socket.Connection.WriteMessage(websocket.TextMessage, []byte(`<stream:features xmlns:stream="http://etherx.jabber.org/streams" />`))
+
+	return nil
+}
+
+func jabberIqRootHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	redirect := map[string]func(*Socket[JabberData], *etree.Document) error {
+		"set": jabberIqSetHandler,
+		"get": jabberIqGetHandler,
+	}
+
+	if handler, ok := redirect[parsed.Root().SelectAttr("type").Value]; ok {
+		if err := handler(socket, parsed); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func jabberIqSetHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	snowId, err := aid.GetSnowFromToken(parsed.FindElement("/iq/query/password").Text())
+	if err != nil {
+		return err
+	}
+
+	person := person.Find(snowId)
+	if person == nil {
+		return fmt.Errorf("person not found")
+	}
+
+	socket.Data.JabberID = snowId + "@prod.ol.epicgames.com/" + parsed.FindElement("/iq/query/resource").Text()
+	socket.Person = person
+
+	socket.Connection.WriteMessage(websocket.TextMessage, []byte(`<iq xmlns="jabber:client" type="result" id="_xmpp_auth1" from="prod.ol.epicgames.com" to="`+ socket.Data.JabberID +`" />`))
+	return nil
+}
+
+
+func jabberIqGetHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	socket.Connection.WriteMessage(websocket.TextMessage, []byte(`<iq xmlns="jabber:client" type="result" id="`+ parsed.Root().SelectAttr("id").Value +`" from="prod.ol.epicgames.com" to="`+ socket.Data.JabberID +`" />`))
+	return nil
 }

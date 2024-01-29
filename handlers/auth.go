@@ -177,23 +177,8 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 }
 
 func GetTokenVerify(c *fiber.Ctx) error {
-	auth := c.Get("Authorization")
-	if auth == "" {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
-	}
-	real := strings.ReplaceAll(auth, "bearer eg1~", "")
-
-	claims, err := aid.JWTVerify(real)
+	snowId, err := aid.GetSnowFromToken(c.Get("Authorization"))
 	if err != nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	snowId, ok := claims["snow_id"].(string)
-	if !ok {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
@@ -204,7 +189,7 @@ func GetTokenVerify(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"app": "fortnite",
-		"token": real,
+		"token": strings.ReplaceAll(c.Get("Authorization"), "bearer eg1~", ""),
 		"token_type": "bearer",
 		"expires_at": time.Now().Add(time.Hour * 24).Format("2006-01-02T15:04:05.999Z"),
 		"expires_in": 86400,
@@ -226,23 +211,8 @@ func DeleteToken(c *fiber.Ctx) error {
 }
 
 func MiddlewareFortnite(c *fiber.Ctx) error {
-	auth := c.Get("Authorization")
-	if auth == "" {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
-	}
-	real := strings.ReplaceAll(auth, "bearer eg1~", "")
-
-	claims, err := aid.JWTVerify(real)
+	snowId, err := aid.GetSnowFromToken(c.Get("Authorization"))
 	if err != nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	snowId, ok := claims["snow_id"].(string)
-	if !ok {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
@@ -256,26 +226,8 @@ func MiddlewareFortnite(c *fiber.Ctx) error {
 }
 
 func MiddlewareWeb(c *fiber.Ctx) error {
-	auth := c.Get("Authorization")
-	if auth == "" {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Authorization Header is empty"))
-	}
-
-	claims, err := aid.JWTVerify(auth)
+	snowId, err := aid.GetSnowFromToken(c.Get("Authorization"))
 	if err != nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	if claims["snow_id"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
-	}
-
-	if claims["frontend"] == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Claims"))
-	}
-
-	snowId, ok := claims["snow_id"].(string)
-	if !ok {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 

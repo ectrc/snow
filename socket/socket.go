@@ -7,34 +7,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type SocketType int
-
-var (
-	SocketTypeJabber      SocketType = 1
-	SocketTypeMatchmaking SocketType = 2
-)
-
-type JabberData struct {
-	JabberID string
-}
-
 type MatchmakerData struct {
 	PlaylistID string
 	Region string
 }
 
-type data interface {
-	JabberData | MatchmakerData
-}
-
-type Socket[T data] struct {
+type Socket[T JabberData | MatchmakerData] struct {
 	ID string
 	Connection *websocket.Conn
 	Data *T
 	Person *person.Person
 }
 
-func newSocket[T data](conn *websocket.Conn, data ...T) *Socket[T] {
+func newSocket[T JabberData | MatchmakerData](conn *websocket.Conn, data ...T) *Socket[T] {
 	additional := data[0]
 
 	return &Socket[T]{

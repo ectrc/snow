@@ -2,9 +2,12 @@ package aid
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+var JWTCompile = regexp.MustCompile(`eg1~(.*)`)
 
 func JWTSign(m JSON) (string, error) {
 	claims := jwt.MapClaims{}
@@ -18,6 +21,11 @@ func JWTSign(m JSON) (string, error) {
 }
 
 func JWTVerify(tokenString string) (JSON, error) {
+	compiled := JWTCompile.FindStringSubmatch(tokenString)
+	if len(compiled) > 0 {
+		tokenString = compiled[1]
+	}
+	
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(Config.JWT.Secret), nil
 	})
@@ -41,4 +49,22 @@ func JWTVerify(tokenString string) (JSON, error) {
 	}
 
 	return json, nil
+}
+
+func GetSnowFromToken(token string) (string, error) {
+	claims, err := JWTVerify(token)
+	if err != nil {
+		return "", err
+	}
+
+	if claims["snow_id"] == nil {
+		return "", fmt.Errorf("invalid access token")
+	}
+
+	snowId, ok := claims["snow_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("invalid access token")
+	}
+
+	return snowId, nil
 }
