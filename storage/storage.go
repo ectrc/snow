@@ -9,7 +9,6 @@ type Storage interface {
 
 	GetAllPersons() []*DB_Person
 	GetPersonsCount() int
-
 	TotalVBucks() int
 
 	GetPerson(personId string) *DB_Person
@@ -18,6 +17,11 @@ type Storage interface {
 	GetPersonByDiscordID(discordId string) *DB_Person
 	SavePerson(person *DB_Person)
 	DeletePerson(personId string)
+
+	GetIncomingRelationships(personId string) []*DB_Relationship
+	GetOutgoingRelationships(personId string) []*DB_Relationship
+	SaveRelationship(relationship *DB_Relationship)
+	DeleteRelationship(relationship *DB_Relationship)
 
 	SaveProfile(profile *DB_Profile)
 	DeleteProfile(profileId string)
@@ -120,6 +124,22 @@ func (r *Repository) SaveProfile(profile *DB_Profile) {
 
 func (r *Repository) DeleteProfile(profileId string) {
 	r.Storage.DeleteProfile(profileId)
+}
+
+func (r *Repository) GetIncomingRelationships(personId string) []*DB_Relationship {
+	return r.Storage.GetIncomingRelationships(personId)
+}
+
+func (r *Repository) GetOutgoingRelationships(personId string) []*DB_Relationship {
+	return r.Storage.GetOutgoingRelationships(personId)
+}
+
+func (r *Repository) SaveRelationship(relationship *DB_Relationship) {
+	r.Storage.SaveRelationship(relationship)
+}
+
+func (r *Repository) DeleteRelationship(relationship *DB_Relationship) {
+	r.Storage.DeleteRelationship(relationship)
 }
 
 func (r *Repository) SaveItem(item *DB_Item) {

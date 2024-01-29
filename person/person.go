@@ -1,6 +1,7 @@
 package person
 
 import (
+	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
@@ -17,6 +18,8 @@ type Person struct {
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
 	Discord *storage.DB_DiscordPerson
+	OutgoingRelationships aid.GenericSyncMap[Relationship[RelationshipOutboundDirection]]
+	IncomingRelationships aid.GenericSyncMap[Relationship[RelationshipInboundDirection]]
 }
 
 func NewPerson() *Person {
@@ -64,7 +67,25 @@ func Find(personId string) *Person {
 		return nil
 	}
 
-	return findHelper(person)
+	return findHelper(person, false, true)
+}
+
+func FindShallow(personId string) *Person {
+	if cache == nil {
+		cache = NewPersonsCacheMutex()
+	}
+
+	cachedPerson := cache.GetPerson(personId)
+	if cachedPerson != nil {
+		return cachedPerson
+	}
+
+	person := storage.Repo.GetPersonFromDB(personId)
+	if person == nil {
+		return nil
+	}
+
+	return findHelper(person, true, true)
 }
 
 func FindByDisplay(displayName string) *Person {
@@ -82,7 +103,25 @@ func FindByDisplay(displayName string) *Person {
 		return nil
 	}
 
-	return findHelper(person)
+	return findHelper(person, false, true)
+}
+
+func FindByDisplayShallow(displayName string) *Person {
+	if cache == nil {
+		cache = NewPersonsCacheMutex()
+	}
+
+	cachedPerson := cache.GetPersonByDisplay(displayName)
+	if cachedPerson != nil {
+		return cachedPerson
+	}
+
+	person := storage.Repo.GetPersonByDisplayFromDB(displayName)
+	if person == nil {
+		return nil
+	}
+
+	return findHelper(person, true, true)
 }
 
 func FindByDiscord(discordId string) *Person {
@@ -100,10 +139,10 @@ func FindByDiscord(discordId string) *Person {
 		return nil
 	}
 
-	return findHelper(person)
+	return findHelper(person, false, true)
 }
 
-func findHelper(databasePerson *storage.DB_Person) *Person {
+func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Person {
 	athenaProfile := NewProfile("athena")
 	commonCoreProfile := NewProfile("common_core")
 	commonPublicProfile := NewProfile("common_public")
@@ -155,9 +194,17 @@ func findHelper(databasePerson *storage.DB_Person) *Person {
 		CollectionsProfile: collectionsProfile,
 		CreativeProfile: creativeProfile,
 		Discord: &databasePerson.Discord,
+		OutgoingRelationships: aid.GenericSyncMap[Relationship[RelationshipOutboundDirection]]{},
+		IncomingRelationships: aid.GenericSyncMap[Relationship[RelationshipInboundDirection]]{},
 	}
 
-	cache.SavePerson(person)
+	if !shallow {
+		person.LoadRelationships()
+	}
+
+	if save {
+		cache.SavePerson(person)
+	}
 	return person
 }
 

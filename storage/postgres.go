@@ -45,6 +45,7 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_PAttribute{}, "Attributes")
 	s.Migrate(&DB_DiscordPerson{}, "Discords")
 	s.Migrate(&DB_SeasonStat{}, "Stats")
+	s.Migrate(&DB_Relationship{}, "Relationships")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -179,6 +180,26 @@ func (s *PostgresStorage) DeletePerson(personId string) {
 		Preload("Profiles.Quests").
 		Preload("Discord").
 		Delete(&DB_Person{}, "id = ?", personId)
+}
+
+func (s *PostgresStorage) GetIncomingRelationships(personId string) []*DB_Relationship {
+	var dbRelationships []*DB_Relationship
+	s.Postgres.Model(&DB_Relationship{}).Where("incoming_person_id = ?", personId).Find(&dbRelationships)
+	return dbRelationships
+}
+
+func (s *PostgresStorage) GetOutgoingRelationships(personId string) []*DB_Relationship {
+	var dbRelationships []*DB_Relationship
+	s.Postgres.Model(&DB_Relationship{}).Where("outgoing_person_id = ?", personId).Find(&dbRelationships)
+	return dbRelationships
+}
+
+func (s *PostgresStorage) SaveRelationship(relationship *DB_Relationship) {
+	s.Postgres.Save(relationship)
+}
+
+func (s *PostgresStorage) DeleteRelationship(relationship *DB_Relationship) {
+	s.Postgres.Delete(&DB_Relationship{}, "incoming_person_id = ? AND outgoing_person_id = ?", relationship.IncomingPersonID, relationship.OutgoingPersonID)
 }
 
 func (s *PostgresStorage) SaveProfile(profile *DB_Profile) {

@@ -13,19 +13,16 @@ func MiddlewareWebsocket(c *fiber.Ctx) error {
 		return fiber.ErrUpgradeRequired
 	}
 
-	var identifier string
 	var protocol string
 
 	switch c.Get("Sec-WebSocket-Protocol") {
 	case "xmpp":
-		identifier = c.Get("Sec-WebSocket-Key")
 		protocol = "jabber"
 	default:
 		protocol = "matchmaking"
-		identifier = uuid.New().String()
 	}
 
-	c.Locals("identifier", identifier)
+	c.Locals("identifier", uuid.New().String())
 	c.Locals("protocol", protocol)
 
 	return c.Next()
@@ -44,4 +41,23 @@ func WebsocketConnection(c *websocket.Conn) {
 	default:
 		aid.Print("Invalid protocol: " + protocol)
 	}
+}
+
+func GetConnectedSockets(c *fiber.Ctx) error {
+	jabber := []socket.Socket[socket.JabberData]{}
+	socket.JabberSockets.Range(func(key string, value *socket.Socket[socket.JabberData]) bool {
+		jabber = append(jabber, *value)
+		return true
+	})
+
+	matchmaking := []socket.Socket[socket.MatchmakerData]{}
+	socket.MatchmakerSockets.Range(func(key string, value *socket.Socket[socket.MatchmakerData]) bool {
+		matchmaking = append(matchmaking, *value)
+		return true
+	})
+
+	return c.Status(200).JSON(aid.JSON{
+		"jabber": jabber,
+		"matchmaking": matchmaking,
+	})
 }

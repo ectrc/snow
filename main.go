@@ -129,6 +129,7 @@ func main() {
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
 
 	snow := r.Group("/snow")
+	snow.Get("/sockets", handlers.GetConnectedSockets)
 	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
 	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
 

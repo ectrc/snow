@@ -2,6 +2,7 @@ package socket
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
@@ -91,4 +92,39 @@ func jabberIqSetHandler(socket *Socket[JabberData], parsed *etree.Document) erro
 func jabberIqGetHandler(socket *Socket[JabberData], parsed *etree.Document) error {
 	socket.Connection.WriteMessage(websocket.TextMessage, []byte(`<iq xmlns="jabber:client" type="result" id="`+ parsed.Root().SelectAttr("id").Value +`" from="prod.ol.epicgames.com" to="`+ socket.Data.JabberID +`" />`))
 	return nil
+}
+
+func GetJabberSocketByPersonID(id string) (*Socket[JabberData], bool) {
+	var found *Socket[JabberData]
+
+	JabberSockets.Range(func(key string, socket *Socket[JabberData]) bool {
+		if socket.Person.ID == id {
+			found = socket
+			return false
+		}
+
+		return true
+	})
+
+	return found, found != nil
+}
+
+func (s *Socket[T]) JabberSendMessageToPerson(data aid.JSON) {
+	if reflect.TypeOf(s.Data) != reflect.TypeOf(&JabberData{}) {
+		return
+	}
+
+	jabberSocket, ok := JabberSockets.Get(s.ID)
+	if !ok {
+		aid.Print("jabber socket not found even though it should be")
+		return
+	}
+
+	aid.Print(`<message xmlns="jabber:client" from="xmpp-admin@prod.ol.epicgames.com" to="`+ jabberSocket.Data.JabberID +`">
+		<body>`+ string(data.ToBytes()) +`</body>
+	</message>`)
+
+	s.Connection.WriteMessage(1, []byte(`<message xmlns="jabber:client" from="xmpp-admin@prod.ol.epicgames.com" to="`+ jabberSocket.Data.JabberID +`">
+		<body>`+ string(data.ToBytes()) +`</body>
+	</message>`))
 }

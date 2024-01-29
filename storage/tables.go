@@ -20,6 +20,16 @@ func (DB_Person) TableName() string {
 	return "Persons"
 }
 
+type DB_Relationship struct {
+	OutgoingPersonID string `gorm:"primary_key"`
+	IncomingPersonID string `gorm:"primary_key"`
+	Status string
+}
+
+func (DB_Relationship) TableName() string {
+	return "Relationships"
+}
+
 type DB_Profile struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
