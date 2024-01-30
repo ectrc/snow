@@ -21,8 +21,8 @@ func (DB_Person) TableName() string {
 }
 
 type DB_Relationship struct {
-	OutgoingPersonID string `gorm:"primary_key"`
-	IncomingPersonID string `gorm:"primary_key"`
+	FromPersonID string `gorm:"primary_key"`
+	TowardsPersonID string `gorm:"primary_key"`
 	Status string
 }
 

@@ -184,13 +184,13 @@ func (s *PostgresStorage) DeletePerson(personId string) {
 
 func (s *PostgresStorage) GetIncomingRelationships(personId string) []*DB_Relationship {
 	var dbRelationships []*DB_Relationship
-	s.Postgres.Model(&DB_Relationship{}).Where("incoming_person_id = ?", personId).Find(&dbRelationships)
+	s.Postgres.Model(&DB_Relationship{}).Where("towards_person_id = ?", personId).Find(&dbRelationships)
 	return dbRelationships
 }
 
 func (s *PostgresStorage) GetOutgoingRelationships(personId string) []*DB_Relationship {
 	var dbRelationships []*DB_Relationship
-	s.Postgres.Model(&DB_Relationship{}).Where("outgoing_person_id = ?", personId).Find(&dbRelationships)
+	s.Postgres.Model(&DB_Relationship{}).Where("from_person_id = ?", personId).Find(&dbRelationships)
 	return dbRelationships
 }
 
@@ -199,7 +199,7 @@ func (s *PostgresStorage) SaveRelationship(relationship *DB_Relationship) {
 }
 
 func (s *PostgresStorage) DeleteRelationship(relationship *DB_Relationship) {
-	s.Postgres.Delete(&DB_Relationship{}, "incoming_person_id = ? AND outgoing_person_id = ?", relationship.IncomingPersonID, relationship.OutgoingPersonID)
+	s.Postgres.Delete(relationship)
 }
 
 func (s *PostgresStorage) SaveProfile(profile *DB_Profile) {

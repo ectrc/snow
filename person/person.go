@@ -18,8 +18,7 @@ type Person struct {
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
 	Discord *storage.DB_DiscordPerson
-	OutgoingRelationships aid.GenericSyncMap[Relationship[RelationshipOutboundDirection]]
-	IncomingRelationships aid.GenericSyncMap[Relationship[RelationshipInboundDirection]]
+	Relationships aid.GenericSyncMap[Relationship]
 }
 
 func NewPerson() *Person {
@@ -194,8 +193,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		CollectionsProfile: collectionsProfile,
 		CreativeProfile: creativeProfile,
 		Discord: &databasePerson.Discord,
-		OutgoingRelationships: aid.GenericSyncMap[Relationship[RelationshipOutboundDirection]]{},
-		IncomingRelationships: aid.GenericSyncMap[Relationship[RelationshipInboundDirection]]{},
+		Relationships: aid.GenericSyncMap[Relationship]{},
 	}
 
 	if !shallow {

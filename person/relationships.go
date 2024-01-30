@@ -8,134 +8,106 @@ import (
 )
 
 type RelationshipDirection string
+const RelationshipInboundDirection RelationshipDirection = "INBOUND"
+const RelationshipOutboundDirection RelationshipDirection = "OUTBOUND"
 
-type RelationshipInboundDirection RelationshipDirection
-const RelationshipInboundDirectionValue RelationshipInboundDirection = "INBOUND"
+type RelationshipGenerateType string
+const GenerateTypeFromPerson RelationshipGenerateType = "FROM_PERSON"
+const GenerateTypeTowardsPerson RelationshipGenerateType = "TOWARDS_PERSON"
 
-type RelationshipOutboundDirection RelationshipDirection
-const RelationshipOutboundDirectionValue RelationshipOutboundDirection = "OUTBOUND"
-
-type Relationship[T RelationshipInboundDirection | RelationshipOutboundDirection] struct {
-	Me *Person
+type Relationship struct {
+	From *Person
 	Towards *Person
 	Status string
-	Direction T
+	Direction RelationshipDirection
 }
 
-func (r *Relationship[T]) ToDatabase() *storage.DB_Relationship {
+func (r *Relationship) ToDatabase() *storage.DB_Relationship {
 	return &storage.DB_Relationship{
-		IncomingPersonID: r.Me.ID,
-		OutgoingPersonID: r.Towards.ID,
+		FromPersonID: r.From.ID,
+		TowardsPersonID: r.Towards.ID,
 		Status: r.Status,
 	}
 }
 
-func (r *Relationship[T]) GenerateFortniteFriendEntry() aid.JSON {
-	return aid.JSON{
-		"accountId": r.Towards.ID,
+func (r *Relationship) GenerateFortniteFriendEntry(t RelationshipGenerateType) aid.JSON {
+	result := aid.JSON{
 		"status": r.Status,
-		"direction": string(r.Direction),
 		"created": "0000-00-00T00:00:00.000Z",
 		"favorite": false,
 	}
+
+	switch t {
+	case GenerateTypeFromPerson:
+		result["direction"] = "OUTBOUND"
+		result["accountId"] = r.Towards.ID
+	case GenerateTypeTowardsPerson:
+		result["direction"] = "INBOUND"
+		result["accountId"] = r.From.ID
+	}
+
+	return result
 }
 
-func (r *Relationship[T]) Save() {
+func (r *Relationship) Save() (*Relationship, error) {
 	storage.Repo.Storage.SaveRelationship(r.ToDatabase())
+	r.From.Relationships.Set(r.Towards.ID, r)
+	r.Towards.Relationships.Set(r.From.ID, r)
+	return r, nil
 }
 
-func (r *Relationship[T]) Delete() {
+func (r *Relationship) Delete() error {
 	storage.Repo.Storage.DeleteRelationship(r.ToDatabase())
+	return nil
 }
 
 func (p *Person) LoadRelationships() {
 	incoming := storage.Repo.Storage.GetIncomingRelationships(p.ID)
 	for _, entry := range incoming {
-		relationship := &Relationship[RelationshipInboundDirection]{
+		relationship := &Relationship{
+			From: Find(entry.FromPersonID),
+			Towards: p,
 			Status: entry.Status,
-			Me: p,
-			Towards: FindShallow(entry.OutgoingPersonID),
-			Direction: RelationshipInboundDirectionValue,
+			Direction: RelationshipInboundDirection,
 		}
 
-		p.IncomingRelationships.Set(entry.OutgoingPersonID, relationship)
-	}
-
-	outgoing := storage.Repo.Storage.GetOutgoingRelationships(p.ID)
-	for _, entry := range outgoing {
-		relationship := &Relationship[RelationshipOutboundDirection]{
-			Status: entry.Status,
-			Me: p,
-			Towards: FindShallow(entry.IncomingPersonID),
-			Direction: RelationshipOutboundDirectionValue,
-		}
-
-		p.OutgoingRelationships.Set(entry.IncomingPersonID, relationship)
+		p.Relationships.Set(entry.FromPersonID, relationship)
 	}
 }
 
-func (p *Person) CreateRelationship(personId string) (string, error) {
-	if p.ID == personId {
-		return "", fmt.Errorf("cannot create relationship with yourself")
+func (p *Person) CreateRelationship(personId string) (*Relationship, error) {
+	exists, okay := p.Relationships.Get(personId)
+	if !okay {
+		return p.createOutboundRelationship(personId)
 	}
 
-	if p.IncomingRelationships.Has(personId) {
-		return "INBOUND", p.createAcceptInboundRelationship(personId)
+	if exists.Status != "PENDING" {
+		return nil, fmt.Errorf("relationship already exists")
 	}
 
-	return "OUTBOUND", p.createOutboundRelationship(personId)
+	if exists.Towards.ID == p.ID {
+		return p.createAcceptInboundRelationship(personId)
+	}
+
+	return nil, fmt.Errorf("relationship already exists")
 }
 
-func (p *Person) createOutboundRelationship(towards string) error {
-	towardsPerson := Find(towards)
-	if towardsPerson == nil {
-		return fmt.Errorf("person not found")
-	}
-
-	relationship := &Relationship[RelationshipOutboundDirection]{
-		Me: p,
-		Towards: towardsPerson,
+func (p *Person) createOutboundRelationship(towards string) (*Relationship, error) {
+	relationship := &Relationship{
+		From: p,
+		Towards: Find(towards),
 		Status: "PENDING",
-		Direction: RelationshipOutboundDirectionValue,
+		Direction: RelationshipOutboundDirection,
 	}
-	relationship.Save()
-	p.OutgoingRelationships.Set(towards, relationship)
-
-	tempRelationship := &Relationship[RelationshipInboundDirection]{
-		Me: towardsPerson,
-		Towards: p,
-		Status: "PENDING",
-		Direction: RelationshipInboundDirectionValue,
-	}
-	tempRelationship.Save()
-	towardsPerson.IncomingRelationships.Set(p.ID, tempRelationship)
-
-	return nil
+	return relationship.Save()
 }
 
-func (p *Person) createAcceptInboundRelationship(towards string) error {
-	towardsPerson := Find(towards)
-	if towardsPerson == nil {
-		return fmt.Errorf("person not found")
-	}
-
-	relationship := &Relationship[RelationshipInboundDirection]{
-		Me: p,
-		Towards: towardsPerson,
-		Status: "ACCEPTED",
-		Direction: RelationshipInboundDirectionValue,
-	}
-	relationship.Save()
-	p.IncomingRelationships.Set(towards, relationship)
-
-	tempRelationship := &Relationship[RelationshipOutboundDirection]{
-		Me: towardsPerson,
+func (p *Person) createAcceptInboundRelationship(towards string) (*Relationship, error) {
+	relationship := &Relationship{
+		From: Find(towards),
 		Towards: p,
 		Status: "ACCEPTED",
-		Direction: RelationshipOutboundDirectionValue,
+		Direction: RelationshipInboundDirection,
 	}
-	tempRelationship.Save()
-	towardsPerson.OutgoingRelationships.Set(p.ID, tempRelationship)
-
-	return nil
+	return relationship.Save()
 }
