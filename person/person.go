@@ -84,7 +84,7 @@ func FindShallow(personId string) *Person {
 		return nil
 	}
 
-	return findHelper(person, true, true)
+	return findHelper(person, true, false)
 }
 
 func FindByDisplay(displayName string) *Person {
@@ -120,7 +120,7 @@ func FindByDisplayShallow(displayName string) *Person {
 		return nil
 	}
 
-	return findHelper(person, true, true)
+	return findHelper(person, true, false)
 }
 
 func FindByDiscord(discordId string) *Person {

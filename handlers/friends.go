@@ -34,22 +34,24 @@ func PostCreateFriend(c *fiber.Ctx) error {
 		return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
 	}
 	
-	from, found := socket.GetJabberSocketByPersonID(relationship.From.ID)
+	from, found := socket.JabberSockets.Get(relationship.From.ID)
 	if found {
 		from.JabberSendMessageToPerson(aid.JSON{
 			"type": "com.epicgames.friends.core.apiobjects.Friend",
 			"timestamp": time.Now().Format(time.RFC3339),
 			"payload": relationship.GenerateFortniteFriendEntry(p.GenerateTypeFromPerson),
 		})
+		from.JabberNotifyFriends()
 	}
 
-	towards, found := socket.GetJabberSocketByPersonID(relationship.Towards.ID)
+	towards, found := socket.JabberSockets.Get(relationship.Towards.ID)
 	if found {
 		towards.JabberSendMessageToPerson(aid.JSON{
 			"type": "com.epicgames.friends.core.apiobjects.Friend",
 			"timestamp": time.Now().Format(time.RFC3339),
 			"payload": relationship.GenerateFortniteFriendEntry(p.GenerateTypeTowardsPerson),
 		})
+		towards.JabberNotifyFriends()
 	}
 
 	return c.SendStatus(204)

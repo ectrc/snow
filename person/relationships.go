@@ -39,12 +39,14 @@ func (r *Relationship) GenerateFortniteFriendEntry(t RelationshipGenerateType) a
 
 	switch t {
 	case GenerateTypeFromPerson:
-		result["direction"] = "OUTBOUND"
+		result["direction"] = RelationshipOutboundDirection
 		result["accountId"] = r.Towards.ID
 	case GenerateTypeTowardsPerson:
-		result["direction"] = "INBOUND"
+		result["direction"] = RelationshipInboundDirection
 		result["accountId"] = r.From.ID
 	}
+
+	aid.PrintJSON(result)
 
 	return result
 }
@@ -65,12 +67,24 @@ func (p *Person) LoadRelationships() {
 	incoming := storage.Repo.Storage.GetIncomingRelationships(p.ID)
 	for _, entry := range incoming {
 		relationship := &Relationship{
-			From: Find(entry.FromPersonID),
+			From: FindShallow(entry.FromPersonID),
 			Towards: p,
 			Status: entry.Status,
 			Direction: RelationshipInboundDirection,
 		}
 
+		p.Relationships.Set(entry.FromPersonID, relationship)
+	}
+
+	outgoing := storage.Repo.Storage.GetOutgoingRelationships(p.ID)
+	for _, entry := range outgoing {
+		relationship := &Relationship{
+			From: p,
+			Towards: FindShallow(entry.TowardsPersonID),
+			Status: entry.Status,
+			Direction: RelationshipOutboundDirection,
+		}
+		
 		p.Relationships.Set(entry.FromPersonID, relationship)
 	}
 }
@@ -95,7 +109,7 @@ func (p *Person) CreateRelationship(personId string) (*Relationship, error) {
 func (p *Person) createOutboundRelationship(towards string) (*Relationship, error) {
 	relationship := &Relationship{
 		From: p,
-		Towards: Find(towards),
+		Towards: FindShallow(towards),
 		Status: "PENDING",
 		Direction: RelationshipOutboundDirection,
 	}
@@ -104,7 +118,7 @@ func (p *Person) createOutboundRelationship(towards string) (*Relationship, erro
 
 func (p *Person) createAcceptInboundRelationship(towards string) (*Relationship, error) {
 	relationship := &Relationship{
-		From: Find(towards),
+		From: FindShallow(towards),
 		Towards: p,
 		Status: "ACCEPTED",
 		Direction: RelationshipInboundDirection,

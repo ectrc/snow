@@ -1,6 +1,8 @@
 package socket
 
 import (
+	"sync"
+
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/person"
 	"github.com/gofiber/contrib/websocket"
@@ -17,6 +19,14 @@ type Socket[T JabberData | MatchmakerData] struct {
 	Connection *websocket.Conn
 	Data *T
 	Person *person.Person
+	mutex sync.Mutex
+}
+
+func (s *Socket[T]) Write(payload []byte) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.Connection.WriteMessage(websocket.TextMessage, payload)
 }
 
 func newSocket[T JabberData | MatchmakerData](conn *websocket.Conn, data ...T) *Socket[T] {

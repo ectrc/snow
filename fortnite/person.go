@@ -7,6 +7,7 @@ import (
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
+	"github.com/google/uuid"
 )
 
 var (
@@ -24,7 +25,35 @@ var (
 )
 
 func NewFortnitePerson(displayName string, everything bool) *p.Person {
-	person := p.NewPerson()
+	return NewFortnitePersonWithId(uuid.New().String(), displayName, everything)
+}
+
+func GiveEverything(person *p.Person) {
+	items := make([]storage.DB_Item, 0)
+
+	for _, item := range Cosmetics.Items {
+		if strings.Contains(strings.ToLower(item.ID), "random") {
+			continue
+		}
+
+		has := person.AthenaProfile.Items.GetItemByTemplateID(item.ID)
+		if has != nil {
+			continue
+		}
+
+		item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
+		item.HasSeen = true
+		person.AthenaProfile.Items.AddItem(item)
+
+		items = append(items, *item.ToDatabase(person.AthenaProfile.ID))
+	}
+
+	storage.Repo.BulkCreateItems(&items)
+	person.Save()
+}
+
+func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.Person {
+	person := p.NewPersonWithCustomID(id)
 	person.DisplayName = displayName
 
 	for _, item := range defaultAthenaItems {
@@ -122,28 +151,4 @@ func NewFortnitePerson(displayName string, everything bool) *p.Person {
 	person.Save()
 
 	return person
-}
-
-func GiveEverything(person *p.Person) {
-	items := make([]storage.DB_Item, 0)
-
-	for _, item := range Cosmetics.Items {
-		if strings.Contains(strings.ToLower(item.ID), "random") {
-			continue
-		}
-
-		has := person.AthenaProfile.Items.GetItemByTemplateID(item.ID)
-		if has != nil {
-			continue
-		}
-
-		item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
-		item.HasSeen = true
-		person.AthenaProfile.Items.AddItem(item)
-
-		items = append(items, *item.ToDatabase(person.AthenaProfile.ID))
-	}
-
-	storage.Repo.BulkCreateItems(&items)
-	person.Save()
 }

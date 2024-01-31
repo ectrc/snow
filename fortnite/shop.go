@@ -10,7 +10,7 @@ import (
 
 var (
 	Rarities = map[string]map[string]int{
-		"EFortRarity::Legendary": map[string]int{
+		"EFortRarity::Legendary": {
 			"AthenaCharacter": 2000,
 			"AthenaBackpack": 1500,
 			"AthenaPickaxe": 1500,
@@ -18,7 +18,7 @@ var (
 			"AthenaDance": 500,
 			"AthenaItemWrap": 800,
 		},
-		"EFortRarity::Epic": map[string]int{
+		"EFortRarity::Epic": {
 			"AthenaCharacter": 1500,
 			"AthenaBackpack": 1200,
 			"AthenaPickaxe": 1200,
@@ -26,7 +26,7 @@ var (
 			"AthenaDance": 800,
 			"AthenaItemWrap": 800,
 		},
-		"EFortRarity::Rare": map[string]int{
+		"EFortRarity::Rare": {
 			"AthenaCharacter": 1200,
 			"AthenaBackpack": 800,
 			"AthenaPickaxe": 800,
@@ -34,7 +34,7 @@ var (
 			"AthenaDance": 500,
 			"AthenaItemWrap": 600,
 		},
-		"EFortRarity::Uncommon": map[string]int{
+		"EFortRarity::Uncommon": {
 			"AthenaCharacter": 800,
 			"AthenaBackpack": 200,
 			"AthenaPickaxe": 500,
@@ -42,7 +42,7 @@ var (
 			"AthenaDance": 200,
 			"AthenaItemWrap": 300,
 		},
-		"EFortRarity::Common": map[string]int{
+		"EFortRarity::Common": {
 			"AthenaCharacter": 500,
 			"AthenaBackpack": 200,
 			"AthenaPickaxe": 500,

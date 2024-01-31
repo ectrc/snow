@@ -44,3 +44,15 @@ func (s *GenericSyncMap[T]) Has(key string) bool {
 	_, ok := s.Get(key)
 	return ok
 }
+
+// change the key of a value in the map
+
+func (s *GenericSyncMap[T]) ChangeKey(oldKey, newKey string) {
+	v, ok := s.Get(oldKey)
+	if !ok {
+		return
+	}
+
+	s.Set(newKey, v)
+	s.Delete(oldKey)
+}

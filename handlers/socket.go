@@ -44,9 +44,9 @@ func WebsocketConnection(c *websocket.Conn) {
 }
 
 func GetConnectedSockets(c *fiber.Ctx) error {
-	jabber := []socket.Socket[socket.JabberData]{}
+	jabber := map[string]socket.Socket[socket.JabberData]{}
 	socket.JabberSockets.Range(func(key string, value *socket.Socket[socket.JabberData]) bool {
-		jabber = append(jabber, *value)
+		jabber[key] = *value
 		return true
 	})
 

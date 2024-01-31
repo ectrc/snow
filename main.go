@@ -46,9 +46,13 @@ func init() {
 	fortnite.GeneratePlaylistImages()
 
 	if found := person.FindByDisplay("god"); found == nil {
-		god := fortnite.NewFortnitePerson("god", true)
+		god := fortnite.NewFortnitePersonWithId("god", "god", true)
 		god.AddPermission("all")
+
+		angel := fortnite.NewFortnitePersonWithId("angel", "angel", true)
+		angel.AddPermission("all")
 	}
+
 }
 func main() {
 	r := fiber.New(fiber.Config{
@@ -56,6 +60,7 @@ func main() {
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 	})
+
 
 	r.Use(aid.FiberLogger())
 	r.Use(aid.FiberLimiter())
