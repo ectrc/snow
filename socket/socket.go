@@ -19,12 +19,12 @@ type Socket[T JabberData | MatchmakerData] struct {
 	Connection *websocket.Conn
 	Data *T
 	Person *person.Person
-	mutex sync.Mutex
+	M sync.Mutex
 }
 
 func (s *Socket[T]) Write(payload []byte) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.M.Lock()
+	defer s.M.Unlock()
 
 	s.Connection.WriteMessage(websocket.TextMessage, payload)
 }

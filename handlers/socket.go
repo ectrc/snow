@@ -44,15 +44,15 @@ func WebsocketConnection(c *websocket.Conn) {
 }
 
 func GetConnectedSockets(c *fiber.Ctx) error {
-	jabber := map[string]socket.Socket[socket.JabberData]{}
+	jabber := aid.JSON{}
 	socket.JabberSockets.Range(func(key string, value *socket.Socket[socket.JabberData]) bool {
-		jabber[key] = *value
+		jabber[key] = value
 		return true
 	})
 
-	matchmaking := []socket.Socket[socket.MatchmakerData]{}
+	matchmaking := aid.JSON{}
 	socket.MatchmakerSockets.Range(func(key string, value *socket.Socket[socket.MatchmakerData]) bool {
-		matchmaking = append(matchmaking, *value)
+		matchmaking[key] = value
 		return true
 	})
 
