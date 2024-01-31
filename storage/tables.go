@@ -82,7 +82,7 @@ func (DB_Loadout) TableName() string {
 
 type DB_Item struct {
 	ID string `gorm:"primary_key"`
-	ProfileID string
+	ProfileID string `gorm:"index"`
 	TemplateID string
 	Quantity int
 	Favorite bool
