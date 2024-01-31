@@ -11,29 +11,38 @@ import (
 )
 
 func GetCloudStorageFiles(c *fiber.Ctx) error {
-	sum := sha1.Sum(storage.GetDefaultEngine())
-	more := sha256.Sum256(storage.GetDefaultEngine())
+	files := map[string][]byte {
+		"DefaultEngine.ini": storage.GetDefaultEngine(),
+		"DefaultGame.ini": storage.GetDefaultGame(),
+		"DefaultRuntimeOptions.ini": storage.GetDefaultRuntime(),
+	}
+	result := []aid.JSON{}
 
-	return c.Status(fiber.StatusOK).JSON([]fiber.Map{
-		{
-			"uniqueFilename": "DefaultEngine.ini",
-			"filename": "DefaultEngine.ini",
-			"hash": hex.EncodeToString(sum[:]),
-			"hash256": hex.EncodeToString(more[:]),
-			"length": len(storage.GetDefaultEngine()),
+	for name, data := range files {
+		sumation1 := sha1.Sum(data)
+		sumation256 := sha256.Sum256(data)
+
+		result = append(result, aid.JSON{
+			"uniqueFilename": name,
+			"filename": name,
+			"hash": hex.EncodeToString(sumation1[:]),
+			"hash256": hex.EncodeToString(sumation256[:]),
+			"length": len(data),
 			"contentType": "application/octet-stream",
 			"uploaded": aid.TimeStartOfDay(),
 			"storageType": "S3",
-			"storageIds": fiber.Map{
+			"storageIds": aid.JSON{
 				"primary": "primary",
 			},
 			"doNotCache": false,
-		},
-	})
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(result)
 }
 
 func GetCloudStorageConfig(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(aid.JSON{
 		"enumerateFilesPath": "/api/cloudstorage/system",
 		"enableMigration": true,
 		"enableWrites": true,

@@ -35,3 +35,32 @@ FortMatchmakingV2.EnableContentBeacon=0
 NumTestsPerRegion=5
 PingTimeout=3.0`)
 }
+
+func GetDefaultGame() []byte {
+	return []byte(`
+[/Script/FortniteGame.FortGlobals]
+bAllowLogout=false
+
+[/Script/FortniteGame.FortChatManager]
+bShouldRequestGeneralChatRooms=false
+bShouldJoinGlobalChat=false
+bShouldJoinFounderChat=false
+bIsAthenaGlobalChatEnabled=false
+
+[/Script/FortniteGame.FortOnlineAccount]
+bEnableEulaCheck=false
+bShouldCheckIfPlatformAllowed=false`)
+}
+
+func GetDefaultRuntime() []byte {
+return []byte(`
+[/Script/FortniteGame.FortRuntimeOptions]
+bEnableGlobalChat=true
+bDisableGifting=false
+bDisableGiftingPC=false
+bDisableGiftingPS4=false
+bDisableGiftingXB=false
+!ExperimentalCohortPercent=ClearArray
++ExperimentalCohortPercent=(CohortPercent=100,ExperimentNum=20)
+`)
+}
