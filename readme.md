@@ -13,9 +13,10 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## What's next?
 
-- Gifting, Matchmaker and Battle Pass support.
-- Interact with external Services like Amazon S3 Buckets to save player data externally.
-- Refactor the XMPP solution to use [melium/xmpp](https://github.com/mellium/xmpp)
+- More profile actions like `RefundMtxPurchase` and `CopyCosmeticLoadout`.
+- Integrating matchmaking with a hoster to smartly put players into games and know when servers become available.
+- Interact with external services like Amazon S3 or Cloudflare R2 to save player data externally.
+- Refactor the XMPP solution to use [melium/xmpp](https://github.com/mellium/xmpp).
 
 ## Version Support
 

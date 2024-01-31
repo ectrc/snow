@@ -53,7 +53,7 @@ bShouldCheckIfPlatformAllowed=false`)
 }
 
 func GetDefaultRuntime() []byte {
-return []byte(`
+	return []byte(`
 [/Script/FortniteGame.FortRuntimeOptions]
 bEnableGlobalChat=true
 bDisableGifting=false
@@ -61,6 +61,5 @@ bDisableGiftingPC=false
 bDisableGiftingPS4=false
 bDisableGiftingXB=false
 !ExperimentalCohortPercent=ClearArray
-+ExperimentalCohortPercent=(CohortPercent=100,ExperimentNum=20)
-`)
++ExperimentalCohortPercent=(CohortPercent=100,ExperimentNum=20)`)
 }

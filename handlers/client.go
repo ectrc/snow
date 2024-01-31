@@ -24,6 +24,8 @@ var (
 		"SetCosmeticLockerSlot": clientSetCosmeticLockerSlotAction,
 		"SetCosmeticLockerBanner": clientSetCosmeticLockerBannerAction,
 		"PurchaseCatalogEntry": clientPurchaseCatalogEntryAction,
+		"GiftCatalogEntry": clientGiftCatalogEntryAction,
+		"RemoveGiftBox": clientRemoveGiftBoxAction,
 	}
 )
 
@@ -70,8 +72,7 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 		profile.Diff(profileSnapshot)
 	}
 	
-	known, _ := strconv.Atoi(c.Query("rvn"))
-	revision := known
+	revision, _ := strconv.Atoi(c.Query("rvn"))
 	if revision == -1 {
 		revision = profile.Revision
 	}
@@ -81,8 +82,6 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 	delete(profileSnapshots, profile.Type)
 
 	multiUpdate := []aid.JSON{}
-	if known != -1 {
-
 		for key := range profileSnapshots {
 			profile := person.GetProfileFromType(key)
 			if profile == nil {
@@ -105,7 +104,6 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 			profile.ClearProfileChanges()
 			go profile.Save()
 		}
-	}
 
 	return c.Status(200).JSON(aid.JSON{
 		"profileId": c.Query("profileId"),
@@ -121,11 +119,7 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 }
 
 func clientQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
-	known, _ := strconv.Atoi(c.Query("rvn"))
-
-	if known == -1 {
-		profile.CreateFullProfileUpdateChange()
-	}
+	profile.CreateFullProfileUpdateChange()
 	return nil
 }
 
@@ -134,8 +128,7 @@ func clientMarkItemSeenAction(c *fiber.Ctx, person *p.Person, profile *p.Profile
 		ItemIds []string `json:"itemIds"`
 	}
 
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -159,8 +152,7 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 		IndexWithinSlot int `json:"indexWithinSlot"`
 	}
 
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -207,8 +199,7 @@ func clientSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *
 		HomebaseBannerIconID string `json:"homebaseBannerIconId" binding:"required"`
 	}
 	
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -248,8 +239,7 @@ func clientSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, prof
 		Favorite []bool `json:"itemFavStatus" binding:"required"`
 	}
 
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -275,8 +265,7 @@ func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *
 		VariantUpdates []aid.JSON `json:"variantUpdates" binding:"required"` // variant updates
 	}
 
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -342,8 +331,7 @@ func clientSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile
 		BannerIconTemplateName string `json:"bannerIconTemplateName" binding:"required"` // template id
 	}
 
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -372,14 +360,13 @@ func clientSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile
 }
 
 func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
-	var body struct{
+	var body struct {
 		OfferID string `json:"offerId" binding:"required"`
 		PurchaseQuantity int `json:"purchaseQuantity" binding:"required"`
 		ExpectedTotalPrice int `json:"expectedTotalPrice" binding:"required"`
 	}
 
-	err := c.BodyParser(&body)
-	if err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
@@ -409,7 +396,7 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 	vbucks.Quantity -= body.ExpectedTotalPrice
 
 	go func() {
-		profile0Vbucks.Quantity = vbucks.Quantity // for season 2 and lower
+		profile0Vbucks.Quantity = vbucks.Quantity
 		vbucks.Save()
 		profile0Vbucks.Save()
 	}()
@@ -448,6 +435,98 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		},
 		"primary": true,
 	})
+
+	return nil
+}
+
+func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		Currency string `json:"currency" binding:"required"`
+		CurrencySubType string `json:"currencySubType" binding:"required"`
+		ExpectedTotalPrice int `json:"expectedTotalPrice" binding:"required"`
+		GameContext string `json:"gameContext" binding:"required"`
+		GiftWrapTemplateId string `json:"giftWrapTemplateId" binding:"required"`
+		PersonalMessage string `json:"personalMessage" binding:"required"`
+		ReceiverAccountIds []string `json:"receiverAccountIds" binding:"required"`
+		OfferId string `json:"offerId" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	offer := fortnite.StaticCatalog.GetOfferById(body.OfferId)
+	if offer == nil {
+		return fmt.Errorf("offer not found")
+	}
+
+	if offer.Price != body.ExpectedTotalPrice {
+		return fmt.Errorf("invalid price")
+	}
+
+	price := offer.Price * len(body.ReceiverAccountIds)
+
+	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if vbucks == nil {
+		return fmt.Errorf("vbucks not found")
+	}
+
+	profile0Vbucks := person.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if profile0Vbucks == nil {
+		return fmt.Errorf("profile0vbucks not found")
+	}
+
+	if vbucks.Quantity < price {
+		return fmt.Errorf("not enough vbucks")
+	}
+
+	vbucks.Quantity -= price
+
+	go func() {
+		profile0Vbucks.Quantity = price
+		vbucks.Save()
+		profile0Vbucks.Save()
+	}()
+
+	for _, receiverAccountId := range body.ReceiverAccountIds {
+		receiverPerson := p.Find(receiverAccountId)
+		if receiverPerson == nil {
+			continue
+		}
+
+		gift := p.NewGift(body.GiftWrapTemplateId, 1, person.ID, body.PersonalMessage)
+		for _, grant := range offer.Grants {
+			item := p.NewItem(grant, 1)
+			item.ProfileType = offer.ProfileType
+			gift.AddLoot(item)
+		}
+		
+		receiverPerson.CommonCoreProfile.Gifts.AddGift(gift)
+		receiverPerson.CommonCoreProfile.Save()
+	}
+
+	return nil
+}
+
+func clientRemoveGiftBoxAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		GiftBoxItemId string `json:"giftBoxItemId" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	gift := profile.Gifts.GetGift(body.GiftBoxItemId)
+	if gift == nil {
+		return fmt.Errorf("gift not found")
+	}
+
+	for _, item := range gift.Loot {
+		person.GetProfileFromType(item.ProfileType).Items.AddItem(item).Save()
+	}
+
+	profile.Gifts.DeleteGift(gift.ID)
 
 	return nil
 }

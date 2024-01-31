@@ -296,12 +296,13 @@ func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 		"itemGrants": []aid.JSON{},
 		"metaInfo": e.Meta,
 		"meta": aid.JSON{},
-		"displayAssetPath": e.DisplayAssetPath,
 		"title": e.Title,
+		"displayAssetPath": e.DisplayAssetPath,
 		"shortDescription": e.ShortDescription,
 	}
 	grants := []aid.JSON{}
 	requirements := []aid.JSON{}
+	purchaseRequirements := []aid.JSON{}
 	meta := []aid.JSON{}
 
 	for _, templateId := range e.Grants {
@@ -312,6 +313,12 @@ func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 
 		if item := p.AthenaProfile.Items.GetItemByTemplateID(templateId); item != nil {
 			requirements = append(requirements, aid.JSON{
+				"requirementType": "DenyOnItemOwnership",
+				"requiredId": item.ID,
+				"minQuantity": 1,
+			})
+
+			purchaseRequirements = append(purchaseRequirements, aid.JSON{
 				"requirementType": "DenyOnItemOwnership",
 				"requiredId": item.ID,
 				"minQuantity": 1,
@@ -331,6 +338,13 @@ func (e *Entry) GenerateResponse(p *person.Person) aid.JSON {
 	json["itemGrants"] = grants
 	json["requirements"] = requirements
 	json["metaInfo"] = meta
+	json["giftInfo"] = aid.JSON{
+		"bIsEnabled": true,
+		"forcedGiftBoxTemplateId": "",
+		"purchaseRequirements": purchaseRequirements,
+		"giftRecordIds": []any{},
+	}
+
 
 	return json
 }

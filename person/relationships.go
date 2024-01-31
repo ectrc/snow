@@ -2,6 +2,7 @@ package person
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
@@ -33,7 +34,7 @@ func (r *Relationship) ToDatabase() *storage.DB_Relationship {
 func (r *Relationship) GenerateFortniteFriendEntry(t RelationshipGenerateType) aid.JSON {
 	result := aid.JSON{
 		"status": r.Status,
-		"created": "0000-00-00T00:00:00.000Z",
+		"created": time.Now().Add(-time.Hour * 24 * 3).Format(time.RFC3339),
 		"favorite": false,
 	}
 
@@ -45,8 +46,6 @@ func (r *Relationship) GenerateFortniteFriendEntry(t RelationshipGenerateType) a
 		result["direction"] = RelationshipInboundDirection
 		result["accountId"] = r.From.ID
 	}
-
-	aid.PrintJSON(result)
 
 	return result
 }

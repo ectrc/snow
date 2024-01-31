@@ -38,11 +38,11 @@ func GetCloudStorageFiles(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return c.Status(200).JSON(result)
 }
 
 func GetCloudStorageConfig(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(aid.JSON{
+	return c.Status(200).JSON(aid.JSON{
 		"enumerateFilesPath": "/api/cloudstorage/system",
 		"enableMigration": true,
 		"enableWrites": true,
@@ -55,15 +55,17 @@ func GetCloudStorageConfig(c *fiber.Ctx) error {
 }
 
 func GetCloudStorageFile(c *fiber.Ctx) error {
+	c.Set("Content-Type", "application/octet-stream")
 	switch c.Params("fileName") {
 	case "DefaultEngine.ini":
-		c.Set("Content-Type", "application/octet-stream")
-		c.Status(fiber.StatusOK)
-		c.Send(storage.GetDefaultEngine())
-		return nil
+		return c.Status(200).Send(storage.GetDefaultEngine())
+	case "DefaultGame.ini":
+		return c.Status(200).Send(storage.GetDefaultGame())
+	case "DefaultRuntimeOptions.ini":
+		return c.Status(200).Send(storage.GetDefaultRuntime())
 	}
 
-	return c.Status(400).JSON(aid.ErrorBadRequest)
+	return c.Status(404).JSON(aid.ErrorBadRequest("File not found"))
 }
 
 func GetUserStorageFiles(c *fiber.Ctx) error {
