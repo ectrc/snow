@@ -13,7 +13,7 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## What's next?
 
-- XMPP, Gifting, Matchmaker and Battle Pass support.
+- Gifting, Matchmaker and Battle Pass support.
 - Interact with external Services like Amazon S3 Buckets to save player data externally.
 - A way to interact with accounts outside of the game. This is mainly for a web app and other services to interact with the backend.
 
