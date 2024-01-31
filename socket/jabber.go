@@ -3,6 +3,7 @@ package socket
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
@@ -35,8 +36,6 @@ func HandleNewJabberSocket(identifier string) {
 			break
 		}
 
-		aid.Print(string(message))
-	
 		parsed := etree.NewDocument()
 		if err := parsed.ReadFromBytes(message); err != nil {
 			return
@@ -100,13 +99,33 @@ func jabberIqGetHandler(socket *Socket[JabberData], parsed *etree.Document) erro
 }
 
 func jabberPresenceHandler(socket *Socket[JabberData], parsed *etree.Document) error {
-	socket.Data.LastPresence = parsed.FindElement("/presence/status").Text()
+	status := parsed.FindElement("/presence/status")
+	if status == nil {
+		return nil
+	}
+	socket.Data.LastPresence = status.Text()
 	socket.JabberNotifyFriends()
 	return nil
 }
 
 func jabberMessageHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	if parsed.FindElement("/message/body") == nil {
+		return nil
+	}
 
+	message := parsed.FindElement("/message")
+	target := message.SelectAttr("to").Value
+	parts := strings.Split(target, "@")
+
+	if len(parts) != 2 {
+		return nil
+	}
+
+	if reciever, ok := JabberSockets.Get(parts[0]); ok {
+		reciever.Write([]byte(`<message xmlns="jabber:client" from="`+ socket.Data.JabberID +`" to="`+ target +`" id="`+ message.SelectAttr("id").Value +`">
+			<body>`+ message.FindElement("/message/body").Text() +`</body>
+		</message>`))
+	}
 	return nil
 }
 
