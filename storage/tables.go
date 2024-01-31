@@ -32,7 +32,7 @@ func (DB_Relationship) TableName() string {
 
 type DB_Profile struct {
 	ID string `gorm:"primary_key"`
-	PersonID string
+	PersonID string `gorm:"index"`
 	Items []DB_Item `gorm:"foreignkey:ProfileID"`
 	Gifts []DB_Gift `gorm:"foreignkey:ProfileID"`
 	Quests []DB_Quest `gorm:"foreignkey:ProfileID"`
@@ -60,7 +60,7 @@ func (DB_PAttribute) TableName() string {
 
 type DB_Loadout struct {
 	ID string `gorm:"primary_key"`
-	ProfileID string
+	ProfileID string `gorm:"index"`
 	TemplateID string
 	LockerName string
 	BannerID string
@@ -96,7 +96,7 @@ func (DB_Item) TableName() string {
 
 type DB_VariantChannel struct {
 	ID string `gorm:"primary_key"`
-	ItemID string
+	ItemID string `gorm:"index"`
 	Channel string
 	Owned pq.StringArray `gorm:"type:text[]"`
 	Active string
@@ -108,7 +108,7 @@ func (DB_VariantChannel) TableName() string {
 
 type DB_Quest struct {
 	ID string `gorm:"primary_key"`
-	ProfileID string
+	ProfileID string `gorm:"index"`
 	TemplateID string
 	State string
 	Objectives pq.StringArray `gorm:"type:text[]"`
@@ -123,7 +123,7 @@ func (DB_Quest) TableName() string {
 
 type DB_Gift struct {
 	ID string `gorm:"primary_key"`
-	ProfileID string
+	ProfileID string `gorm:"index"`
 	TemplateID string
 	Quantity int
 	FromID string
@@ -138,7 +138,7 @@ func (DB_Gift) TableName() string {
 
 type DB_Loot struct {
 	ID string `gorm:"primary_key"`
-	GiftID string
+	GiftID string `gorm:"index"`
 	TemplateID string
 	Quantity int
 	ProfileType string
