@@ -44,7 +44,6 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 		"common_core": nil,
 		"common_public": nil,
 	}
-
 	for key := range profileSnapshots {
 		profileSnapshots[key] = person.GetProfileFromType(key).Snapshot()
 	}
@@ -71,7 +70,8 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 		profile.Diff(profileSnapshot)
 	}
 	
-	revision, _ := strconv.Atoi(c.Query("rvn"))
+	known, _ := strconv.Atoi(c.Query("rvn"))
+	revision := known
 	if revision == -1 {
 		revision = profile.Revision
 	}
@@ -81,27 +81,30 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 	delete(profileSnapshots, profile.Type)
 
 	multiUpdate := []aid.JSON{}
-	for key := range profileSnapshots {
-		profile := person.GetProfileFromType(key)
-		if profile == nil {
-			continue
+	if known != -1 {
+
+		for key := range profileSnapshots {
+			profile := person.GetProfileFromType(key)
+			if profile == nil {
+				continue
+			}
+			profile.Revision++
+			
+			if len(profile.Changes) == 0 {
+				continue
+			}
+			
+			multiUpdate = append(multiUpdate, aid.JSON{
+				"profileId": profile.Type,
+				"profileRevision": profile.Revision,
+				"profileCommandRevision": profile.Revision,
+				"profileChangesBaseRevision": profile.Revision - 1,
+				"profileChanges": profile.Changes,
+			})
+			
+			profile.ClearProfileChanges()
+			go profile.Save()
 		}
-		profile.Revision++
-
-		if len(profile.Changes) == 0 {
-			continue
-		}
-
-		multiUpdate = append(multiUpdate, aid.JSON{
-			"profileId": profile.Type,
-			"profileRevision": profile.Revision,
-			"profileCommandRevision": profile.Revision,
-			"profileChangesBaseRevision": profile.Revision - 1,
-			"profileChanges": profile.Changes,
-		})
-
-		profile.ClearProfileChanges()
-		go profile.Save()
 	}
 
 	return c.Status(200).JSON(aid.JSON{
@@ -118,7 +121,11 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 }
 
 func clientQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
-	profile.CreateFullProfileUpdateChange()
+	known, _ := strconv.Atoi(c.Query("rvn"))
+
+	if known == -1 {
+		profile.CreateFullProfileUpdateChange()
+	}
 	return nil
 }
 
