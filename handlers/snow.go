@@ -50,3 +50,14 @@ func GetPlayer(c *fiber.Ctx) error {
 		"discord": person.Discord,
 	})
 }
+
+func GetCachedPlayers(c *fiber.Ctx) error {
+	persons := p.AllFromCache()
+	players := make([]p.PersonSnapshot, len(persons))
+
+	for i, person := range persons {
+		players[i] = *person.Snapshot()
+	}
+
+	return c.JSON(players)
+}

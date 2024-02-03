@@ -140,6 +140,7 @@ func main() {
 
 	snow := r.Group("/snow")
 	snow.Get("/sockets", handlers.GetConnectedSockets)
+	snow.Get("/cache", handlers.GetCachedPlayers)
 	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
 	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
 
