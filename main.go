@@ -45,14 +45,19 @@ func init() {
 	fortnite.GenerateRandomStorefront()
 	fortnite.GeneratePlaylistImages()
 
-	if found := person.FindByDisplay("god"); found == nil {
-		god := fortnite.NewFortnitePersonWithId("god", "god", true)
-		god.AddPermission("all")
+	for _, username := range aid.Config.Accounts.Gods {
+		found := person.FindByDisplay(username)
+		if found == nil {
+			found = fortnite.NewFortnitePersonWithId(username, username, true)
+		}
 
-		angel := fortnite.NewFortnitePersonWithId("angel", "angel", true)
-		angel.AddPermission("all")
+		for _, perm := range found.Permissions {
+			found.RemovePermission(perm)
+		}
+
+		found.AddPermission("all")
+		aid.Print("(snow) max account " + username + " loaded")
 	}
-
 }
 func main() {
 	r := fiber.New(fiber.Config{

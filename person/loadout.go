@@ -68,7 +68,8 @@ func NewLoadout(name string, athena *Profile) *Loadout {
 
 	return &Loadout{
 		ID: uuid.New().String(),
-		PersonID: athena.ID,
+		PersonID: athena.PersonID,
+		ProfileID: athena.ID,
 		TemplateID: "CosmeticLocker:CosmeticLocker_Athena",
 		LockerName: name,
 		CharacterID: aid.JSONParse(character.ValueJSON).(string),
@@ -83,6 +84,12 @@ func NewLoadout(name string, athena *Profile) *Loadout {
 		DanceID: dancesValue,
 		ItemWrapID: wrapsValue,
 	}
+}
+
+func NewLoadoutWithID(id string, name string, athena *Profile) *Loadout {
+	loadout := NewLoadout(name, athena)
+	loadout.ID = id
+	return loadout
 }
 
 func FromDatabaseLoadout(loadout *storage.DB_Loadout) *Loadout {
@@ -229,14 +236,7 @@ func (l *Loadout) GetItemsSlotData(itemIds []string) aid.JSON {
 		
 		items := json["items"].([]string)
 		items[pos] = item.TemplateID
-
-		activeVariants := json["activeVariants"].([]aid.JSON)
-		activeVariants[pos] = aid.JSON{
-			"variants": []aid.JSON{},
-		}
-
 		json["items"] = items
-		json["activeVariants"] = activeVariants
 	}
 
 	return json
@@ -268,4 +268,25 @@ func (l *Loadout) ToDatabase(profileId string) *storage.DB_Loadout {
 
 func (q *Loadout) Save() {
 	storage.Repo.SaveLoadout(q.ToDatabase(q.ProfileID))
+}
+
+func (l *Loadout) Copy() Loadout {
+	return *l
+}
+
+func (l *Loadout) CopyFrom(loadout *Loadout) {
+	l.ProfileID = loadout.ProfileID
+	l.BannerID = loadout.BannerID
+	l.BannerColorID = loadout.BannerColorID
+	l.CharacterID = loadout.CharacterID
+	l.PickaxeID = loadout.PickaxeID
+	l.BackpackID = loadout.BackpackID
+	l.GliderID = loadout.GliderID
+	copy(l.DanceID, loadout.DanceID)
+	copy(l.ItemWrapID, loadout.ItemWrapID)
+	l.ContrailID = loadout.ContrailID
+	l.LoadingScreenID = loadout.LoadingScreenID
+	l.MusicPackID = loadout.MusicPackID
+
+	l.Save()
 }

@@ -55,3 +55,17 @@ func (a *Attribute) Save() {
 	}
 	storage.Repo.SaveAttribute(a.ToDatabase(a.ProfileID))
 }
+
+func AttributeConvertToSlice[T any](attribute *Attribute) []T {
+	valuesRaw := aid.JSONParse(attribute.ValueJSON).([]interface{})
+	values := make([]T, len(valuesRaw))
+	for i, value := range valuesRaw {
+		values[i] = value.(T)
+	}
+
+	return values
+}
+
+func AttributeConvert[T any](attribute *Attribute) T {
+	return aid.JSONParse(attribute.ValueJSON).(T)
+}

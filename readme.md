@@ -13,7 +13,7 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## What's next?
 
-- More profile actions like `RefundMtxPurchase` and `CopyCosmeticLoadout`.
+- More profile actions like `RefundMtxPurchase` and more.
 - Integrating matchmaking with a hoster to smartly put players into games and know when servers become available.
 - Interact with external services like Amazon S3 or Cloudflare R2 to save player data externally.
 - Refactor the XMPP solution to use [melium/xmpp](https://github.com/mellium/xmpp).
@@ -23,6 +23,7 @@ Performance first, universal Fortnite private server backend written in Go.
 ### Supported
 
 - **_Chapter 1 Season 2_** `Fortnite+Release-2.5-CL-3889387-Windows`
+- **_Chapter 1 Season 3_** `Fortnite+Release-3.6-CL-4019403-Windows`
 - **_Chapter 1 Season 5_** `Fortnite+Release-5.41-CL-4363240-Windows`
 - **_Chapter 1 Season 8_** `Fortnite+Release-8.51-CL-6165369-Windows`
 - **_Chapter 2 Season 2_** `Fortnite+Release-12.41-CL-12905909-Windows`

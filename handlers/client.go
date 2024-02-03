@@ -9,6 +9,7 @@ import (
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
+	"github.com/google/uuid"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,6 +24,9 @@ var (
 		"SetBattleRoyaleBanner": clientSetBattleRoyaleBannerAction,
 		"SetCosmeticLockerSlot": clientSetCosmeticLockerSlotAction,
 		"SetCosmeticLockerBanner": clientSetCosmeticLockerBannerAction,
+		"SetCosmeticLockerName": clientSetCosmeticLockerNameAction,
+		"CopyCosmeticLoadout": clientCopyCosmeticLoadoutAction,
+		"DeleteCosmeticLoadout": clientDeleteCosmeticLoadoutAction,
 		"PurchaseCatalogEntry": clientPurchaseCatalogEntryAction,
 		"GiftCatalogEntry": clientGiftCatalogEntryAction,
 		"RemoveGiftBox": clientRemoveGiftBoxAction,
@@ -188,8 +192,8 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 	default:
 		attr.ValueJSON = aid.JSONStringify(item.ID)
 	}
-
 	go attr.Save()
+
 	return nil
 }
 
@@ -225,11 +229,9 @@ func clientSetBattleRoyaleBannerAction(c *fiber.Ctx, person *p.Person, profile *
 
 	iconAttr.ValueJSON = aid.JSONStringify(strings.Split(iconItem.TemplateID, ":")[1])
 	colorAttr.ValueJSON = aid.JSONStringify(strings.Split(colorItem.TemplateID, ":")[1])
+	iconAttr.Save()
+	colorAttr.Save()
 
-	go func() {
-		iconAttr.Save()
-		colorAttr.Save()
-	}()
 	return nil
 }
 
@@ -321,6 +323,7 @@ func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *
 	}
 
 	go currentLocker.Save()	
+
 	return nil
 }
 
@@ -351,11 +354,194 @@ func clientSetCosmeticLockerBannerAction(c *fiber.Ctx, person *p.Person, profile
 	if currentLocker == nil {
 		return fmt.Errorf("current locker not found")
 	}
-
 	currentLocker.BannerColorID = color.ID
 	currentLocker.BannerID = icon.ID
 
 	go currentLocker.Save()
+
+	return nil
+}
+
+func clientSetCosmeticLockerNameAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		LockerItem string `json:"lockerItem" binding:"required"`
+		Name string `json:"name" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	loadoutsAttribute := profile.Attributes.GetAttributeByKey("loadouts")
+	if loadoutsAttribute == nil {
+		return fmt.Errorf("loadouts not found")
+	}
+	loadouts := p.AttributeConvertToSlice[string](loadoutsAttribute)
+
+	currentLocker := profile.Loadouts.GetLoadout(body.LockerItem)
+	if currentLocker == nil {
+		return fmt.Errorf("current locker not found")
+	}
+
+	if loadouts[0] == currentLocker.ID {
+		return fmt.Errorf("cannot rename default locker")
+	}
+
+	currentLocker.LockerName = body.Name
+	go currentLocker.Save()
+
+	return nil
+}
+
+func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		OptNewNameForTarget string `json:"optNewNameForTarget" binding:"required"`
+		SourceIndex int `json:"sourceIndex" binding:"required"`
+		TargetIndex int `json:"targetIndex" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	lastAppliedLoadoutAttribute := profile.Attributes.GetAttributeByKey("last_applied_loadout")
+	if lastAppliedLoadoutAttribute == nil {
+		return fmt.Errorf("last_applied_loadout not found")
+	}
+
+	activeLoadoutIndexAttribute := profile.Attributes.GetAttributeByKey("active_loadout_index")
+	if activeLoadoutIndexAttribute == nil {
+		return fmt.Errorf("active_loadout_index not found")
+	}
+
+	loadoutsAttribute := profile.Attributes.GetAttributeByKey("loadouts")
+	if loadoutsAttribute == nil {
+		return fmt.Errorf("loadouts not found")
+	}
+	loadouts := p.AttributeConvertToSlice[string](loadoutsAttribute)
+
+	if body.SourceIndex >= len(loadouts) {
+		return fmt.Errorf("source index out of range")
+	}
+
+	sandboxLoadout := profile.Loadouts.GetLoadout("sandbox_loadout")
+	if sandboxLoadout == nil {
+		return fmt.Errorf("sandbox loadout not found")
+	}
+
+	lastAppliedLoadout := profile.Loadouts.GetLoadout(aid.JSONParse(lastAppliedLoadoutAttribute.ValueJSON).(string))
+	if lastAppliedLoadout == nil {
+		return fmt.Errorf("last applied loadout not found")
+	}
+
+	if body.TargetIndex >= len(loadouts) {
+		clone := lastAppliedLoadout.Copy()
+		clone.ID = uuid.New().String()
+		clone.LockerName = body.OptNewNameForTarget
+		profile.Loadouts.AddLoadout(&clone).Save()
+
+		lastAppliedLoadout.CopyFrom(sandboxLoadout)
+		go lastAppliedLoadout.Save()
+
+		sandboxLoadout.CopyFrom(&clone)
+		go sandboxLoadout.Save()
+
+		loadouts = append(loadouts, clone.ID)
+		loadoutsAttribute.ValueJSON = aid.JSONStringify(loadouts)
+		go loadoutsAttribute.Save()
+
+		lastAppliedLoadoutAttribute.ValueJSON = aid.JSONStringify(clone.ID)
+		activeLoadoutIndexAttribute.ValueJSON = aid.JSONStringify(body.TargetIndex)
+		go lastAppliedLoadoutAttribute.Save()
+		go activeLoadoutIndexAttribute.Save()
+		return nil
+	}
+
+	if body.SourceIndex > 0  {
+		sourceLoadout := profile.Loadouts.GetLoadout(loadouts[body.SourceIndex])
+		if sourceLoadout == nil {
+			return fmt.Errorf("target loadout not found")
+		}
+	
+		sandboxLoadout.CopyFrom(sourceLoadout)
+		go sandboxLoadout.Save()
+		lastAppliedLoadoutAttribute.ValueJSON = aid.JSONStringify(sourceLoadout.ID)
+		activeLoadoutIndexAttribute.ValueJSON = aid.JSONStringify(body.SourceIndex)
+		go lastAppliedLoadoutAttribute.Save()
+		go activeLoadoutIndexAttribute.Save()
+
+		return nil
+	}
+
+	activeLoadout := profile.Loadouts.GetLoadout(loadouts[body.TargetIndex])
+	if activeLoadout == nil {
+		return fmt.Errorf("target loadout not found")
+	}
+
+	sandboxLoadout.CopyFrom(activeLoadout)
+	go sandboxLoadout.Save()
+
+	if len(profile.Changes) == 0{
+		// dance ids and item wrap ids are registered as changes in the client so force a fix
+		profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
+	}
+
+	return nil
+}
+
+func clientDeleteCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		FallbackLoadoutIndex int `json:"fallbackLoadoutIndex" binding:"required"`
+		LoadoutIndex int `json:"index" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	lastAppliedLoadoutAttribute := profile.Attributes.GetAttributeByKey("last_applied_loadout")
+	if lastAppliedLoadoutAttribute == nil {
+		return fmt.Errorf("last_applied_loadout not found")
+	}
+
+	activeLoadoutIndexAttribute := profile.Attributes.GetAttributeByKey("active_loadout_index")
+	if activeLoadoutIndexAttribute == nil {
+		return fmt.Errorf("active_loadout_index not found")
+	}
+
+	loadoutsAttribute := profile.Attributes.GetAttributeByKey("loadouts")
+	if loadoutsAttribute == nil {
+		return fmt.Errorf("loadouts not found")
+	}
+	loadouts := p.AttributeConvertToSlice[string](loadoutsAttribute)
+
+	if body.LoadoutIndex >= len(loadouts) {
+		return fmt.Errorf("loadout index out of range")
+	}
+
+	if body.LoadoutIndex == 0 {
+		return fmt.Errorf("cannot delete default loadout")
+	}
+
+	if body.FallbackLoadoutIndex == -1 {
+		body.FallbackLoadoutIndex = 0
+	}
+
+	fallbackLoadout := profile.Loadouts.GetLoadout(loadouts[body.FallbackLoadoutIndex])
+	if fallbackLoadout == nil {
+		return fmt.Errorf("fallback loadout not found")
+	}
+
+	lastAppliedLoadoutAttribute.ValueJSON = aid.JSONStringify(fallbackLoadout.ID)
+	activeLoadoutIndexAttribute.ValueJSON = aid.JSONStringify(body.FallbackLoadoutIndex)
+	lastAppliedLoadoutAttribute.Save()
+	activeLoadoutIndexAttribute.Save()
+
+	profile.Loadouts.DeleteLoadout(loadouts[body.LoadoutIndex])
+	loadouts = append(loadouts[:body.LoadoutIndex], loadouts[body.LoadoutIndex+1:]...)
+	loadoutsAttribute.ValueJSON = aid.JSONStringify(loadouts)
+	loadoutsAttribute.Save()
+
 	return nil
 }
 
@@ -394,12 +580,9 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 	}
 
 	vbucks.Quantity -= body.ExpectedTotalPrice
-
-	go func() {
-		profile0Vbucks.Quantity = vbucks.Quantity
-		vbucks.Save()
-		profile0Vbucks.Save()
-	}()
+	profile0Vbucks.Quantity = vbucks.Quantity
+	vbucks.Save()
+	profile0Vbucks.Save()
 
 	if offer.ProfileType != "athena" {
 		return fmt.Errorf("save the world not implemeted yet")
@@ -481,12 +664,9 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 	}
 
 	vbucks.Quantity -= price
-
-	go func() {
-		profile0Vbucks.Quantity = price
-		vbucks.Save()
-		profile0Vbucks.Save()
-	}()
+	profile0Vbucks.Quantity = price
+	vbucks.Save()
+	profile0Vbucks.Save()
 
 	for _, receiverAccountId := range body.ReceiverAccountIds {
 		receiverPerson := p.Find(receiverAccountId)
@@ -501,8 +681,7 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 			gift.AddLoot(item)
 		}
 		
-		receiverPerson.CommonCoreProfile.Gifts.AddGift(gift)
-		receiverPerson.CommonCoreProfile.Save()
+		receiverPerson.CommonCoreProfile.Gifts.AddGift(gift).Save()
 	}
 
 	return nil

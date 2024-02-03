@@ -255,11 +255,11 @@ func (m *LoadoutMutex) AddLoadout(loadout *Loadout) *Loadout {
 	loadout.PersonID = m.PersonID
 	loadout.ProfileID = m.ProfileID
 	m.Store(loadout.ID, loadout)
-	// storage.Repo.SaveLoadout(loadout.ToDatabase(m.ProfileID))
+	storage.Repo.SaveLoadout(loadout.ToDatabase(m.ProfileID))
 	return loadout
 }
 
-func (m *LoadoutMutex) DeleteItem(id string) {
+func (m *LoadoutMutex) DeleteLoadout(id string) {
 	loadout := m.GetLoadout(id)
 	if loadout == nil {
 		return
