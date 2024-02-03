@@ -438,7 +438,8 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 		clone := lastAppliedLoadout.Copy()
 		clone.ID = uuid.New().String()
 		clone.LockerName = body.OptNewNameForTarget
-		profile.Loadouts.AddLoadout(&clone).Save()
+		profile.Loadouts.AddLoadout(&clone)
+		go clone.Save()
 
 		lastAppliedLoadout.CopyFrom(sandboxLoadout)
 		go lastAppliedLoadout.Save()
@@ -454,6 +455,11 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 		activeLoadoutIndexAttribute.ValueJSON = aid.JSONStringify(body.TargetIndex)
 		go lastAppliedLoadoutAttribute.Save()
 		go activeLoadoutIndexAttribute.Save()
+
+		if len(profile.Changes) == 0{
+			profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
+		}
+
 		return nil
 	}
 
@@ -470,6 +476,10 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 		go lastAppliedLoadoutAttribute.Save()
 		go activeLoadoutIndexAttribute.Save()
 
+		if len(profile.Changes) == 0{
+			profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
+		}
+
 		return nil
 	}
 
@@ -482,7 +492,6 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 	go sandboxLoadout.Save()
 
 	if len(profile.Changes) == 0{
-		// dance ids and item wrap ids are registered as changes in the client so force a fix
 		profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
 	}
 
