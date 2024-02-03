@@ -8,6 +8,9 @@ import (
 )
 
 type CS struct {
+	Accounts struct {
+		Gods []string
+	}
 	Database struct {
 		URI  string
 		Type string
@@ -51,6 +54,7 @@ func LoadConfig(file []byte) {
 		panic(err)
 	}
 
+	Config.Accounts.Gods = cfg.Section("accounts").Key("gods").Strings(",")
 	Config.Database.DropAllTables = cfg.Section("database").Key("drop").MustBool(false)
 	Config.Database.URI = cfg.Section("database").Key("uri").String()
 	if Config.Database.URI == "" {
