@@ -9,7 +9,6 @@ import (
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
-	"github.com/google/uuid"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -429,41 +428,44 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 		return fmt.Errorf("sandbox loadout not found")
 	}
 
-	lastAppliedLoadout := profile.Loadouts.GetLoadout(aid.JSONParse(lastAppliedLoadoutAttribute.ValueJSON).(string))
+	lastAppliedLoadout := profile.Loadouts.GetLoadout(p.AttributeConvert[string](lastAppliedLoadoutAttribute))
 	if lastAppliedLoadout == nil {
 		return fmt.Errorf("last applied loadout not found")
 	}
 
 	if body.TargetIndex >= len(loadouts) {
-		clone := lastAppliedLoadout.Copy()
-		clone.ID = uuid.New().String()
-		clone.LockerName = body.OptNewNameForTarget
-		profile.Loadouts.AddLoadout(&clone)
-		go clone.Save()
+		aid.Print("creating a new loadout with source", body.SourceIndex, "and target", body.TargetIndex)
+
+		newLoadout := p.NewLoadout(body.OptNewNameForTarget, profile)
+		newLoadout.CopyFrom(lastAppliedLoadout)
+		profile.Loadouts.AddLoadout(newLoadout)
+		go newLoadout.Save()
 
 		lastAppliedLoadout.CopyFrom(sandboxLoadout)
 		go lastAppliedLoadout.Save()
 
-		sandboxLoadout.CopyFrom(&clone)
-		go sandboxLoadout.Save()
-
-		loadouts = append(loadouts, clone.ID)
-		loadoutsAttribute.ValueJSON = aid.JSONStringify(loadouts)
-		go loadoutsAttribute.Save()
-
-		lastAppliedLoadoutAttribute.ValueJSON = aid.JSONStringify(clone.ID)
+		lastAppliedLoadoutAttribute.ValueJSON = aid.JSONStringify(newLoadout.ID)
 		activeLoadoutIndexAttribute.ValueJSON = aid.JSONStringify(body.TargetIndex)
 		go lastAppliedLoadoutAttribute.Save()
 		go activeLoadoutIndexAttribute.Save()
 
-		if len(profile.Changes) == 0{
-			profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
+		loadouts = append(loadouts, newLoadout.ID)
+		loadoutsAttribute.ValueJSON = aid.JSONStringify(loadouts)
+		go loadoutsAttribute.Save()
+
+		sandboxLoadout.CopyFrom(newLoadout)
+		go sandboxLoadout.Save()
+
+		if len(profile.Changes) == 0 {
+			profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID")
 		}
 
 		return nil
 	}
 
 	if body.SourceIndex > 0  {
+		aid.Print("saving source loadout", body.SourceIndex, "to sandbox")
+
 		sourceLoadout := profile.Loadouts.GetLoadout(loadouts[body.SourceIndex])
 		if sourceLoadout == nil {
 			return fmt.Errorf("target loadout not found")
@@ -471,28 +473,34 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 	
 		sandboxLoadout.CopyFrom(sourceLoadout)
 		go sandboxLoadout.Save()
+
 		lastAppliedLoadoutAttribute.ValueJSON = aid.JSONStringify(sourceLoadout.ID)
 		activeLoadoutIndexAttribute.ValueJSON = aid.JSONStringify(body.SourceIndex)
+
 		go lastAppliedLoadoutAttribute.Save()
 		go activeLoadoutIndexAttribute.Save()
 
 		if len(profile.Changes) == 0{
-			profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
+			profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID")
+			profile.CreateLoadoutChangedChange(sourceLoadout, "DanceID")
 		}
 
 		return nil
 	}
 
-	activeLoadout := profile.Loadouts.GetLoadout(loadouts[body.TargetIndex])
-	if activeLoadout == nil {
+	aid.Print("loading target loadout", body.TargetIndex, "to sandbox")
+
+	targetLoadout := profile.Loadouts.GetLoadout(loadouts[body.TargetIndex])
+	if targetLoadout == nil {
 		return fmt.Errorf("target loadout not found")
 	}
 
-	sandboxLoadout.CopyFrom(activeLoadout)
+	sandboxLoadout.CopyFrom(targetLoadout)
 	go sandboxLoadout.Save()
 
 	if len(profile.Changes) == 0{
-		profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID") 
+		profile.CreateLoadoutChangedChange(sandboxLoadout, "DanceID")
+		profile.CreateLoadoutChangedChange(targetLoadout, "DanceID")
 	}
 
 	return nil
