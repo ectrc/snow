@@ -13,25 +13,16 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## What's next?
 
-- More profile actions like `RefundMtxPurchase` and more.
-- Integrating matchmaking with a hoster to smartly put players into games and know when servers become available.
+- Final MCP actions like `RefundMtxPurchase`, `SetAffiliateName` and more.
+- Integrating a matchmaker with a hoster to smartly put players into games and know when servers become available.
 - Interact with external services like Amazon S3 or Cloudflare R2 to save player data externally.
 - Refactor the XMPP solution to use [melium/xmpp](https://github.com/mellium/xmpp).
 
-## Version Support
+## Supported MCP Actions
 
-### Supported
+> These are request made from Fortnite to the backend to perform actions on the profile.
 
-- **_Chapter 1 Season 2_** `Fortnite+Release-2.5-CL-3889387-Windows`
-- **_Chapter 1 Season 3_** `Fortnite+Release-3.6-CL-4019403-Windows`
-- **_Chapter 1 Season 5_** `Fortnite+Release-5.41-CL-4363240-Windows`
-- **_Chapter 1 Season 8_** `Fortnite+Release-8.51-CL-6165369-Windows`
-- **_Chapter 2 Season 2_** `Fortnite+Release-12.41-CL-12905909-Windows`
-- **_Chapter 3 Season 1_** `Fortnite+Release-19.10-CL-Unknown-Windows`
-
-### Not Supported
-
-- **_Chapter 1 Season 4_** `Fortnite+Release-4.5-CL-4159770-Windows` I cannot get JWT Tokens to correctly work. I need to supply a key id header for the JWT Token to work however I cannot find the proper kids. If you know how to get the kid from the game please open an issue or pull request.
+`QueryProfile`, `ClientQuestLogin`, `MarkItemSeen`, `SetItemFavoriteStatusBatch`, `EquipBattleRoyaleCustomization`, `SetBattleRoyaleBanner`, `SetCosmeticLockerSlot`, `SetCosmeticLockerBanner`, `SetCosmeticLockerName`, `CopyCosmeticLoadout`, `DeleteCosmeticLoadout`, `PurchaseCatalogEntry`, `GiftCatalogEntry`, `RemoveGiftBox`
 
 ## Support
 
