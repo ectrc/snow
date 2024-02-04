@@ -2,7 +2,7 @@
 
 # Snow
 
-Performance first, universal Fortnite private server backend written in Go.
+> Performance first, feature-rich universal Fortnite private server backend written in Go.
 
 ## Overview
 
@@ -11,9 +11,7 @@ Performance first, universal Fortnite private server backend written in Go.
 - **Automatic Profile Changes** Automatically keeps track of profile changes exactly so any external changes are displayed in-game on the next action.
 - **Universal Database** It is possible to add new database types to satisfy your needs. Currently, it only supports `postgresql`.
 
-## What's coming up?
-
-> The backend is very feature rich and is constantly being updated. Below are the features that are not yet implemented, but are coming soon.
+## What's up next?
 
 - **Party System V2** Currently it relies on the automatic XMPP solution which is very hard to keep track of.
 - Purchasing the **Battle Pass**. This will require the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
@@ -23,8 +21,6 @@ Performance first, universal Fortnite private server backend written in Go.
 - **Save The World**. This is a very large task and will require a lot of work. It is not a priority at the moment and might be done after the Battle Royale experience is complete.
 
 ## Supported MCP Actions
-
-> These are request made from Fortnite to the server to perform actions on the profile.
 
 `QueryProfile`, `ClientQuestLogin`, `MarkItemSeen`, `SetItemFavoriteStatusBatch`, `EquipBattleRoyaleCustomization`, `SetBattleRoyaleBanner`, `SetCosmeticLockerSlot`, `SetCosmeticLockerBanner`, `SetCosmeticLockerName`, `CopyCosmeticLoadout`, `DeleteCosmeticLoadout`, `PurchaseCatalogEntry`, `GiftCatalogEntry`, `RemoveGiftBox`, `RefundMtxPurchase`, `SetAffiliateName`
 
