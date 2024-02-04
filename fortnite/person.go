@@ -151,7 +151,7 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("allowed_to_send_gifts", true)).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("gift_history", aid.JSON{})).Save()
 
-	loadout := p.NewLoadoutWithID("sandbox_loadout", "", person.AthenaProfile)
+	loadout := p.NewLoadout("PRESET 1", person.AthenaProfile)
 	person.AthenaProfile.Loadouts.AddLoadout(loadout).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("loadouts", []string{loadout.ID})).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("last_applied_loadout", loadout.ID)).Save()

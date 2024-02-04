@@ -265,7 +265,6 @@ func (m *LoadoutMutex) DeleteLoadout(id string) {
 		return
 	}
 
-	loadout.Delete()
 	m.Delete(id)
 	storage.Repo.DeleteItem(id)
 }
@@ -304,6 +303,64 @@ func (m *LoadoutMutex) Count() int {
 	count := 0
 	m.Range(func(key, value interface{}) bool {
 		count++
+		return true
+	})
+	return count
+}
+
+type PurchaseMutex struct {
+	sync.Map
+	PersonID	 string
+	ProfileID	 string
+}
+
+func NewPurchaseMutex(profile *storage.DB_Profile) *PurchaseMutex {
+	return &PurchaseMutex{
+		PersonID:	 profile.PersonID,
+		ProfileID: profile.ID,
+	}
+}
+
+func (m *PurchaseMutex) AddPurchase(purchase *Purchase) *Purchase {
+	purchase.ProfileID = m.ProfileID
+	purchase.PersonID = m.PersonID
+	m.Store(purchase.ID, purchase)
+	// storage.Repo.SavePurchase(purchase.ToDatabase(m.ProfileID))
+
+	// Find(m.PersonID).SetPurchaseHistoryAttribute()
+	return purchase
+}
+
+func (m *PurchaseMutex) GetPurchase(id string) *Purchase {
+	purchase, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return purchase.(*Purchase)
+}
+
+func (m *PurchaseMutex) RangePurchases(f func(key string, value *Purchase) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Purchase))
+	})
+}
+
+func (m *PurchaseMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
+
+func (m *PurchaseMutex) CountRefunded() int {
+	count := 0
+	m.RangePurchases(func(key string, value *Purchase) bool {
+		if value.RefundedAt.Unix() > 0 {
+			count++
+		}
 		return true
 	})
 	return count

@@ -17,6 +17,7 @@ type Profile struct {
 	Quests *QuestMutex
 	Attributes *AttributeMutex
 	Loadouts *LoadoutMutex
+	Purchases *PurchaseMutex
 	Type string
 	Revision int
 	Changes []interface{}
@@ -32,6 +33,7 @@ func NewProfile(profile string) *Profile {
 		Quests:	NewQuestMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Attributes: NewAttributeMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Loadouts: NewLoadoutMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		Purchases: NewPurchaseMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Type: profile,
 		Revision: 0,
 		Changes: []interface{}{},
@@ -44,6 +46,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 	quests := NewQuestMutex(profile)
 	attributes := NewAttributeMutex(profile)
 	loadouts := NewLoadoutMutex(profile)
+	purchases := NewPurchaseMutex(profile)
 
 	for _, item := range profile.Items {
 		items.AddItem(FromDatabaseItem(&item))
@@ -71,6 +74,10 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		attributes.AddAttribute(parsed)
 	}
 
+	for _, purchase := range profile.Purchases {
+		purchases.AddPurchase(FromDatabasePurchase(&purchase))
+	}
+
 	return &Profile{
 		ID: profile.ID,
 		PersonID: profile.PersonID,
@@ -79,6 +86,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		Quests: quests,
 		Attributes: attributes,
 		Loadouts: loadouts,
+		Purchases: purchases,
 		Type: profile.Type,
 		Revision: profile.Revision,
 		Changes: []interface{}{},
@@ -437,6 +445,7 @@ func (p *Profile) ToDatabase() *storage.DB_Profile {
 		Gifts: []storage.DB_Gift{},
 		Quests: []storage.DB_Quest{},
 		Loadouts: []storage.DB_Loadout{},
+		Purchases: []storage.DB_Purchase{},
 		Attributes: []storage.DB_Attribute{},
 		Revision: p.Revision,
 	}
@@ -463,6 +472,11 @@ func (p *Profile) ToDatabase() *storage.DB_Profile {
 
 	p.Loadouts.RangeLoadouts(func(id string, loadout *Loadout) bool {
 		dbProfile.Loadouts = append(dbProfile.Loadouts, *loadout.ToDatabase(dbProfile.PersonID))
+		return true
+	})
+
+	p.Purchases.RangePurchases(func(id string, purchase *Purchase) bool {
+		dbProfile.Purchases = append(dbProfile.Purchases, *purchase.ToDatabase(dbProfile.PersonID))
 		return true
 	})
 

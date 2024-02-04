@@ -9,12 +9,12 @@ type Tabler interface {
 type DB_Person struct {
 	ID string
 	DisplayName string
+	RefundTickets int
 	Permissions pq.StringArray `gorm:"type:text[]"`
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
-	Purchases []DB_Purchase `gorm:"foreignkey:ProfileID"`
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
-	BanHistory []DB_BanStatus `gorm:"foreignkey:PersonID"`
+	BanHistory []DB_BanStatus `gorm:"foreignkey:PersonID"` 
 }
 
 func (DB_Person) TableName() string {
@@ -39,6 +39,7 @@ type DB_Profile struct {
 	Quests []DB_Quest `gorm:"foreignkey:ProfileID"`
 	Attributes []DB_Attribute `gorm:"foreignkey:ProfileID"`
 	Loadouts []DB_Loadout `gorm:"foreignkey:ProfileID"`
+	Purchases []DB_Purchase `gorm:"foreignkey:ProfileID"`
 	Type string
 	Revision int
 }
@@ -95,16 +96,28 @@ func (DB_Item) TableName() string {
 	return "Items"
 }
 
+type DB_VariantChannel struct {
+	ID string `gorm:"primary_key"`
+	ItemID string `gorm:"index"`
+	Channel string
+	Owned pq.StringArray `gorm:"type:text[]"`
+	Active string
+}
+
+func (DB_VariantChannel) TableName() string {
+	return "Variants"
+}
+
 type DB_Purchase struct {
 	ID string `gorm:"primary_key"`
 	ProfileID string `gorm:"index"`
-	Loot []DB_PurchaseLoot `gorm:"foreignkey:PurchaseID"`
 	OfferID string
 	PurchaseDate int64
 	FreeRefundExpiry int64
 	RefundExpiry int64
 	RefundedAt int64
 	TotalPaid int
+	Loot []DB_PurchaseLoot `gorm:"foreignkey:PurchaseID"`
 }
 
 func (DB_Purchase) TableName() string {
@@ -121,18 +134,6 @@ type DB_PurchaseLoot struct {
 
 func (DB_PurchaseLoot) TableName() string {
 	return "PurchaseLoot"
-}
-
-type DB_VariantChannel struct {
-	ID string `gorm:"primary_key"`
-	ItemID string `gorm:"index"`
-	Channel string
-	Owned pq.StringArray `gorm:"type:text[]"`
-	Active string
-}
-
-func (DB_VariantChannel) TableName() string {
-	return "Variants"
 }
 
 type DB_Quest struct {

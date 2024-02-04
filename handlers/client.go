@@ -27,6 +27,7 @@ var (
 		"CopyCosmeticLoadout": clientCopyCosmeticLoadoutAction,
 		"DeleteCosmeticLoadout": clientDeleteCosmeticLoadoutAction,
 		"PurchaseCatalogEntry": clientPurchaseCatalogEntryAction,
+		"RefundMtxPurchase": clientRefundMtxPurchaseAction,
 		"GiftCatalogEntry": clientGiftCatalogEntryAction,
 		"RemoveGiftBox": clientRemoveGiftBoxAction,
 	}
@@ -449,7 +450,7 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 		return fmt.Errorf("source index out of range")
 	}
 
-	sandboxLoadout := profile.Loadouts.GetLoadout("sandbox_loadout")
+	sandboxLoadout := profile.Loadouts.GetLoadout(loadouts[0])
 	if sandboxLoadout == nil {
 		return fmt.Errorf("sandbox loadout not found")
 	}
@@ -626,6 +627,7 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 	}
 
 	loot := []aid.JSON{}
+	purchase := p.NewPurchase(body.OfferID, body.ExpectedTotalPrice)
 	for i := 0; i < body.PurchaseQuantity; i++ {
 		for _, grant := range offer.Grants {
 			if profile.Items.GetItemByTemplateID(grant) != nil {
@@ -638,6 +640,7 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 
 			item := p.NewItem(grant, 1)
 			person.AthenaProfile.Items.AddItem(item)
+			purchase.AddLoot(item)
 
 			loot = append(loot, aid.JSON{
 				"itemType": item.TemplateID,
@@ -648,6 +651,8 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		}
 	}
 
+	person.AthenaProfile.Purchases.AddPurchase(purchase).Save()
+
 	*notifications = append(*notifications, aid.JSON{
 		"type": "CatalogPurchase",
 		"lootResult": aid.JSON{
@@ -655,6 +660,62 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		},
 		"primary": true,
 	})
+
+	return nil
+}
+
+func clientRefundMtxPurchaseAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		PurchaseID string `json:"purchaseId" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	aid.Print(person.AthenaProfile.Purchases.Count())
+	aid.Print(person.CommonCoreProfile.Purchases.Count())
+
+	person.AthenaProfile.Purchases.RangePurchases(func(key string, value *p.Purchase) bool {
+		aid.Print(key, value.ID)
+		return true
+	})	
+
+	purchase := person.AthenaProfile.Purchases.GetPurchase(body.PurchaseID)
+	if purchase == nil {
+		return fmt.Errorf("purchase not found")
+	}
+
+	if person.RefundTickets <= 0 {
+		return fmt.Errorf("not enough refund tickets")
+	}
+
+	if time.Now().After(purchase.FreeRefundExpiry) {
+		person.RefundTickets--
+	}
+
+	for _, item := range purchase.Loot {
+		profile.Items.DeleteItem(item.ID)
+	}
+	
+	purchase.RefundedAt = time.Now()
+	purchase.Save()
+
+	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if vbucks == nil {
+		return fmt.Errorf("vbucks not found")
+	}
+
+	vbucks.Quantity += purchase.TotalPaid
+	vbucks.Save()
+
+	profile0Vbucks := person.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if profile0Vbucks == nil {
+		return fmt.Errorf("profile0vbucks not found")
+	}
+
+	profile0Vbucks.Quantity = vbucks.Quantity
+	profile0Vbucks.Save()
 
 	return nil
 }

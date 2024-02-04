@@ -49,6 +49,9 @@ type Storage interface {
 	SaveLoadout(loadout *DB_Loadout)
 	DeleteLoadout(loadoutId string)
 
+	SavePurchase(purchase *DB_Purchase)
+	DeletePurchase(purchaseId string)
+
 	SaveDiscordPerson(person *DB_DiscordPerson)
 	DeleteDiscordPerson(personId string)
 }
@@ -205,6 +208,14 @@ func (r *Repository) SaveLoadout(loadout *DB_Loadout) {
 
 func (r *Repository) DeleteLoadout(loadoutId string) {
 	r.Storage.DeleteLoadout(loadoutId)
+}
+
+func (r *Repository) SavePurchase(purchase *DB_Purchase) {
+	r.Storage.SavePurchase(purchase)
+}
+
+func (r *Repository) DeletePurchase(purchaseId string) {
+	r.Storage.DeletePurchase(purchaseId)
 }
 
 func (r *Repository) SaveDiscordPerson(person *DB_DiscordPerson) {

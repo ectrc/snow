@@ -6,13 +6,13 @@ type PersonSnapshot struct {
 	ID                  string
 	DisplayName         string
 	Permissions         []string
-	IsBanned            bool
 	AthenaProfile       ProfileSnapshot
 	CommonCoreProfile   ProfileSnapshot
 	CommonPublicProfile ProfileSnapshot
 	Profile0Profile     ProfileSnapshot
 	CollectionsProfile  ProfileSnapshot
 	CreativeProfile     ProfileSnapshot
+	BanHistory          []storage.DB_BanStatus
 	Discord             storage.DB_DiscordPerson
 }
 

@@ -35,7 +35,7 @@ func FromDatabaseGift(gift *storage.DB_Gift) *Gift {
 	loot := []*Item{}
 
 	for _, item := range gift.Loot {
-		loot = append(loot, FromDatabaseLoot(&item))
+		loot = append(loot, FromDatabaseGiftLoot(&item))
 	}
 
 	return &Gift{
@@ -99,7 +99,7 @@ func (g *Gift) ToDatabase(profileId string) *storage.DB_Gift {
 	profileLoot := []storage.DB_GiftLoot{}
 
 	for _, item := range g.Loot {
-		profileLoot = append(profileLoot, *item.ToLootDatabase(g.ID))
+		profileLoot = append(profileLoot, *item.ToGiftLootDatabase(g.ID))
 	}
 
 	return &storage.DB_Gift{

@@ -58,7 +58,19 @@ func FromDatabaseItem(item *storage.DB_Item) *Item {
 	}
 }
 
-func FromDatabaseLoot(item *storage.DB_GiftLoot) *Item {
+func FromDatabaseGiftLoot(item *storage.DB_GiftLoot) *Item {
+	return &Item{
+		ID:	item.ID,
+		TemplateID: item.TemplateID,
+		Quantity: item.Quantity,
+		Favorite: false,
+		HasSeen: false,
+		Variants: []*VariantChannel{},
+		ProfileType: item.ProfileType,
+	}
+}
+
+func FromDatabasePurchaseLoot(item *storage.DB_PurchaseLoot) *Item {
 	return &Item{
 		ID:	item.ID,
 		TemplateID: item.TemplateID,
@@ -202,11 +214,21 @@ func (i *Item) Save() {
 	storage.Repo.SaveItem(i.ToDatabase(i.ProfileID))
 }
 
-func (i *Item) ToLootDatabase(giftId string) *storage.DB_GiftLoot {
+func (i *Item) ToGiftLootDatabase(giftId string) *storage.DB_GiftLoot {
 	return &storage.DB_GiftLoot{
 		GiftID: giftId,
 		ProfileType: i.ProfileType,
 		ID: i.ID,
+		TemplateID: i.TemplateID,
+		Quantity: i.Quantity,
+	}
+}
+
+func (i *Item) ToPurchaseLootDatabase(purchaseId string) *storage.DB_PurchaseLoot {
+	return &storage.DB_PurchaseLoot{
+		ID: i.ID,
+		PurchaseID: purchaseId,
+		ProfileType: i.ProfileType,
 		TemplateID: i.TemplateID,
 		Quantity: i.Quantity,
 	}

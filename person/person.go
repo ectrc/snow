@@ -11,6 +11,7 @@ import (
 type Person struct {
 	ID string
 	DisplayName string
+	RefundTickets int
 	Permissions []string
 	AthenaProfile *Profile
 	CommonCoreProfile *Profile
@@ -28,6 +29,7 @@ func NewPerson() *Person {
 		ID: uuid.New().String(),
 		DisplayName: uuid.New().String(),
 		Permissions: []string{},
+		RefundTickets: 3,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
@@ -42,6 +44,7 @@ func NewPersonWithCustomID(id string) *Person {
 		ID: id,
 		DisplayName: uuid.New().String(),
 		Permissions: []string{},
+		RefundTickets: 3,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
@@ -193,6 +196,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		CollectionsProfile: collectionsProfile,
 		CreativeProfile: creativeProfile,
 		Discord: &databasePerson.Discord,
+		RefundTickets: databasePerson.RefundTickets,
 		Relationships: aid.GenericSyncMap[Relationship]{},
 	}
 
@@ -313,6 +317,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		DisplayName: p.DisplayName,
 		Permissions: p.Permissions,
 		BanHistory: p.BanHistory,
+		RefundTickets: p.RefundTickets,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},
@@ -381,6 +386,7 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 		DisplayName: p.DisplayName,
 		Permissions: p.Permissions,
 		BanHistory: p.BanHistory,
+		RefundTickets: p.RefundTickets,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},
@@ -391,19 +397,6 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 	}
 
 	return &dbPerson
-}
-
-func (p *Person) AddAttribute(value *Attribute) {
-	p.AthenaProfile.Attributes.AddAttribute(value)
-}
-
-func (p *Person) GetAttribute(key string) *Attribute {
-	attribute := p.AthenaProfile.Attributes.GetAttribute(key)
-	return attribute
-}
-
-func (p *Person) RemoveAttribute(key string) {
-	p.AthenaProfile.Attributes.DeleteAttribute(key)
 }
 
 func (p *Person) Snapshot() *PersonSnapshot {
@@ -424,4 +417,21 @@ func (p *Person) Snapshot() *PersonSnapshot {
 
 func (p *Person) Delete() {
 	storage.Repo.DeletePerson(p.ID)
+}
+
+func (p *Person) SetPurchaseHistoryAttribute() {
+	purchases := []aid.JSON{}
+
+	p.AthenaProfile.Purchases.RangePurchases(func(key string, value *Purchase) bool {
+		purchases = append(purchases, value.GenerateFortnitePurchaseEntry())
+		return true
+	})
+
+	purchaseAttribute := p.CommonCoreProfile.Attributes.GetAttributeByKey("mtx_purchase_history")
+	purchaseAttribute.ValueJSON = aid.JSONStringify(aid.JSON{
+		"refundsUsed": p.AthenaProfile.Purchases.CountRefunded(),
+		"refundCredits": p.RefundTickets,
+		"purchases": purchases,
+	})
+	purchaseAttribute.Save()
 }

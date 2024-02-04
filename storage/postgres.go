@@ -47,6 +47,7 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Gift{}, "Gifts")
 	s.Migrate(&DB_GiftLoot{}, "GiftLoot")
 	s.Migrate(&DB_DiscordPerson{}, "Discords")
+	s.Migrate(&DB_BanStatus{}, "Bans")
 	s.Migrate(&DB_SeasonStat{}, "Stats")
 }
 
@@ -54,9 +55,8 @@ func (s *PostgresStorage) DropTables() {
 	s.Postgres.Exec(`DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;`)
 }
 
-func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
-	var dbPerson DB_Person
-	s.Postgres.
+func (s *PostgresStorage) PreloadPerson() (tx *gorm.DB) {
+	return s.Postgres.
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
@@ -66,9 +66,16 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
+		Preload("Profiles.Purchases").
+		Preload("Profiles.Purchases.Loot").
 		Preload("Discord").
-		Where("id = ?", personId).
-		Find(&dbPerson)
+		Preload("BanHistory").
+		Preload("Stats")
+}
+
+func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
+	var dbPerson DB_Person
+	s.PreloadPerson().Where("id = ?", personId).Find(&dbPerson)
 
 	if dbPerson.ID == "" {
 		return nil
@@ -79,19 +86,7 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 
 func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 	var dbPerson DB_Person
-	s.Postgres.
-		Model(&DB_Person{}).
-		Preload("Profiles").
-		Preload("Profiles.Loadouts").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Quests").
-		Preload("Discord").
-		Where("display_name = ?", displayName).
-		Find(&dbPerson)
+	s.PreloadPerson().Where("display_name = ?", displayName).Find(&dbPerson)
 
 	if dbPerson.ID == "" {
 		return nil
@@ -102,19 +97,7 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 
 func (s *PostgresStorage) GetPersonsByPartialDisplay(displayName string) []*DB_Person {
 	var dbPersons []*DB_Person
-	s.Postgres.
-		Model(&DB_Person{}).
-		Preload("Profiles").
-		Preload("Profiles.Loadouts").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Quests").
-		Preload("Discord").
-		Where("display_name LIKE ?", "%" + displayName + "%").
-		Find(&dbPersons)
+	s.PreloadPerson().Where("display_name LIKE ?", "%" + displayName + "%").Find(&dbPersons)
 
 	if len(dbPersons) == 0 {
 		return nil
@@ -136,19 +119,7 @@ func (s *PostgresStorage) GetPersonByDiscordID(discordId string) *DB_Person {
 
 func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 	var dbPersons []*DB_Person
-
-	s.Postgres.
-		Model(&DB_Person{}).
-		Preload("Profiles").
-		Preload("Profiles.Loadouts").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Quests").
-		Preload("Discord").
-		Find(&dbPersons)
+	s.PreloadPerson().Find(&dbPersons)
 
 	return dbPersons
 }
@@ -170,18 +141,7 @@ func (s *PostgresStorage) SavePerson(person *DB_Person) {
 }
 
 func (s *PostgresStorage) DeletePerson(personId string) {
-	s.Postgres.
-		Model(&DB_Person{}).
-		Preload("Profiles").
-		Preload("Profiles.Loadouts").
-		Preload("Profiles.Attributes").
-		Preload("Profiles.Items").
-		Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts").
-		Preload("Profiles.Gifts.Loot").
-		Preload("Profiles.Quests").
-		Preload("Discord").
-		Delete(&DB_Person{}, "id = ?", personId)
+	s.PreloadPerson().Delete(&DB_Person{}, "id = ?", personId)
 }
 
 func (s *PostgresStorage) GetIncomingRelationships(personId string) []*DB_Relationship {
@@ -274,6 +234,14 @@ func (s *PostgresStorage) SaveLoadout(loadout *DB_Loadout) {
 
 func (s *PostgresStorage) DeleteLoadout(loadoutId string) {
 	s.Postgres.Delete(&DB_Loadout{}, "id = ?", loadoutId)
+}
+
+func (s *PostgresStorage) SavePurchase(purchase *DB_Purchase) {
+	s.Postgres.Save(purchase)
+}
+
+func (s *PostgresStorage) DeletePurchase(purchaseId string) {
+	s.Postgres.Delete(&DB_Purchase{}, "id = ?", purchaseId)
 }
 
 func (s *PostgresStorage) SaveDiscordPerson(discordPerson *DB_DiscordPerson) {
