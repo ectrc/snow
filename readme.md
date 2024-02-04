@@ -4,30 +4,25 @@
 
 Performance first, universal Fortnite private server backend written in Go.
 
-## Features
+## Overview
 
 - **Single File** It will embed all of the external files inside of one executable! This allows the backend to be ran anywhere with no setup _(after initial config)_!
 - **Blazingly Fast** Written in Go and built upon Fast HTTP, it is extremely fast and can handle any profile action in milliseconds with its caching system.
-- **Profile Changes** Automatically keeps track of profile changes exactly so any external changes are displayed in-game on the next action.
+- **Automatic Profile Changes** Automatically keeps track of profile changes exactly so any external changes are displayed in-game on the next action.
 - **Universal Database** It is possible to add new database types to satisfy your needs. Currently, it only supports `postgresql`.
 
-## What's next?
+## What's coming up?
 
-- Final niche actions like `RefundMtxPurchase`, `SetAffiliateName` and more.
-- Interact with external services like Amazon S3 or Cloudflare R2 to save player data externally.
-- Seed Randomization for the Item Shop instead of a random number generator. This will allow for the same item shop to be generated for each day without the need for a database or keeping the server running.
-- Integrating a matchmaker with a hoster to smartly put players into games and know when servers become available.
-- Refactor the XMPP solution to use [melium/xmpp](https://github.com/mellium/xmpp).
+> The backend is very feature rich and is constantly being updated. Below are the features that are not yet implemented, but are coming soon.
 
-### Missing Features
-
-> Use this as a roadmap to see what is coming next! It is easier to list what is missing than what is included as the server is almost feature complete.
-
-- **User Settings** An Amazon S3 bucket will be required to store user settings.
-- **Party System V2** Ccurrently it relies on the automatic XMPP solution which is very hard to keep track of.
-- **Battle Pass** For support, I will need the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
-- **Event Tracking** This will come from the game server and will send down every event for every player. With this it is possible to track quests, player stats, and more. This will need a game server to be built specifically for Snow. Features reliant on this are **Leaderboards**, **Challenges**, **Stats**, **Pins** and **Career**.
-- **Save The World** Really?
+- **Party System V2** Currently it relies on the automatic XMPP solution which is very hard to keep track of.
+- Niche profile actions like `RefundMtxPurchase`, `SetAffiliateName` and more. These are barely used however they contribute to the full experience.
+- Amazon S3 integration to store the **Player Settings** externally. Using the bucket will allow for horizontal scaling which may be required for very large player counts.
+- Purchasing the **Battle Pass**. This will require the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
+- Seeded randomization for the **Item Shop** instead of a random number generator. This will ensure that even if the backend is restarted, the same random items will be in the shop during that day.
+- Interaction with a Game Server to handle **Event Tracking** for player statistics and challenges. This will be a very large task as a new specialised game server will need to be created.
+- After the game server addition, a **Matchmaking System** will be added to match players together for a game. It will use a bin packing algorithm to ensure that games are filled as much as possible.
+- **Save The World**. This is a very large task and will require a lot of work. It is not a priority at the moment and might be done after the Battle Royale experience is complete.
 
 ## Supported MCP Actions
 
