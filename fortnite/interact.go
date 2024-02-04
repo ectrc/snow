@@ -92,6 +92,19 @@ type FAPI_Cosmetic struct {
 	BattlePass bool `json:"battlePass"`
 }
 
+type SnowVariantGrant struct {
+	Channel string `json:"channel"`
+	Value string `json:"value"`
+}
+
+type SnowVariant struct {
+	Grants []SnowVariantGrant `json:"grants"`
+	Name string `json:"name"`
+	Gift bool `json:"gift"`
+	Equip bool `json:"equip"`
+	Unseen bool `json:"unseen"`
+}
+
 type Set struct {
 	Items map[string]FAPI_Cosmetic `json:"items"`
 	Name string `json:"name"`
@@ -101,6 +114,7 @@ type Set struct {
 type CosmeticData struct {
 	Items map[string]FAPI_Cosmetic `json:"items"`
 	Sets map[string]Set `json:"sets"`
+	VariantTokens map[string]SnowVariant `json:"variantTokens"`
 }
 
 func (c *CosmeticData) GetRandomItem() FAPI_Cosmetic {
@@ -227,6 +241,7 @@ var (
 	Cosmetics = CosmeticData{
 		Items: make(map[string]FAPI_Cosmetic),
 		Sets: make(map[string]Set),
+		VariantTokens: make(map[string]SnowVariant),
 	}
 )
 
@@ -365,8 +380,18 @@ func PreloadCosmetics(max int) error {
 
 		withDisplayAssets++
 	}
+
+	variants := storage.HttpAsset("QF3nHCFt1vhELoU4q1VKTmpxnk20c2iAiBEBzlbzQAY.json")
+	if variants == nil {
+		panic("Failed to load variants")
+	}
+
+	err = json.Unmarshal(*variants, &Cosmetics.VariantTokens)
+	if err != nil {
+		return err
+	}
+
 	aid.Print("(snow) preloaded", len(Cosmetics.Items), "cosmetics")
-	
 	return nil
 }
 
