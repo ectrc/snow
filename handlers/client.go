@@ -153,6 +153,10 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 		SlotName string `json:"slotName" binding:"required"`
 		ItemToSlot string `json:"itemToSlot"`
 		IndexWithinSlot int `json:"indexWithinSlot"`
+		VariantUpdates []struct{
+			Active string `json:"active"`
+			Channel string `json:"channel"`
+		} `json:"variantUpdates"`
 	}
 
 	if err := c.BodyParser(&body); err != nil {
@@ -168,6 +172,16 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 		item = &p.Item{
 			ID: body.ItemToSlot,
 		}
+	}
+
+	for _, update := range body.VariantUpdates {
+		channel := item.GetChannel(update.Channel)
+		if channel == nil {
+			continue
+		}
+
+		channel.Active = update.Active
+		go channel.Save()
 	}
 
 	attr := profile.Attributes.GetAttributeByKey("favorite_" + strings.ReplaceAll(strings.ToLower(body.SlotName), "wrap", "wraps"))
@@ -191,8 +205,8 @@ func clientEquipBattleRoyaleCustomizationAction(c *fiber.Ctx, person *p.Person, 
 	default:
 		attr.ValueJSON = aid.JSONStringify(item.ID)
 	}
-	go attr.Save()
 
+	go attr.Save()
 	return nil
 }
 
@@ -263,7 +277,10 @@ func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *
 		ItemToSlot string `json:"itemToSlot" binding:"required"` // template id
 		LockerItem string `json:"lockerItem" binding:"required"` // locker id
 		SlotIndex int `json:"slotIndex" binding:"required"` // index of slot
-		VariantUpdates []aid.JSON `json:"variantUpdates" binding:"required"` // variant updates
+		VariantUpdates []struct{
+			Active string `json:"active"`
+			Channel string `json:"channel"`
+		} `json:"variantUpdates" binding:"required"` // variant updates
 	}
 
 	if err := c.BodyParser(&body); err != nil {
@@ -284,6 +301,16 @@ func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *
 	currentLocker := profile.Loadouts.GetLoadout(body.LockerItem)
 	if currentLocker == nil {
 		return fmt.Errorf("current locker not found")
+	}
+
+	for _, update := range body.VariantUpdates {
+		channel := item.GetChannel(update.Channel)
+		if channel == nil {
+			continue
+		}
+
+		channel.Active = update.Active
+		go channel.Save()
 	}
 
 	switch body.Category {
@@ -321,8 +348,7 @@ func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *
 		currentLocker.MusicPackID = item.ID
 	}
 
-	go currentLocker.Save()	
-
+	go currentLocker.Save()
 	return nil
 }
 
@@ -434,8 +460,6 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 	}
 
 	if body.TargetIndex >= len(loadouts) {
-		aid.Print("creating a new loadout with source", body.SourceIndex, "and target", body.TargetIndex)
-
 		newLoadout := p.NewLoadout(body.OptNewNameForTarget, profile)
 		newLoadout.CopyFrom(lastAppliedLoadout)
 		profile.Loadouts.AddLoadout(newLoadout)
@@ -464,8 +488,6 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 	}
 
 	if body.SourceIndex > 0  {
-		aid.Print("saving source loadout", body.SourceIndex, "to sandbox")
-
 		sourceLoadout := profile.Loadouts.GetLoadout(loadouts[body.SourceIndex])
 		if sourceLoadout == nil {
 			return fmt.Errorf("target loadout not found")
@@ -487,8 +509,6 @@ func clientCopyCosmeticLoadoutAction(c *fiber.Ctx, person *p.Person, profile *p.
 
 		return nil
 	}
-
-	aid.Print("loading target loadout", body.TargetIndex, "to sandbox")
 
 	targetLoadout := profile.Loadouts.GetLoadout(loadouts[body.TargetIndex])
 	if targetLoadout == nil {

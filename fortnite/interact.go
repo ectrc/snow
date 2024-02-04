@@ -2,9 +2,11 @@ package fortnite
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/ectrc/snow/aid"
@@ -24,6 +26,18 @@ type FAPI_Response struct {
 type FAPI_Error struct {
 	Status int `json:"status"`
 	Error string `json:"error"`
+}
+
+type FAPI_Cosmetic_Variant struct {
+	Channel string `json:"channel"`
+	Type string `json:"type"`
+	Options []FAPI_Cosmetic_VariantChannel  `json:"options"`
+}
+
+type FAPI_Cosmetic_VariantChannel struct {
+	Tag string `json:"tag"`
+	Name string `json:"name"`
+	Image string `json:"image"`
 }
 
 type FAPI_Cosmetic struct {
@@ -62,15 +76,7 @@ type FAPI_Cosmetic struct {
 		SmallIcon string `json:"smallIcon"`
 		Other map[string]string `json:"other"`
 	} `json:"images"`
-	Variants []struct {
-		Channel string `json:"channel"`
-		Type string `json:"type"`
-		Options []struct {
-			Tag string `json:"tag"`
-			Name string `json:"name"`
-			Image string `json:"image"`
-		} `json:"options"`
-	} `json:"variants"`
+	Variants []FAPI_Cosmetic_Variant `json:"variants"`
 	GameplayTags []string `json:"gameplayTags"`
 	SearchTags []string `json:"searchTags"`
 	MetaTags []string `json:"metaTags"`
@@ -165,7 +171,13 @@ func (c *CosmeticData) GetRandomSet() Set {
 	return c.GetRandomSet()
 }
 
+var EXTRA_NUMERIC_STYLES = []string{"Soccer", "Football", "ScaryBall"}
+
 func (c *CosmeticData) AddItem(item FAPI_Cosmetic) {
+	if slices.Contains(EXTRA_NUMERIC_STYLES, item.Set.BackendValue) {
+		item = c.AddNumericVariantChannelToItem(item)
+	}
+
 	c.Items[item.ID] = item
 
 	if item.Set.BackendValue != "" {
@@ -179,6 +191,23 @@ func (c *CosmeticData) AddItem(item FAPI_Cosmetic) {
 
 		Cosmetics.Sets[item.Set.BackendValue].Items[item.ID] = item
 	}
+}
+
+func (c *CosmeticData) AddNumericVariantChannelToItem(item FAPI_Cosmetic) FAPI_Cosmetic {
+	owned := []FAPI_Cosmetic_VariantChannel{}
+	for i := 0; i < 100; i++ {
+		owned = append(owned, FAPI_Cosmetic_VariantChannel{
+			Tag: fmt.Sprint(i),
+		})
+	}
+
+	item.Variants = append(item.Variants, FAPI_Cosmetic_Variant{
+		Channel: "Numeric",
+		Type: "int",
+		Options: owned,
+	})
+
+	return item
 }
 
 var (

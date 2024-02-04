@@ -58,11 +58,11 @@ func (s *PostgresStorage) GetPerson(personId string) *DB_Person {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		// Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
+		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts").
+		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
 		Preload("Discord").
 		Where("id = ?", personId).
@@ -81,11 +81,11 @@ func (s *PostgresStorage) GetPersonByDisplay(displayName string) *DB_Person {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		// Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
+		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts").
+		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
 		Preload("Discord").
 		Where("display_name = ?", displayName).
@@ -104,11 +104,11 @@ func (s *PostgresStorage) GetPersonsByPartialDisplay(displayName string) []*DB_P
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		// Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
+		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts").
+		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
 		Preload("Discord").
 		Where("display_name LIKE ?", "%" + displayName + "%").
@@ -139,11 +139,11 @@ func (s *PostgresStorage) GetAllPersons() []*DB_Person {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		// Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
+		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts").
+		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
 		Preload("Discord").
 		Find(&dbPersons)
@@ -172,11 +172,11 @@ func (s *PostgresStorage) DeletePerson(personId string) {
 		Model(&DB_Person{}).
 		Preload("Profiles").
 		Preload("Profiles.Loadouts").
-		// Preload("Profiles.Items.Variants").
-		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Attributes").
 		Preload("Profiles.Items").
+		Preload("Profiles.Items.Variants").
 		Preload("Profiles.Gifts").
+		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
 		Preload("Discord").
 		Delete(&DB_Person{}, "id = ?", personId)
@@ -224,6 +224,10 @@ func (s *PostgresStorage) DeleteItem(itemId string) {
 
 func (s *PostgresStorage) SaveVariant(variant *DB_VariantChannel) {
 	s.Postgres.Save(variant)
+}
+
+func (s *PostgresStorage) BulkCreateVariants(variants *[]DB_VariantChannel) {
+	s.Postgres.Create(variants)
 }
 
 func (s *PostgresStorage) DeleteVariant(variantId string) {

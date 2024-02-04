@@ -41,11 +41,24 @@ func GiveEverything(person *p.Person) {
 			continue
 		}
 
-		item := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
-		item.HasSeen = true
-		person.AthenaProfile.Items.AddItem(item)
+		new := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
+		new.HasSeen = true
 
-		items = append(items, *item.ToDatabase(person.AthenaProfile.ID))
+		grouped := map[string][]string{}
+		for _, variant := range item.Variants {
+			grouped[variant.Channel] = []string{}
+			
+			for _, option := range variant.Options {
+				grouped[variant.Channel] = append(grouped[variant.Channel], option.Tag)
+			}
+		}
+
+		for channel, tags := range grouped {
+			new.AddChannel(new.NewChannel(channel, tags, tags[0]))
+		}
+
+		person.AthenaProfile.Items.AddItem(new)
+		items = append(items, *new.ToDatabase(person.AthenaProfile.ID))
 	}
 
 	storage.Repo.BulkCreateItems(&items)

@@ -253,19 +253,24 @@ func (p *Person) Save() {
 	storage.Repo.SavePerson(dbPerson)
 }
 
+func (p *Person) SaveShallow() {
+	dbPerson := p.ToDatabaseShallow()
+	storage.Repo.SavePerson(dbPerson)
+}
+
 func (p *Person) Ban() {
 	p.IsBanned = true
-	p.Save()
+	p.SaveShallow()
 }
 
 func (p *Person) Unban() {
 	p.IsBanned = false
-	p.Save()
+	p.SaveShallow()
 }
 
 func (p *Person) AddPermission(permission string) {
 	p.Permissions = append(p.Permissions, permission)
-	p.Save()
+	p.SaveShallow()
 }
 
 func (p *Person) RemovePermission(permission string) {
@@ -275,7 +280,7 @@ func (p *Person) RemovePermission(permission string) {
 			break
 		}
 	}
-	p.Save()
+	p.SaveShallow()
 }
 
 func (p *Person) HasPermission(permission Permission) bool {
@@ -355,6 +360,24 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		})
 
 		dbPerson.Profiles = append(dbPerson.Profiles, dbProfile)
+	}
+
+	return &dbPerson
+}
+
+func (p *Person) ToDatabaseShallow() *storage.DB_Person {
+	dbPerson := storage.DB_Person{
+		ID: p.ID,
+		DisplayName: p.DisplayName,
+		Permissions: p.Permissions,
+		IsBanned: p.IsBanned,
+		Profiles: []storage.DB_Profile{},
+		Stats: []storage.DB_SeasonStat{},
+		Discord: storage.DB_DiscordPerson{},
+	}
+
+	if p.Discord != nil {
+		dbPerson.Discord = *p.Discord
 	}
 
 	return &dbPerson

@@ -93,6 +93,7 @@ func PostTokenExchangeCode(c *fiber.Ctx, body *FortniteTokenBody) error {
   access, err := aid.JWTSign(aid.JSON{
     "snow_id": person.ID, // custom
     "creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
+		"am": "exchange_code",
   })
   if err != nil {
     return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
@@ -101,6 +102,7 @@ func PostTokenExchangeCode(c *fiber.Ctx, body *FortniteTokenBody) error {
   refresh, err := aid.JWTSign(aid.JSON{
     "snow_id": person.ID,
     "creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
+		"am": "exchange_code",
   })
   if err != nil {
     return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
@@ -143,6 +145,7 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 	access, err := aid.JWTSign(aid.JSON{
 		"snow_id": person.ID, // custom
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
+		"am": "password",
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
@@ -151,6 +154,7 @@ func PostTokenPassword(c *fiber.Ctx, body *FortniteTokenBody) error {
 	refresh, err := aid.JWTSign(aid.JSON{
 		"snow_id": person.ID,
 		"creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
+		"am": "password",
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)

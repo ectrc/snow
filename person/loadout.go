@@ -1,6 +1,7 @@
 package person
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/ectrc/snow/aid"
@@ -167,7 +168,6 @@ func (l *Loadout) GetAttribute(attribute string) interface{} {
 		return l.GenerateFortniteLockerSlotsData()
 	}
 
-
 	return nil
 }
 
@@ -185,6 +185,43 @@ func (l *Loadout) GenerateFortniteLockerSlotsData() aid.JSON {
 			"MusicPack": l.GetItemSlotData(l.MusicPackID),
 		},
 	}
+}
+
+func (l *Loadout) GetSlotFromItemTemplateID(templateId string) string {
+	re := regexp.MustCompile(`Athena(.*):`)
+	match := re.FindStringSubmatch(templateId)
+
+	if len(match) > 1 {
+		return match[1]
+	}
+
+	return ""
+}
+
+func (l *Loadout) GetItemFromSlot(slot string) *Item {
+	person := Find(l.PersonID)
+	if person == nil {
+		return nil
+	}
+
+	switch slot {
+	case "Character":
+		return person.AthenaProfile.Items.GetItem(l.CharacterID)
+	case "Backpack":
+		return person.AthenaProfile.Items.GetItem(l.BackpackID)
+	case "Pickaxe":
+		return person.AthenaProfile.Items.GetItem(l.PickaxeID)
+	case "Glider":
+		return person.AthenaProfile.Items.GetItem(l.GliderID)
+	case "SkyDiveContrail":
+		return person.AthenaProfile.Items.GetItem(l.ContrailID)
+	case "LoadingScreen":
+		return person.AthenaProfile.Items.GetItem(l.LoadingScreenID)
+	case "MusicPack":
+		return person.AthenaProfile.Items.GetItem(l.MusicPackID)
+	}
+
+	return nil
 }
 
 func (l *Loadout) GetItemSlotData(itemId string) aid.JSON {

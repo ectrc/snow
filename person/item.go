@@ -44,6 +44,7 @@ func FromDatabaseItem(item *storage.DB_Item) *Item {
 	variants := []*VariantChannel{}
 
 	for _, variant := range item.Variants {
+		
 		variants = append(variants, FromDatabaseVariant(&variant))
 	}
 
@@ -126,6 +127,7 @@ func (i *Item) DeleteLoot() {
 
 func (i *Item) NewChannel(channel string, owned []string, active string) *VariantChannel {
 	return &VariantChannel{
+		ID: uuid.New().String(),
 		ItemID: i.ID,
 		Channel: channel,
 		Owned: owned,
@@ -139,12 +141,14 @@ func (i *Item) AddChannel(channel *VariantChannel) {
 }
 
 func (i *Item) RemoveChannel(channel *VariantChannel) {
+	var vId string
 	for index, c := range i.Variants {
 		if c.Channel == channel.Channel {
+			vId = c.ID
 			i.Variants = append(i.Variants[:index], i.Variants[index+1:]...)
 		}
 	}
-	//storage.Repo.DeleteItemVariant(i.ID, channel)
+	storage.Repo.DeleteVariant(vId)
 }
 
 func (i *Item) GetChannel(channel string) *VariantChannel {
@@ -161,6 +165,14 @@ func (i *Item) FillChannels(channels []*VariantChannel) {
 	i.Variants = []*VariantChannel{}
 	for _, channel := range channels {
 		i.AddChannel(channel)
+	}
+}
+
+func (i *Item) EquipChannel(channel string, variant string) {
+	for _, c := range i.Variants {
+		if c.Channel == channel {
+			c.Active = variant
+		}
 	}
 }
 
@@ -251,5 +263,5 @@ func (v *VariantChannel) ToDatabase() *storage.DB_VariantChannel {
 }
 
 func (v *VariantChannel) Save() {
-	//storage.Repo.SaveItemVariant(v.ToDatabase())
+	storage.Repo.SaveVariant(v.ToDatabase())
 }

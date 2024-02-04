@@ -31,6 +31,7 @@ type Storage interface {
 	DeleteItem(itemId string)
 
 	SaveVariant(variant *DB_VariantChannel)
+	BulkCreateVariants(variants *[]DB_VariantChannel)
 	DeleteVariant(variantId string)
 
 	SaveQuest(quest *DB_Quest)
@@ -152,6 +153,10 @@ func (r *Repository) BulkCreateItems(items *[]DB_Item) {
 
 func (r *Repository) DeleteItem(itemId string) {
 	r.Storage.DeleteItem(itemId)
+}
+
+func (r *Repository) BulkCreateVariants(variants *[]DB_VariantChannel) {
+	r.Storage.BulkCreateVariants(variants)
 }
 
 func (r *Repository) SaveVariant(variant *DB_VariantChannel) {

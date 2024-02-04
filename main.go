@@ -55,7 +55,7 @@ func init() {
 			found.RemovePermission(perm)
 		}
 
-		found.AddPermission("all")
+		found.AddPermission("asdasdasdasa")
 		aid.Print("(snow) max account " + username + " loaded")
 	}
 }

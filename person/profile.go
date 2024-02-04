@@ -183,6 +183,8 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 		return nil
 	}
 
+	loadout := p.GetActiveLoadout()
+
 	for _, change := range changes {
 		switch change.Path[0] {
 		case "Items":
@@ -199,7 +201,14 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 			}
 
 			if change.Type == "update" && change.Path[2] != "Quantity" {
-				p.CreateItemAttributeChangedChange(p.Items.GetItem(change.Path[1]), change.Path[2])
+				item := p.Items.GetItem(change.Path[1])
+				p.CreateItemAttributeChangedChange(item, change.Path[2])
+
+				slotType := loadout.GetSlotFromItemTemplateID(item.TemplateID)
+				slotValue := loadout.GetItemFromSlot(slotType)
+				if slotValue != nil && slotValue.ID == item.ID {
+					p.CreateLoadoutChangedChange(loadout, slotType + "ID")
+				}
 			}
 		case "Quests":
 			if change.Type == "create" && change.Path[2] == "ID" {
@@ -223,7 +232,12 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 			}
 
 			if change.Type == "update" && change.Path[2] == "ValueJSON" {
-				p.CreateStatModifiedChange(p.Attributes.GetAttribute(change.Path[1]))
+				attribute := p.Attributes.GetAttribute(change.Path[1])
+				p.CreateStatModifiedChange(attribute)
+
+				if attribute.Key == "last_applied_loadout" {
+					p.CreateLoadoutChangedChange(p.GetActiveLoadout(), "CharacterID")
+				}
 			}
 		case "Loadouts":
 			if change.Type == "create" && change.Path[2] == "ID" {
@@ -241,6 +255,20 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 	}
 
 	return changes
+}
+
+func (p *Profile) GetActiveLoadout() *Loadout {
+	lastAppliedLoadoutAttribute := p.Attributes.GetAttributeByKey("last_applied_loadout")
+	if lastAppliedLoadoutAttribute == nil {
+		return nil
+	}
+
+	lastAppliedLoadout := p.Loadouts.GetLoadout(AttributeConvert[string](lastAppliedLoadoutAttribute))
+	if lastAppliedLoadout == nil {
+		return nil
+	}
+
+	return lastAppliedLoadout
 }
 
 func (p *Profile) CreateAttribute(key string, value interface{}) *Attribute {
