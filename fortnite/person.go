@@ -141,6 +141,7 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("mfa_enabled", true)).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("mtx_affiliate", "")).Save()
+	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("mtx_affiliate_set_time", 0)).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("mtx_purchase_history", aid.JSON{
 		"refundsUsed": 0,
 		"refundCredits": 3,

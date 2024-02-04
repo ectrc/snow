@@ -31,6 +31,7 @@ var (
 		"RefundMtxPurchase": clientRefundMtxPurchaseAction,
 		"GiftCatalogEntry": clientGiftCatalogEntryAction,
 		"RemoveGiftBox": clientRemoveGiftBoxAction,
+		"SetAffiliateName": clientSetAffiliateNameAction,
 	}
 )
 
@@ -823,6 +824,34 @@ func clientRemoveGiftBoxAction(c *fiber.Ctx, person *p.Person, profile *p.Profil
 	}
 
 	profile.Gifts.DeleteGift(gift.ID)
+
+	return nil
+}
+
+func clientSetAffiliateNameAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		AffiliateName string `json:"affiliateName" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	affiliate := person.CommonCoreProfile.Attributes.GetAttributeByKey("mtx_affiliate")
+	if affiliate == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid affiliate attribute"))
+	}
+
+	affiliate.ValueJSON = aid.JSONStringify(body.AffiliateName)
+	affiliate.Save()
+
+	setTime := person.CommonCoreProfile.Attributes.GetAttributeByKey("mtx_affiliate_set_time")
+	if setTime == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid affiliate set time attribute"))
+	}
+
+	setTime.ValueJSON = aid.JSONStringify(time.Now().Format("2006-01-02T15:04:05.999Z"))
+	setTime.Save()
 
 	return nil
 }

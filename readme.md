@@ -15,7 +15,6 @@ Performance first, universal Fortnite private server backend written in Go.
 
 > The backend is very feature rich and is constantly being updated. Below are the features that are not yet implemented, but are coming soon.
 
-- Amazon S3 integration to store the **Player Settings** externally. Using the bucket will allow for horizontal scaling which may be required for very large player counts.
 - **Party System V2** Currently it relies on the automatic XMPP solution which is very hard to keep track of.
 - Purchasing the **Battle Pass**. This will require the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
 - Seeded randomization for the **Item Shop** instead of a random number generator. This will ensure that even if the backend is restarted, the same random items will be in the shop during that day.
@@ -27,7 +26,7 @@ Performance first, universal Fortnite private server backend written in Go.
 
 > These are request made from Fortnite to the server to perform actions on the profile.
 
-`QueryProfile`, `ClientQuestLogin`, `MarkItemSeen`, `SetItemFavoriteStatusBatch`, `EquipBattleRoyaleCustomization`, `SetBattleRoyaleBanner`, `SetCosmeticLockerSlot`, `SetCosmeticLockerBanner`, `SetCosmeticLockerName`, `CopyCosmeticLoadout`, `DeleteCosmeticLoadout`, `PurchaseCatalogEntry`, `GiftCatalogEntry`, `RemoveGiftBox`
+`QueryProfile`, `ClientQuestLogin`, `MarkItemSeen`, `SetItemFavoriteStatusBatch`, `EquipBattleRoyaleCustomization`, `SetBattleRoyaleBanner`, `SetCosmeticLockerSlot`, `SetCosmeticLockerBanner`, `SetCosmeticLockerName`, `CopyCosmeticLoadout`, `DeleteCosmeticLoadout`, `PurchaseCatalogEntry`, `GiftCatalogEntry`, `RemoveGiftBox`, `RefundMtxPurchase`, `SetAffiliateName`
 
 ## Support
 
