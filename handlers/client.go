@@ -9,6 +9,7 @@ import (
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/socket"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -745,6 +746,19 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		return fmt.Errorf("invalid price")
 	}
 
+	for _, receiverAccountId := range body.ReceiverAccountIds {
+		receiverPerson := p.Find(receiverAccountId)
+		if receiverPerson == nil {
+			return fmt.Errorf("one or more receivers not found")
+		}
+
+		for _, grant := range offer.Grants {
+			if receiverPerson.AthenaProfile.Items.GetItemByTemplateID(grant) != nil {
+				return fmt.Errorf("one or more receivers has one of the items")
+			}
+		}
+	}
+
 	price := offer.Price * len(body.ReceiverAccountIds)
 
 	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
@@ -768,10 +782,6 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 
 	for _, receiverAccountId := range body.ReceiverAccountIds {
 		receiverPerson := p.Find(receiverAccountId)
-		if receiverPerson == nil {
-			continue
-		}
-
 		gift := p.NewGift(body.GiftWrapTemplateId, 1, person.ID, body.PersonalMessage)
 		for _, grant := range offer.Grants {
 			item := p.NewItem(grant, 1)
@@ -780,6 +790,15 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		}
 		
 		receiverPerson.CommonCoreProfile.Gifts.AddGift(gift).Save()
+
+		socket, ok := socket.JabberSockets.Get(receiverPerson.ID)
+		if ok {
+			socket.Write(aid.JSONToBytes(aid.JSON{
+				"payload": aid.JSON{},
+				"type": "com.epicgames.gift.received",
+				"timestamp": time.Now().Format("2006-01-02T15:04:05.999Z"),
+			}))
+		}
 	}
 
 	return nil

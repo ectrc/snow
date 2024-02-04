@@ -15,6 +15,11 @@ func (j *JSON) ToBytes() []byte {
 	return json
 }
 
+func JSONToBytes(input JSON) []byte {
+	json, _ := json.Marshal(input)
+	return json
+}
+
 func JSONStringify(input interface{}) string {
 	json, _ := json.Marshal(input)
 	return string(json)
