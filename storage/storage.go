@@ -58,6 +58,7 @@ type Storage interface {
 
 type Repository struct {
 	Storage Storage
+	Amazon  *AmazonClient
 }
 
 func NewStorage(s Storage) *Repository {

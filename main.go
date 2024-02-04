@@ -37,6 +37,10 @@ func init() {
 	}
 
 	storage.Repo = storage.NewStorage(device)
+
+	if aid.Config.Amazon.Enabled {
+		storage.Repo.Amazon = storage.NewAmazonClient(aid.Config.Amazon.BucketURI, aid.Config.Amazon.AccessKeyID, aid.Config.Amazon.SecretAccessKey, aid.Config.Amazon.ClientSettingsBucket)
+	}
 }
 
 func init() {
@@ -55,7 +59,7 @@ func init() {
 			found.RemovePermission(perm)
 		}
 
-		found.AddPermission("asdasdasdasa")
+		found.AddPermission("all")
 		aid.Print("(snow) max account " + username + " loaded")
 	}
 }
@@ -139,10 +143,13 @@ func main() {
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
 
 	snow := r.Group("/snow")
-	snow.Get("/sockets", handlers.GetConnectedSockets)
-	snow.Get("/cache", handlers.GetCachedPlayers)
-	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
 	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
+	if aid.Config.Output.Level != "prod" {
+		snow.Get("/cache", handlers.GetCachedPlayers)
+		snow.Get("/config", handlers.GetSnowConfig)
+		snow.Get("/sockets", handlers.GetConnectedSockets)
+		snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
+	}
 
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)

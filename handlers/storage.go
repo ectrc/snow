@@ -6,39 +6,57 @@ import (
 	"encoding/hex"
 
 	"github.com/ectrc/snow/aid"
+	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
+type cloudstorage struct {
+	f []aid.JSON
+}
+
+func (c *cloudstorage) Add(name string, bytes []byte) error {
+	sumation1 := sha1.Sum(bytes)
+	sumation256 := sha256.Sum256(bytes)
+
+	c.f = append(c.f, aid.JSON{
+		"uniqueFilename": name,
+		"filename": name,
+		"hash": hex.EncodeToString(sumation1[:]),
+		"hash256": hex.EncodeToString(sumation256[:]),
+		"length": len(bytes),
+		"contentType": "application/octet-stream",
+		"uploaded": aid.TimeStartOfDay(),
+		"storageType": "S3",
+		"storageIds": aid.JSON{
+			"primary": "primary",
+		},
+		"doNotCache": false,
+	})
+
+	return nil
+}
+
+func (c *cloudstorage) Get() []aid.JSON {
+	if c.f == nil {
+		c.f = []aid.JSON{}
+	}
+	return c.f
+}
+
 func GetCloudStorageFiles(c *fiber.Ctx) error {
-	files := map[string][]byte {
+	lookup := map[string][]byte {
 		"DefaultEngine.ini": storage.GetDefaultEngine(),
 		"DefaultGame.ini": storage.GetDefaultGame(),
 		"DefaultRuntimeOptions.ini": storage.GetDefaultRuntime(),
 	}
-	result := []aid.JSON{}
-
-	for name, data := range files {
-		sumation1 := sha1.Sum(data)
-		sumation256 := sha256.Sum256(data)
-
-		result = append(result, aid.JSON{
-			"uniqueFilename": name,
-			"filename": name,
-			"hash": hex.EncodeToString(sumation1[:]),
-			"hash256": hex.EncodeToString(sumation256[:]),
-			"length": len(data),
-			"contentType": "application/octet-stream",
-			"uploaded": aid.TimeStartOfDay(),
-			"storageType": "S3",
-			"storageIds": aid.JSON{
-				"primary": "primary",
-			},
-			"doNotCache": false,
-		})
+	
+	files := cloudstorage{}
+	for name, bytes := range lookup {
+		files.Add(name, bytes)
 	}
 
-	return c.Status(200).JSON(result)
+	return c.Status(200).JSON(files.Get())
 }
 
 func GetCloudStorageConfig(c *fiber.Ctx) error {
@@ -69,13 +87,48 @@ func GetCloudStorageFile(c *fiber.Ctx) error {
 }
 
 func GetUserStorageFiles(c *fiber.Ctx) error {
-	return c.Status(200).JSON([]aid.JSON{})
+	if !aid.Config.Amazon.Enabled {
+		return c.Status(200).JSON([]aid.JSON{})
+	}
+	person := c.Locals("person").(*person.Person)
+	files := cloudstorage{}
+
+	file, err := storage.Repo.Amazon.GetUserFile(person.ID)
+	if err == nil {
+		files.Add("ClientSettings.sav", file)
+	}
+	
+	return c.Status(200).JSON(files.Get())
 }
 
 func GetUserStorageFile(c *fiber.Ctx) error {
-	return c.Status(200).JSON(aid.JSON{})
+	if !aid.Config.Amazon.Enabled {
+		return c.SendStatus(204)
+	}
+	person := c.Locals("person").(*person.Person)
+
+	file, err := storage.Repo.Amazon.GetUserFile(person.ID)
+	if err != nil {
+		aid.Print("(amazon)", err.Error())
+		return c.Status(500).JSON(aid.ErrorBadRequest("Failed to retrieve user file"))
+	}
+
+	c.Set("Content-Type", "application/octet-stream")
+	return c.Status(200).Send(file)
 }
 
 func PutUserStorageFile(c *fiber.Ctx) error {
-	return c.Status(200).JSON(aid.JSON{})
+	if !aid.Config.Amazon.Enabled {
+		return c.SendStatus(204)
+	}
+	person := c.Locals("person").(*person.Person)
+	body := c.Body()
+
+	err := storage.Repo.Amazon.CreateUserFile(person.ID, body)
+	if err != nil {
+		aid.Print("(amazon)", err.Error())
+		return c.Status(500).JSON(aid.ErrorBadRequest("Failed to create user file"))
+	}
+
+	return c.SendStatus(204)
 }

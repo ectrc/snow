@@ -6,6 +6,7 @@ import (
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -60,4 +61,11 @@ func GetCachedPlayers(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(players)
+}
+
+func GetSnowConfig(c *fiber.Ctx) error {
+	return c.JSON(aid.JSON{
+		"basic": aid.Config,		
+		"amazon": storage.Repo.Amazon,
+	})
 }

@@ -22,6 +22,13 @@ type CS struct {
 		Token string
 		Guild string
 	}
+	Amazon struct {
+		Enabled bool
+		BucketURI string
+		AccessKeyID string
+		SecretAccessKey string
+		ClientSettingsBucket string
+	}
 	Output struct {
 		Level string
 	}
@@ -92,6 +99,27 @@ func LoadConfig(file []byte) {
 	Config.Discord.Guild = cfg.Section("discord").Key("guild").String()
 	if Config.Discord.Guild == "" {
 		panic("Discord Guild ID is empty")
+	}
+
+	Config.Amazon.Enabled = true
+	Config.Amazon.BucketURI = cfg.Section("amazon").Key("uri").String()
+	if Config.Amazon.BucketURI == "" {
+		Config.Amazon.Enabled = false
+	}
+
+	Config.Amazon.AccessKeyID = cfg.Section("amazon").Key("id").String()
+	if Config.Amazon.AccessKeyID == "" {
+		Config.Amazon.Enabled = false
+	}
+
+	Config.Amazon.SecretAccessKey = cfg.Section("amazon").Key("key").String()
+	if Config.Amazon.SecretAccessKey == "" {
+		Config.Amazon.Enabled = false
+	}
+
+	Config.Amazon.ClientSettingsBucket = cfg.Section("amazon").Key("bucket").String()
+	if Config.Amazon.ClientSettingsBucket == "" {
+		Config.Amazon.Enabled = false
 	}
 
 	Config.API.Host = cfg.Section("api").Key("host").String()
