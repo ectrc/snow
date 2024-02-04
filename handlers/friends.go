@@ -62,7 +62,40 @@ func DeleteFriend(c *fiber.Ctx) error {
 }
 
 func GetFriendListSummary(c *fiber.Ctx) error {
-	return c.Status(200).JSON([]aid.JSON{})
+	person := c.Locals("person").(*p.Person)
+
+	summary := aid.JSON{
+		"friends": []aid.JSON{},
+		"blocklist": []aid.JSON{},
+		"incoming": []aid.JSON{},
+		"outgoing": []aid.JSON{},
+		"suggested": []aid.JSON{},
+	}
+
+	person.Relationships.Range(func(key string, value *p.Relationship) bool {
+		switch value.Direction {
+		case p.RelationshipInboundDirection:
+			res := value.GenerateFortniteSummaryEntry(p.GenerateTypeTowardsPerson)
+			if value.Status == "ACCEPTED" {
+				summary["friends"] = append(summary["friends"].([]aid.JSON), res)
+				break
+			}
+
+			summary["incoming"] = append(summary["incoming"].([]aid.JSON), res)
+		case p.RelationshipOutboundDirection:
+			res := value.GenerateFortniteSummaryEntry(p.GenerateTypeFromPerson)
+			if value.Status == "ACCEPTED" {
+				summary["friends"] = append(summary["friends"].([]aid.JSON), res)
+				break
+			}
+			
+			summary["outgoing"] = append(summary["outgoing"].([]aid.JSON), res)
+		}
+			
+		return true
+	})
+
+	return c.Status(200).JSON(summary)
 }
 
 func GetPersonSearch(c *fiber.Ctx) error {

@@ -793,11 +793,11 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 
 		socket, ok := socket.JabberSockets.Get(receiverPerson.ID)
 		if ok {
-			socket.Write(aid.JSONToBytes(aid.JSON{
+			socket.JabberSendMessageToPerson(aid.JSON{
 				"payload": aid.JSON{},
 				"type": "com.epicgames.gift.received",
 				"timestamp": time.Now().Format("2006-01-02T15:04:05.999Z"),
-			}))
+			})
 		}
 	}
 

@@ -50,6 +50,25 @@ func (r *Relationship) GenerateFortniteFriendEntry(t RelationshipGenerateType) a
 	return result
 }
 
+func (r *Relationship) GenerateFortniteSummaryEntry(t RelationshipGenerateType) aid.JSON {
+	result := aid.JSON{
+		"created": time.Now().Add(-time.Hour * 24 * 3).Format(time.RFC3339),
+		"favorite": false,
+		"groups": []string{},
+		"mutual": 0,
+		"note": "",
+	}
+
+	switch t {
+	case GenerateTypeFromPerson:
+		result["accountId"] = r.Towards.ID
+	case GenerateTypeTowardsPerson:
+		result["accountId"] = r.From.ID
+	}
+
+	return result
+}
+
 func (r *Relationship) Save() (*Relationship, error) {
 	storage.Repo.Storage.SaveRelationship(r.ToDatabase())
 	r.From.Relationships.Set(r.Towards.ID, r)

@@ -120,7 +120,7 @@ func main() {
 	friends.Post("/public/friends/:accountId/:wanted", handlers.PostCreateFriend)
 	friends.Delete("/public/friends/:accountId/:wanted", handlers.DeleteFriend)
 	friends.Get("/:version/:accountId/summary", handlers.GetFriendListSummary)
-	friends.Get("/:version/:accountId/friends/:wanted", handlers.PostCreateFriend)
+	friends.Post("/:version/:accountId/friends/:wanted", handlers.PostCreateFriend)
 
 	game := fortnite.Group("/game/v2")
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
