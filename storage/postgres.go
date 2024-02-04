@@ -35,17 +35,19 @@ func (s *PostgresStorage) Migrate(table interface{}, tableName string) {
 
 func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_Person{}, "Persons")
+	s.Migrate(&DB_Relationship{}, "Relationships")
 	s.Migrate(&DB_Profile{}, "Profiles")
-	s.Migrate(&DB_Item{}, "Items")
-	s.Migrate(&DB_Gift{}, "Gifts")
-	s.Migrate(&DB_Quest{}, "Quests")
+	s.Migrate(&DB_Attribute{}, "Attributes")
 	s.Migrate(&DB_Loadout{}, "Loadouts")
-	s.Migrate(&DB_Loot{}, "Loot")
+	s.Migrate(&DB_Item{}, "Items")
+	s.Migrate(&DB_Purchase{}, "Purchases")
+	s.Migrate(&DB_PurchaseLoot{}, "PurchaseLoot")
 	s.Migrate(&DB_VariantChannel{}, "Variants")
-	s.Migrate(&DB_PAttribute{}, "Attributes")
+	s.Migrate(&DB_Quest{}, "Quests")
+	s.Migrate(&DB_Gift{}, "Gifts")
+	s.Migrate(&DB_GiftLoot{}, "GiftLoot")
 	s.Migrate(&DB_DiscordPerson{}, "Discords")
 	s.Migrate(&DB_SeasonStat{}, "Stats")
-	s.Migrate(&DB_Relationship{}, "Relationships")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -242,12 +244,12 @@ func (s *PostgresStorage) DeleteQuest(questId string) {
 	s.Postgres.Delete(&DB_Quest{}, "id = ?", questId)
 }
 
-func (s *PostgresStorage) SaveLoot(loot *DB_Loot) {
+func (s *PostgresStorage) SaveLoot(loot *DB_GiftLoot) {
 	s.Postgres.Save(loot)
 }
 
 func (s *PostgresStorage) DeleteLoot(lootId string) {
-	s.Postgres.Delete(&DB_Loot{}, "id = ?", lootId)
+	s.Postgres.Delete(&DB_GiftLoot{}, "id = ?", lootId)
 }
 
 func (s *PostgresStorage) SaveGift(gift *DB_Gift) {
@@ -258,12 +260,12 @@ func (s *PostgresStorage) DeleteGift(giftId string) {
 	s.Postgres.Delete(&DB_Gift{}, "id = ?", giftId)
 }
 
-func (s *PostgresStorage) SaveAttribute(attribute *DB_PAttribute) {
+func (s *PostgresStorage) SaveAttribute(attribute *DB_Attribute) {
 	s.Postgres.Save(attribute)
 }
 
 func (s *PostgresStorage) DeleteAttribute(attributeId string) {
-	s.Postgres.Delete(&DB_PAttribute{}, "id = ?", attributeId)
+	s.Postgres.Delete(&DB_Attribute{}, "id = ?", attributeId)
 }
 
 func (s *PostgresStorage) SaveLoadout(loadout *DB_Loadout) {

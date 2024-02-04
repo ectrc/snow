@@ -96,7 +96,7 @@ func (g *Gift) Delete() {
 }
 
 func (g *Gift) ToDatabase(profileId string) *storage.DB_Gift {
-	profileLoot := []storage.DB_Loot{}
+	profileLoot := []storage.DB_GiftLoot{}
 
 	for _, item := range g.Loot {
 		profileLoot = append(profileLoot, *item.ToLootDatabase(g.ID))

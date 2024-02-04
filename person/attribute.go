@@ -25,7 +25,7 @@ func NewAttribute(key string, value interface{}) *Attribute {
 	}
 }
 
-func FromDatabaseAttribute(db *storage.DB_PAttribute) *Attribute {
+func FromDatabaseAttribute(db *storage.DB_Attribute) *Attribute {
 	return &Attribute{
 		ID: db.ID,
 		ProfileID: db.ProfileID,
@@ -35,8 +35,8 @@ func FromDatabaseAttribute(db *storage.DB_PAttribute) *Attribute {
 	}
 }
 
-func (a *Attribute) ToDatabase(profileId string) *storage.DB_PAttribute {
-	return &storage.DB_PAttribute{
+func (a *Attribute) ToDatabase(profileId string) *storage.DB_Attribute {
+	return &storage.DB_Attribute{
 		ID: a.ID,
 		ProfileID: profileId,
 		Key: a.Key,

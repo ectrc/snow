@@ -58,7 +58,7 @@ func FromDatabaseItem(item *storage.DB_Item) *Item {
 	}
 }
 
-func FromDatabaseLoot(item *storage.DB_Loot) *Item {
+func FromDatabaseLoot(item *storage.DB_GiftLoot) *Item {
 	return &Item{
 		ID:	item.ID,
 		TemplateID: item.TemplateID,
@@ -202,8 +202,8 @@ func (i *Item) Save() {
 	storage.Repo.SaveItem(i.ToDatabase(i.ProfileID))
 }
 
-func (i *Item) ToLootDatabase(giftId string) *storage.DB_Loot {
-	return &storage.DB_Loot{
+func (i *Item) ToLootDatabase(giftId string) *storage.DB_GiftLoot {
+	return &storage.DB_GiftLoot{
 		GiftID: giftId,
 		ProfileType: i.ProfileType,
 		ID: i.ID,

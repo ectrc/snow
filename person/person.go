@@ -330,7 +330,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 			Gifts: []storage.DB_Gift{},
 			Quests: []storage.DB_Quest{},
 			Loadouts: []storage.DB_Loadout{},
-			Attributes: []storage.DB_PAttribute{},
+			Attributes: []storage.DB_Attribute{},
 			Revision: profile.Revision,
 		}
 

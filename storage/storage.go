@@ -37,13 +37,13 @@ type Storage interface {
 	SaveQuest(quest *DB_Quest)
 	DeleteQuest(questId string)
 
-	SaveLoot(loot *DB_Loot)
+	SaveLoot(loot *DB_GiftLoot)
 	DeleteLoot(lootId string)
 
 	SaveGift(gift *DB_Gift)
 	DeleteGift(giftId string)
 
-	SaveAttribute(attribute *DB_PAttribute)
+	SaveAttribute(attribute *DB_Attribute)
 	DeleteAttribute(attributeId string)
 
 	SaveLoadout(loadout *DB_Loadout)
@@ -175,7 +175,7 @@ func (r *Repository) DeleteQuest(questId string) {
 	r.Storage.DeleteQuest(questId)
 }
 
-func (r *Repository) SaveLoot(loot *DB_Loot) {
+func (r *Repository) SaveLoot(loot *DB_GiftLoot) {
 	r.Storage.SaveLoot(loot)
 }
 
@@ -191,7 +191,7 @@ func (r *Repository) DeleteGift(giftId string) {
 	r.Storage.DeleteGift(giftId)
 }
 
-func (r *Repository) SaveAttribute(attribute *DB_PAttribute) {
+func (r *Repository) SaveAttribute(attribute *DB_Attribute) {
 	r.Storage.SaveAttribute(attribute)
 }
 

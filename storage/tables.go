@@ -36,7 +36,7 @@ type DB_Profile struct {
 	Items []DB_Item `gorm:"foreignkey:ProfileID"`
 	Gifts []DB_Gift `gorm:"foreignkey:ProfileID"`
 	Quests []DB_Quest `gorm:"foreignkey:ProfileID"`
-	Attributes []DB_PAttribute `gorm:"foreignkey:ProfileID"`
+	Attributes []DB_Attribute `gorm:"foreignkey:ProfileID"`
 	Loadouts []DB_Loadout `gorm:"foreignkey:ProfileID"`
 	Type string
 	Revision int
@@ -46,7 +46,7 @@ func (DB_Profile) TableName() string {
 	return "Profiles"
 }
 
-type DB_PAttribute struct {
+type DB_Attribute struct {
 	ID string `gorm:"primary_key"`
 	ProfileID string
 	Key string
@@ -54,7 +54,7 @@ type DB_PAttribute struct {
 	Type string
 }
 
-func (DB_PAttribute) TableName() string {
+func (DB_Attribute) TableName() string {
 	return "Attributes"
 }
 
@@ -94,6 +94,34 @@ func (DB_Item) TableName() string {
 	return "Items"
 }
 
+type DB_Purchase struct {
+	ID string `gorm:"primary_key"`
+	ProfileID string `gorm:"index"`
+	Loot []DB_PurchaseLoot `gorm:"foreignkey:PurchaseID"`
+	OfferID string
+	PurchaseDate int64
+	FreeRefundExpiry int64
+	RefundExpiry int64
+	Refundable bool
+	Refunded bool
+}
+
+func (DB_Purchase) TableName() string {
+	return "Purchases"
+}
+
+type DB_PurchaseLoot struct {
+	ID string `gorm:"primary_key"`
+	PurchaseID string `gorm:"index"`
+	TemplateID string
+	Quantity int
+	ProfileType string
+}
+
+func (DB_PurchaseLoot) TableName() string {
+	return "PurchaseLoot"
+}
+
 type DB_VariantChannel struct {
 	ID string `gorm:"primary_key"`
 	ItemID string `gorm:"index"`
@@ -129,14 +157,14 @@ type DB_Gift struct {
 	FromID string
 	GiftedAt int64
 	Message string
-	Loot []DB_Loot `gorm:"foreignkey:GiftID"`
+	Loot []DB_GiftLoot `gorm:"foreignkey:GiftID"`
 }
 
 func (DB_Gift) TableName() string {
 	return "Gifts"
 }
 
-type DB_Loot struct {
+type DB_GiftLoot struct {
 	ID string `gorm:"primary_key"`
 	GiftID string `gorm:"index"`
 	TemplateID string
@@ -144,8 +172,8 @@ type DB_Loot struct {
 	ProfileType string
 }
 
-func (DB_Loot) TableName() string {
-	return "Loot"
+func (DB_GiftLoot) TableName() string {
+	return "GiftLoot"
 }
 
 type DB_DiscordPerson struct {
@@ -166,12 +194,10 @@ type DB_SeasonStat struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
 	Build string
-	XP int
-	Level int
-	LevelClaimed int
-	Stars int
-	Tier int
-	TierClaimed int
+	SeasonXP int
+	SeasonalLevel int
+	SeasonalTier int
+	BattleStars int
 }
 
 func (DB_SeasonStat) TableName() string {
