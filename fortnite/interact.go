@@ -108,6 +108,10 @@ func (c *CosmeticData) GetRandomItem() FAPI_Cosmetic {
 
 	i := 0
 	for _, item := range c.Items {
+		if strings.Contains(item.Description, "TBD") {
+			continue
+		}
+
 		if i == randomInt {
 			return item
 		}
@@ -127,6 +131,10 @@ func (c *CosmeticData) GetRandomItemByType(itemType string) FAPI_Cosmetic {
 			continue
 		}
 
+		if strings.Contains(item.Description, "TBD") {
+			continue
+		}
+
 		if i == randomInt {
 			return item
 		}
@@ -143,6 +151,10 @@ func (c *CosmeticData) GetRandomItemByNotType(itemType string) FAPI_Cosmetic {
 	i := 0
 	for _, item := range c.Items {
 		if item.Type.BackendValue == itemType {
+			continue
+		}
+
+		if strings.Contains(item.Description, "TBD") {
 			continue
 		}
 
@@ -272,7 +284,7 @@ func PreloadCosmetics(max int) error {
 	}
 
 	for _, item := range list {
-		if item.Introduction.BackendValue > max {
+		if item.Introduction.BackendValue == 0 || item.Introduction.BackendValue > max {
 			continue
 		}
 
