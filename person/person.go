@@ -1,6 +1,8 @@
 package person
 
 import (
+	"time"
+
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
@@ -10,7 +12,6 @@ type Person struct {
 	ID string
 	DisplayName string
 	Permissions []string
-	IsBanned bool
 	AthenaProfile *Profile
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
@@ -18,6 +19,7 @@ type Person struct {
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
 	Discord *storage.DB_DiscordPerson
+	BanHistory []storage.DB_BanStatus
 	Relationships aid.GenericSyncMap[Relationship]
 }
 
@@ -26,7 +28,6 @@ func NewPerson() *Person {
 		ID: uuid.New().String(),
 		DisplayName: uuid.New().String(),
 		Permissions: []string{},
-		IsBanned: false,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
@@ -41,7 +42,6 @@ func NewPersonWithCustomID(id string) *Person {
 		ID: id,
 		DisplayName: uuid.New().String(),
 		Permissions: []string{},
-		IsBanned: false,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
 		CommonPublicProfile: NewProfile("common_public"),
@@ -185,7 +185,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		ID: databasePerson.ID,
 		DisplayName: databasePerson.DisplayName,
 		Permissions: databasePerson.Permissions,
-		IsBanned: databasePerson.IsBanned,
+		BanHistory: databasePerson.BanHistory,
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
@@ -259,12 +259,22 @@ func (p *Person) SaveShallow() {
 }
 
 func (p *Person) Ban() {
-	p.IsBanned = true
+	p.BanHistory = append(p.BanHistory, storage.DB_BanStatus{
+		ID: uuid.New().String(),
+		PersonID: p.ID,
+		IssuedBy: "system",
+		Reason: "Banned by system",
+		Expiry: time.Now().AddDate(0, 0, 7).Unix(),
+	})
+
 	p.SaveShallow()
 }
 
 func (p *Person) Unban() {
-	p.IsBanned = false
+	for _, ban := range p.BanHistory {
+		ban.Expiry = time.Now().Unix()
+	}
+
 	p.SaveShallow()
 }
 
@@ -302,7 +312,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: p.Permissions,
-		IsBanned: p.IsBanned,
+		BanHistory: p.BanHistory,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},
@@ -370,7 +380,7 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: p.Permissions,
-		IsBanned: p.IsBanned,
+		BanHistory: p.BanHistory,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},
@@ -401,13 +411,13 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: p.Permissions,
-		IsBanned: p.IsBanned,
 		AthenaProfile: *p.AthenaProfile.Snapshot(),
 		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
 		CommonPublicProfile: *p.CommonPublicProfile.Snapshot(),
 		Profile0Profile: *p.Profile0Profile.Snapshot(),
 		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
+		BanHistory: p.BanHistory,
 		Discord: *p.Discord,
 	}
 } 

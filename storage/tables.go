@@ -10,10 +10,11 @@ type DB_Person struct {
 	ID string
 	DisplayName string
 	Permissions pq.StringArray `gorm:"type:text[]"`
-	IsBanned bool
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
+	Purchases []DB_Purchase `gorm:"foreignkey:ProfileID"`
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
+	BanHistory []DB_BanStatus `gorm:"foreignkey:PersonID"`
 }
 
 func (DB_Person) TableName() string {
@@ -102,8 +103,8 @@ type DB_Purchase struct {
 	PurchaseDate int64
 	FreeRefundExpiry int64
 	RefundExpiry int64
-	Refundable bool
-	Refunded bool
+	RefundedAt int64
+	TotalPaid int
 }
 
 func (DB_Purchase) TableName() string {
@@ -202,4 +203,16 @@ type DB_SeasonStat struct {
 
 func (DB_SeasonStat) TableName() string {
 	return "Stats"
+}
+
+type DB_BanStatus struct {
+	ID string `gorm:"primary_key"`
+	PersonID string `gorm:"index"`
+	IssuedBy string
+	Expiry int64
+	Reason string
+}
+
+func (DB_BanStatus) TableName() string {
+	return "Bans"
 }
