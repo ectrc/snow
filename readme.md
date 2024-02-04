@@ -13,14 +13,25 @@ Performance first, universal Fortnite private server backend written in Go.
 
 ## What's next?
 
-- Final MCP actions like `RefundMtxPurchase`, `SetAffiliateName` and more.
-- Integrating a matchmaker with a hoster to smartly put players into games and know when servers become available.
+- Final niche actions like `RefundMtxPurchase`, `SetAffiliateName` and more.
 - Interact with external services like Amazon S3 or Cloudflare R2 to save player data externally.
+- Seed Randomization for the Item Shop instead of a random number generator. This will allow for the same item shop to be generated for each day without the need for a database or keeping the server running.
+- Integrating a matchmaker with a hoster to smartly put players into games and know when servers become available.
 - Refactor the XMPP solution to use [melium/xmpp](https://github.com/mellium/xmpp).
+
+### Missing Features
+
+> Use this as a roadmap to see what is coming next! It is easier to list what is missing than what is included as the server is almost feature complete.
+
+- **User Settings** An Amazon S3 bucket will be required to store user settings.
+- **Party System V2** Ccurrently it relies on the automatic XMPP solution which is very hard to keep track of.
+- **Battle Pass** For support, I will need the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
+- **Event Tracking** This will come from the game server and will send down every event for every player. With this it is possible to track quests, player stats, and more. This will need a game server to be built specifically for Snow. Features reliant on this are **Leaderboards**, **Challenges**, **Stats**, **Pins** and **Career**.
+- **Save The World** Really?
 
 ## Supported MCP Actions
 
-> These are request made from Fortnite to the backend to perform actions on the profile.
+> These are request made from Fortnite to the server to perform actions on the profile.
 
 `QueryProfile`, `ClientQuestLogin`, `MarkItemSeen`, `SetItemFavoriteStatusBatch`, `EquipBattleRoyaleCustomization`, `SetBattleRoyaleBanner`, `SetCosmeticLockerSlot`, `SetCosmeticLockerBanner`, `SetCosmeticLockerName`, `CopyCosmeticLoadout`, `DeleteCosmeticLoadout`, `PurchaseCatalogEntry`, `GiftCatalogEntry`, `RemoveGiftBox`
 
