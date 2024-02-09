@@ -10,7 +10,7 @@ type DB_Person struct {
 	ID string
 	DisplayName string
 	RefundTickets int
-	Permissions pq.StringArray `gorm:"type:text[]"`
+	Permissions int64
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`

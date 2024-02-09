@@ -1,16 +1,18 @@
 package person
 
-type Permission string
+type Permission int64
 
+// DO NOT MOVE THE ORDER OF THESE PERMISSIONS AS THEY ARE USED IN THE DATABASE
 const (
-	PermissionLookup      Permission = "lookup"
-	PermissionBan         Permission = "ban"
-	PermissionInformation Permission = "information"
-	PermissionDonator     Permission = "donator"
-	PermissionGiveItem    Permission = "give_item"
-	PermissionTakeItem    Permission = "take_item"
-	PermissionReset       Permission = "reset"
-	PermissionFullLocker  Permission = "full_locker"
+	PermissionLookup Permission = 1 << iota
+	PermissionBan
+	PermissionInformation
+	PermissionItemControl
+	PermissionLockerControl
+	PermissionPermissionControl
+	// user roles, not really permissions but implemented as such
+	PermissionOwner
+	PermissionDonator
 
-	PermissionAll Permission = "all"
+	PermissionAll Permission = 1<<iota - 1
 )

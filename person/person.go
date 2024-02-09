@@ -12,7 +12,7 @@ type Person struct {
 	ID string
 	DisplayName string
 	RefundTickets int
-	Permissions []string
+	Permissions Permission
 	AthenaProfile *Profile
 	CommonCoreProfile *Profile
 	CommonPublicProfile *Profile
@@ -28,7 +28,7 @@ func NewPerson() *Person {
 	return &Person{
 		ID: uuid.New().String(),
 		DisplayName: uuid.New().String(),
-		Permissions: []string{},
+		Permissions: 0,
 		RefundTickets: 3,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
@@ -43,7 +43,7 @@ func NewPersonWithCustomID(id string) *Person {
 	return &Person{
 		ID: id,
 		DisplayName: uuid.New().String(),
-		Permissions: []string{},
+		Permissions: 0,
 		RefundTickets: 3,
 		AthenaProfile: NewProfile("athena"),
 		CommonCoreProfile: NewProfile("common_core"),
@@ -187,7 +187,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 	person := &Person{
 		ID: databasePerson.ID,
 		DisplayName: databasePerson.DisplayName,
-		Permissions: databasePerson.Permissions,
+		Permissions: Permission(databasePerson.Permissions),
 		BanHistory: databasePerson.BanHistory,
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
@@ -282,40 +282,29 @@ func (p *Person) Unban() {
 	p.SaveShallow()
 }
 
-func (p *Person) AddPermission(permission string) {
-	p.Permissions = append(p.Permissions, permission)
+func (p *Person) AddPermission(permission Permission) {
+	p.Permissions |= permission
 	p.SaveShallow()
 }
 
-func (p *Person) RemovePermission(permission string) {
-	for i, perm := range p.Permissions {
-		if perm == permission {
-			p.Permissions = append(p.Permissions[:i], p.Permissions[i+1:]...)
-			break
-		}
-	}
+func (p *Person) RemovePermission(permission Permission) {
+	p.Permissions &= ^permission
 	p.SaveShallow()
 }
 
 func (p *Person) HasPermission(permission Permission) bool {
-	for _, perm := range p.Permissions {
-		if perm == string(PermissionAll) {
-			return true
-		}
-
-		if perm == string(permission) {
-			return true
-		}
+	if permission == PermissionAll {
+		return p.Permissions == PermissionAll
 	}
 
-	return false
+	return p.Permissions & permission != 0
 }
 
 func (p *Person) ToDatabase() *storage.DB_Person {
 	dbPerson := storage.DB_Person{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
-		Permissions: p.Permissions,
+		Permissions: int64(p.Permissions),
 		BanHistory: p.BanHistory,
 		RefundTickets: p.RefundTickets,
 		Profiles: []storage.DB_Profile{},
@@ -384,7 +373,7 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 	dbPerson := storage.DB_Person{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
-		Permissions: p.Permissions,
+		Permissions: int64(p.Permissions),
 		BanHistory: p.BanHistory,
 		RefundTickets: p.RefundTickets,
 		Profiles: []storage.DB_Profile{},
@@ -403,7 +392,7 @@ func (p *Person) Snapshot() *PersonSnapshot {
 	return &PersonSnapshot{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
-		Permissions: p.Permissions,
+		Permissions: int64(p.Permissions),
 		AthenaProfile: *p.AthenaProfile.Snapshot(),
 		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
 		CommonPublicProfile: *p.CommonPublicProfile.Snapshot(),
