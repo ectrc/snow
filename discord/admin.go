@@ -196,7 +196,7 @@ func listBansHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looke
 			banIssuer = &person.Person{Discord: &storage.DB_DiscordPerson{ID: "0"}}
 		}
 		
-		embed.AddField(ban.Reason, "Banned by <@"+banIssuer.Discord.ID+"> on <t:"+fmt.Sprintf("%d", ban.Expiry.Unix())+":D>", false)
+		embed.AddField(ban.Reason, "Banned by <@"+banIssuer.Discord.ID+">, expires <t:"+fmt.Sprintf("%d", ban.Expiry.Unix())+":D>", false)
 		return true
 	})
 
