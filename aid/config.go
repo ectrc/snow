@@ -37,6 +37,7 @@ type CS struct {
 		Host string
 		Port string
 		FrontendPort string
+		Debug bool
 	}
 	JWT struct {
 		Secret string
@@ -139,6 +140,8 @@ func LoadConfig(file []byte) {
 		Config.API.FrontendPort = Config.API.Port
 	}
 
+	Config.API.Debug = cfg.Section("api").Key("debug").MustBool(false)
+
 	Config.JWT.Secret = cfg.Section("jwt").Key("secret").String()
 	if Config.JWT.Secret == "" {
 		panic("JWT Secret is empty")
@@ -168,6 +171,6 @@ func LoadConfig(file []byte) {
 
 	Config.Fortnite.Season = parsedSeason
 	Config.Fortnite.Everything = cfg.Section("fortnite").Key("everything").MustBool(false)
-	Config.Fortnite.Password = cfg.Section("fortnite").Key("disable_password").MustBool(false)
+	Config.Fortnite.Password = !(cfg.Section("fortnite").Key("disable_password").MustBool(false))
 	Config.Fortnite.DisableClientCredentials = cfg.Section("fortnite").Key("disable_client_credentials").MustBool(false)
 }

@@ -155,7 +155,7 @@ func main() {
 
 	snow := r.Group("/snow")
 	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
-	if aid.Config.Output.Level != "prod" {
+	if aid.Config.API.Debug {
 		snow.Get("/cache", handlers.GetCachedPlayers)
 		snow.Get("/config", handlers.GetSnowConfig)
 		snow.Get("/sockets", handlers.GetConnectedSockets)
