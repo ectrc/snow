@@ -32,6 +32,7 @@ var (
 		"GiftCatalogEntry": clientGiftCatalogEntryAction,
 		"RemoveGiftBox": clientRemoveGiftBoxAction,
 		"SetAffiliateName": clientSetAffiliateNameAction,
+		"SetReceiveGiftsEnabled": clientSetReceiveGiftsEnabledAction,
 	}
 )
 
@@ -844,6 +845,26 @@ func clientSetAffiliateNameAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 
 	setTime.ValueJSON = aid.JSONStringify(time.Now().Format("2006-01-02T15:04:05.999Z"))
 	setTime.Save()
+
+	return nil
+}
+
+func clientSetReceiveGiftsEnabledAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		ReceiveGifts bool `json:"bReceiveGifts" binding:"required"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	attribute := profile.Attributes.GetAttributeByKey("allowed_to_receive_gifts")
+	if attribute == nil {
+		return fmt.Errorf("attribute not found")
+	}
+
+	attribute.ValueJSON = aid.JSONStringify(body.ReceiveGifts)
+	go attribute.Save()
 
 	return nil
 }
