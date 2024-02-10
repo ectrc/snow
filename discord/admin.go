@@ -375,7 +375,7 @@ func fillItemsHandler(s *discordgo.Session, i *discordgo.InteractionCreate, look
 	})
 
 	fortnite.GiveEverything(player)
-	str := player.DisplayName + "has been granted all items."
+	str := player.DisplayName + " has been granted all items."
 	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 		Content: &str,
 	})
