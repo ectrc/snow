@@ -89,6 +89,7 @@ func (c *DiscordClient) RegisterCommands() {
 	for _, command := range c.Commands {
 		if command.AdminOnly {
 			command.Command.DefaultMemberPermissions = &adminPermission
+			command.Command.Description += " (admin only)"
 		}
 
 		update = append(update, command.Command)

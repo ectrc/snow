@@ -43,3 +43,13 @@ func ReverseString(input string) string {
 	}
 	return str
 }
+
+func ToHex(number int) string {
+	inta := strconv.FormatInt(int64(number), 16)
+	
+	if len(inta) == 1 {
+		return "0" + inta
+	}
+	
+	return inta
+}

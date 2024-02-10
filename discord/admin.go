@@ -54,7 +54,7 @@ func whoHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
@@ -119,7 +119,7 @@ func banHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
@@ -146,7 +146,7 @@ func unbanHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
@@ -168,12 +168,12 @@ func giveItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	if !looker.HasPermission(person.PermissionGiveItem) {
+	if !looker.HasPermission(person.PermissionItemControl) {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
@@ -229,12 +229,12 @@ func takeItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	if !looker.HasPermission(person.PermissionTakeItem) {
+	if !looker.HasPermission(person.PermissionItemControl) {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
@@ -301,19 +301,14 @@ func giveEverythingHandler(s *discordgo.Session, i *discordgo.InteractionCreate)
 		return
 	}
 
-	if !looker.HasPermission(person.PermissionGiveItem) {
+	if !looker.HasPermission(person.PermissionItemControl) || !looker.HasPermission(person.PermissionLockerControl) {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData(), s)
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
-		return
-	}
-
-	if !player.HasPermission(person.PermissionFullLocker) {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 	
@@ -327,4 +322,79 @@ func giveEverythingHandler(s *discordgo.Session, i *discordgo.InteractionCreate)
 	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 		Content: &str,
 	})
+}
+
+func permissionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	looker := person.FindByDiscord(i.Member.User.ID)
+	if looker == nil {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if !looker.HasPermission(person.PermissionPermissionControl) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if len(i.ApplicationCommandData().Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	subCommand := i.ApplicationCommandData().Options[0]
+	if len(subCommand.Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	player := getPersonFromOptions(subCommand.Options, s)
+	if player == nil {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
+		return
+	}
+
+	permission := person.IntToPermission(subCommand.Options[0].IntValue())
+	if permission == 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+	
+	if permission == person.PermissionAll && !looker.HasPermission(person.PermissionOwner) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if player.HasPermission(person.PermissionOwner) && !looker.HasPermission(person.PermissionOwner) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if player.HasPermission(person.PermissionAll) && !looker.HasPermission(person.PermissionOwner) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	switch subCommand.Name {
+	case "add":
+		player.AddPermission(permission)
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: player.DisplayName + " has been given permission `" + permission.GetName() + "`.",
+			},
+		})
+	case "remove":
+		player.RemovePermission(permission)
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: player.DisplayName + " has had permission `" + permission.GetName() + "` removed.",
+			},
+		})
+	default:
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 }

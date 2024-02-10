@@ -58,13 +58,42 @@ func getAverageColour(img image.Image) colours {
 	}
 }
 
+func GetAverageHexColour(img image.Image) string {
+	colour := getAverageColour(img)
+	return "#" + aid.ToHex(int(colour.averageRed)) + aid.ToHex(int(colour.averageGreen)) + aid.ToHex(int(colour.averageBlue))
+}
+
 func colorDifference(c1, c2 colours) float64 {
 	diffRed := int(c1.averageRed) - int(c2.averageRed)
 	diffGreen := int(c1.averageGreen) - int(c2.averageGreen)
 	diffBlue := int(c1.averageBlue) - int(c2.averageBlue)
 
-	// Using Euclidean distance to calculate color difference
 	return math.Sqrt(float64(diffRed*diffRed + diffGreen*diffGreen + diffBlue*diffBlue))
+}
+
+func GetCharacterImage(characterId string) image.Image {
+	character, ok := Cosmetics.Items[characterId]
+	if !ok {
+		return getRandomCharacterImage()
+	}
+	
+	response, err := http.Get(character.Images.Featured)
+	if err != nil {
+		return getRandomCharacterImage()
+	}
+	defer response.Body.Close()
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	image, _, err := image.Decode(bytes.NewReader(b))
+	if err != nil {
+		panic(err)
+	}
+
+	return image
 }
 
 func getRandomCharacterImage() image.Image {

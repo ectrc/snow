@@ -32,7 +32,6 @@ func GetLightswitchBulkStatus(c *fiber.Ctx) error {
 		"banned": isBanned,
 		"launcherInfoDTO": aid.JSON{
 			"appName":"Fortnite",
-			"catalogItemId":"4fe75bbc5a674f4f9b356b5c90567da5",
 			"namespace":"fn",
 		},
 	}})
@@ -65,34 +64,34 @@ func GetFortniteTimeline(c *fiber.Ctx) error {
 	switch season {
 	case 2:
 		events = append(events, aid.JSON{
-			"activeUntil": "9999-12-31T23:59:59.999Z",
-			"activeSince": "0001-01-01T00:00:00Z",
+			"activeUntil": "9999-01-01T00:00:00.000Z",
+			"activeSince": "9999-01-01T00:00:00.000Z",
 			"eventType": "EventFlag.LobbyWinterDecor",
 		})
 	case 6:
 		events = append(events, aid.JSON{
 			"activeUntil": "9999-01-01T00:00:00.000Z",
-			"activeSince": "0001-01-01T00:00:00Z",
+			"activeSince": "9999-01-01T00:00:00.000Z",
 			"eventType": "EventFlag.LobbySeason6Halloween",
 		})
 	case 11:
 		events = append(events, aid.JSON{
 			"activeUntil": "9999-01-01T00:00:00.000Z",
-			"activeSince": "0001-01-01T00:00:00Z",
+			"activeSince": "9999-01-01T00:00:00.000Z",
 			"eventType": "EventFlag.LTE_WinterFest2019",
 		}, aid.JSON{
 			"activeUntil": "9999-01-01T00:00:00.000Z",
-			"activeSince": "0001-01-01T00:00:00Z",
+			"activeSince": "9999-01-01T00:00:00.000Z",
 			"eventType": "EventFlag.LTE_WinterFest",
 		}, aid.JSON{
 			"activeUntil": "9999-01-01T00:00:00.000Z",
-			"activeSince": "0001-01-01T00:00:00Z",
+			"activeSince": "9999-01-01T00:00:00.000Z",
 			"eventType": "EventFlag.Winterfest.Tree",
 		})
 	default:
 		events = append(events, aid.JSON{
-			"activeUntil": "9999-12-31T23:59:59.999Z",
-			"activeSince": "0001-01-01T00:00:00Z",
+			"activeUntil": "9999-01-01T00:00:00.000Z",
+			"activeSince": "9999-01-01T00:00:00.000Z",
 			"eventType": "EventFlag.LobbySeason" + strings.Split(build, ".")[0],
 		})
 	}

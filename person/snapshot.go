@@ -5,7 +5,7 @@ import "github.com/ectrc/snow/storage"
 type PersonSnapshot struct {
 	ID                  string
 	DisplayName         string
-	Permissions         []string
+	Permissions         int64
 	AthenaProfile       ProfileSnapshot
 	CommonCoreProfile   ProfileSnapshot
 	CommonPublicProfile ProfileSnapshot

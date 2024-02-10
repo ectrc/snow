@@ -55,21 +55,27 @@ func init() {
 			found = fortnite.NewFortnitePersonWithId(username, username, true)
 		}
 
-		for _, perm := range found.Permissions {
-			found.RemovePermission(perm)
-		}
-
-		found.AddPermission("all")
+		found.AddPermission(person.PermissionAllWithRoles)
 		aid.Print("(snow) max account " + username + " loaded")
 	}
+
+	for _, username := range aid.Config.Accounts.Owners {
+		found := person.FindByDisplay(username)
+		if found == nil {
+			continue
+		}
+
+		found.AddPermission(person.PermissionOwner)
+		aid.Print("(snow) owner account " + username + " loaded")
+	}
 }
+
 func main() {
 	r := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 	})
-
 
 	r.Use(aid.FiberLogger())
 	r.Use(aid.FiberLimiter())
@@ -78,9 +84,12 @@ func main() {
 	r.Get("/region", handlers.GetRegion)
 	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
 	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
+	r.Get("/affiliate/api/public/affiliates/slug/:slug", handlers.GetAffiliate)
+	
 	r.Get("/api/v1/search/:accountId", handlers.GetPersonSearch)
 	r.Post("/api/v1/assets/Fortnite/:versionId/:assetName", handlers.PostAssets)
-	r.Get("/affiliate/api/public/affiliates/slug/:slug", handlers.GetAffiliate)
+
+	r.Get("/profile/privacy_settings", handlers.MiddlewareFortnite, handlers.GetPrivacySettings)
 	r.Put("/profile/play_region", handlers.AnyNoContent)
 	
 	r.Get("/", handlers.RedirectSocket)

@@ -19,9 +19,9 @@
 - Interaction with a Game Server to handle **Event Tracking** for player statistics and challenges. This will be a very large task as a new specialised game server will need to be created.
 - After the game server addition, a **Matchmaking System** will be added to match players together for a game. It will use a bin packing algorithm to ensure that games are filled as much as possible.
 
-And finally, the biggest task of all...
+And once battle royale is completed ...
 
-- **Save The World**. This is a very large task and will require a lot of work. It is not a priority at the moment and might be done after the Battle Royale experience is complete.
+- **Save The World**
 
 ## Supported MCP Actions
 

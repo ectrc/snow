@@ -18,6 +18,21 @@ func addCommands() {
 		panic("StaticClient is nil")
 	}
 
+	personOptions := []*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionUser,
+			Name: "discord",
+			Description: "The discord account of the player.",
+			Required: false,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionString,
+			Name: "display",
+			Description: "The display name of the player.",
+			Required: false,
+		},
+	}
+
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
 			Name: "create",
@@ -58,7 +73,7 @@ func addCommands() {
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
 			Name: "information",
-			Description: "Useful information about this server's activity! Admin Only.",
+			Description: "Useful information about this server's activity!",
 		},
 		Handler: informationHandler,
 		AdminOnly: true,
@@ -68,20 +83,7 @@ func addCommands() {
 		Command: &discordgo.ApplicationCommand{
 			Name: "who",
 			Description: "Lookup a player's information.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "display",
-					Description: "The display name of the player.",
-					Required: false,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionUser,
-					Name: "discord",
-					Description: "The discord account of the player.",
-					Required: false,
-				},
-			},
+			Options: personOptions,
 		},
 		Handler: whoHandler,
 		AdminOnly: true,
@@ -91,20 +93,7 @@ func addCommands() {
 		Command: &discordgo.ApplicationCommand{
 			Name: "ban",
 			Description: "Ban a player from using the bot.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type: discordgo.ApplicationCommandOptionUser,
-					Name: "discord",
-					Description: "The discord account of the player.",
-					Required: false,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "display",
-					Description: "The display name of the player.",
-					Required: false,
-				},
-			},
+			Options: personOptions,
 		},
 		Handler: banHandler,
 		AdminOnly: true,
@@ -114,61 +103,38 @@ func addCommands() {
 		Command: &discordgo.ApplicationCommand{
 			Name: "unban",
 			Description: "Unban a player from using the bot.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type: discordgo.ApplicationCommandOptionUser,
-					Name: "discord",
-					Description: "The discord account of the player.",
-					Required: false,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "display",
-					Description: "The display name of the player.",
-					Required: false,
-				},
-			},
+			Options: personOptions,
 		},
 		Handler: unbanHandler,
 		AdminOnly: true,
 	})
 
+	grantOptions := append([]*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionString,
+			Name: "template_id",
+			Description: "The item id of the cosmetic to give/take.",
+			Required: true,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionInteger,
+			Name: "quantity",
+			Description: "The amount of the item to give/take.",
+			Required: true,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionString,
+			Name: "profile",
+			Description: "common_core, athena, common_public, profile0, collections, creative",
+			Required: true,
+		},
+	}, personOptions...)
+
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
 			Name: "give",
 			Description: "Grant a player an item in the game.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "template_id",
-					Description: "The item id of the cosmetic to give.",
-					Required: true,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionInteger,
-					Name: "quantity",
-					Description: "The amount of the item to give.",
-					Required: true,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "profile",
-					Description: "common_core, athena, common_public, profile0, collections, creative",
-					Required: true,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionUser,
-					Name: "discord",
-					Description: "The discord account of the player.",
-					Required: false,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "display",
-					Description: "The display name of the player.",
-					Required: false,
-				},
-			},
+			Options: grantOptions,
 		},
 		Handler: giveItemHandler,
 		AdminOnly: true,
@@ -178,38 +144,7 @@ func addCommands() {
 		Command: &discordgo.ApplicationCommand{
 			Name: "take",
 			Description: "Take an item from a player in the game.",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "template_id",
-					Description: "The item id of the cosmetic to take.",
-					Required: true,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionInteger,
-					Name: "quantity",
-					Description: "The amount of the item to take.",
-					Required: true,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "profile",
-					Description: "common_core, athena, common_public, profile0, collections, creative",
-					Required: true,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionUser,
-					Name: "discord",
-					Description: "The discord account of the player.",
-					Required: false,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "display",
-					Description: "The display name of the player.",
-					Required: false,
-				},
-			},
+			Options: grantOptions,
 		},
 		Handler: takeItemHandler,
 		AdminOnly: true,
@@ -219,34 +154,89 @@ func addCommands() {
 		Command: &discordgo.ApplicationCommand{
 			Name: "everything",
 			Description: "Give a player full locker",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type: discordgo.ApplicationCommandOptionUser,
-					Name: "discord",
-					Description: "The discord account of the player.",
-					Required: false,
-				},
-				{
-					Type: discordgo.ApplicationCommandOptionString,
-					Name: "display",
-					Description: "The display name of the player.",
-					Required: false,
-				},
-			},
+			Options: personOptions,
 		},
 		Handler: giveEverythingHandler,
 		AdminOnly: true,
 	})
+
+	permissionOptionChoices := []*discordgo.ApplicationCommandOptionChoice{
+		{
+			Name: "All",
+			Value: person.PermissionAll,
+		},
+		{
+			Name: "Lookup",
+			Value: person.PermissionLookup,
+		},
+		{
+			Name: "Information",
+			Value: person.PermissionInformation,
+		},
+		{
+			Name: "Donator",
+			Value: person.PermissionDonator,
+		},
+		{
+			Name: "ItemControl",
+			Value: person.PermissionItemControl,
+		},
+		{
+			Name: "LockerControl",
+			Value: person.PermissionLockerControl,
+		},
+		{
+			Name: "Owner",
+			Value: person.PermissionOwner,
+		},
+		{
+			Name: "PermissionControl",
+			Value: person.PermissionPermissionControl,
+		},
+	}
+
+	permissionOptions := append([]*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionInteger,
+			Name: "permission",
+			Description: "The permission to add/take.",
+			Required: true,
+			Choices: permissionOptionChoices,
+		},
+	}, personOptions...)
+
+	permissionSubCommands := []*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "add",
+			Description: "Add a permission to a player.",
+			Options: permissionOptions,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "remove",
+			Description: "Rake a permission from a player.",
+			Options: permissionOptions,
+		},
+	}
+
+	addCommand(&DiscordCommand{
+		Command: &discordgo.ApplicationCommand{
+			Name: "permission",
+			Description: "Give or take permissions from a player.",
+			Options: permissionSubCommands,
+		},
+		Handler: permissionHandler,
+		AdminOnly: true,
+	})
 }
 
-func getPersonFromOptions(data discordgo.ApplicationCommandInteractionData, s *discordgo.Session) *person.Person {
-	options := data.Options
-
-	if len(options) <= 0 {
+func getPersonFromOptions(opts []*discordgo.ApplicationCommandInteractionDataOption, s *discordgo.Session) *person.Person {
+	if len(opts) <= 0 {
 		return nil
 	}
 
-	for _, option := range options {
+	for _, option := range opts {
 		switch option.Type {
 		case discordgo.ApplicationCommandOptionUser: 
 			if option.Name != "discord" {
