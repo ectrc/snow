@@ -10,6 +10,7 @@ import (
 type CS struct {
 	Accounts struct {
 		Gods []string
+		Owners []string
 	}
 	Database struct {
 		URI  string
@@ -62,6 +63,7 @@ func LoadConfig(file []byte) {
 	}
 
 	Config.Accounts.Gods = cfg.Section("accounts").Key("gods").Strings(",")
+	Config.Accounts.Owners = cfg.Section("accounts").Key("owners").Strings(",")
 	Config.Database.DropAllTables = cfg.Section("database").Key("drop").MustBool(false)
 	Config.Database.URI = cfg.Section("database").Key("uri").String()
 	if Config.Database.URI == "" {
@@ -166,6 +168,6 @@ func LoadConfig(file []byte) {
 
 	Config.Fortnite.Season = parsedSeason
 	Config.Fortnite.Everything = cfg.Section("fortnite").Key("everything").MustBool(false)
-	Config.Fortnite.Password = cfg.Section("fortnite").Key("password").MustBool(false)
+	Config.Fortnite.Password = cfg.Section("fortnite").Key("disable_password").MustBool(false)
 	Config.Fortnite.DisableClientCredentials = cfg.Section("fortnite").Key("disable_client_credentials").MustBool(false)
 }

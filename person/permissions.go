@@ -1,7 +1,5 @@
 package person
 
-import "github.com/ectrc/snow/aid"
-
 type Permission int64
 
 // DO NOT MOVE THE ORDER OF THESE PERMISSIONS AS THEY ARE USED IN THE DATABASE
@@ -16,33 +14,59 @@ const (
 	PermissionOwner
 	PermissionDonator
 
-	permissionRealAll = 1<<iota - 1
-	// every permission except owner
-	PermissionAll Permission = permissionRealAll ^ PermissionOwner
+	// special permissions
+	PermissionAll          = PermissionLookup | PermissionBan | PermissionInformation | PermissionItemControl | PermissionLockerControl | PermissionPermissionControl
+	PermissionAllWithRoles = PermissionAll | PermissionOwner | PermissionDonator
 )
 
-func (p Permission) StringifyMe() string {
-	aid.Print(p)
-	switch p {
-	case PermissionLookup:
-		return "Lookup"
-	case PermissionBan:
-		return "Ban"
-	case PermissionInformation:
-		return "Information"
-	case PermissionItemControl:
-		return "ItemControl"
-	case PermissionLockerControl:
-		return "LockerControl"
-	case PermissionPermissionControl:
-		return "PermissionControl"
-	case PermissionOwner:
-		return "Owner"
-	case PermissionDonator:
-		return "Donator"
-	case PermissionAll:
-		return "All"
-	default:
-		return "Unknown"
+func (p Permission) GetName() string {
+	if p == 0 {
+		return "None"
 	}
+
+	if p == PermissionAll {
+		return "All"
+	}
+
+	if p == PermissionAllWithRoles {
+		return "AllWithRoles"
+	}
+
+	if p&PermissionLookup != 0 {
+		return "Lookup"
+	}
+
+	if p&PermissionBan != 0 {
+		return "Ban"
+	}
+
+	if p&PermissionInformation != 0 {
+		return "Information"
+	}
+
+	if p&PermissionItemControl != 0 {
+		return "ItemControl"
+	}
+
+	if p&PermissionLockerControl != 0 {
+		return "LockerControl"
+	}
+
+	if p&PermissionPermissionControl != 0 {
+		return "PermissionControl"
+	}
+
+	if p&PermissionOwner != 0 {
+		return "Owner"
+	}
+
+	if p&PermissionDonator != 0 {
+		return "Donator"
+	}
+
+	return "Unknown"
+}
+
+func IntToPermission(i int64) Permission {
+	return Permission(i)
 }

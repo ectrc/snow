@@ -293,9 +293,9 @@ func (p *Person) RemovePermission(permission Permission) {
 }
 
 func (p *Person) HasPermission(permission Permission) bool {
-	if permission == PermissionAll {
-		return p.Permissions == PermissionAll
-	}
+	// if permission == PermissionAll && permission != PermissionOwner {
+	// 	return p.Permissions == PermissionAll
+	// }
 
 	return p.Permissions & permission != 0
 }
@@ -406,6 +406,7 @@ func (p *Person) Snapshot() *PersonSnapshot {
 
 func (p *Person) Delete() {
 	storage.Repo.DeletePerson(p.ID)
+	cache.DeletePerson(p.ID)
 }
 
 func (p *Person) SetPurchaseHistoryAttribute() {
