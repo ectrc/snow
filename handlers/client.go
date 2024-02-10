@@ -675,14 +675,6 @@ func clientRefundMtxPurchaseAction(c *fiber.Ctx, person *p.Person, profile *p.Pr
 		return fmt.Errorf("invalid Body")
 	}
 
-	aid.Print(person.AthenaProfile.Purchases.Count())
-	aid.Print(person.CommonCoreProfile.Purchases.Count())
-
-	person.AthenaProfile.Purchases.RangePurchases(func(key string, value *p.Purchase) bool {
-		aid.Print(key, value.ID)
-		return true
-	})	
-
 	purchase := person.AthenaProfile.Purchases.GetPurchase(body.PurchaseID)
 	if purchase == nil {
 		return fmt.Errorf("purchase not found")

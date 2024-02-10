@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ectrc/snow/aid"
@@ -30,7 +29,6 @@ func GetFriendList(c *fiber.Ctx) error {
 func PostCreateFriend(c *fiber.Ctx) error {
 	relationship, err := c.Locals("person").(*p.Person).CreateRelationship(c.Params("wanted"))
 	if err != nil {
-		aid.Print(fmt.Sprintf("Error creating relationship: %s", err.Error()))
 		return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
 	}
 	

@@ -273,9 +273,6 @@ func (p *Person) AddBan(reason string, issuedBy string, expiry ...string) {
 		parsed, err := aid.ParseDuration(expiry[0])
 		if err == nil {
 			t = time.Now().Add(parsed)
-			aid.Print("Parsed duration for ban expiry:", t.Format("2006-01-02T15:04:05.999Z"))
-		} else {
-			aid.Print("Failed to parse duration for ban expiry:", err)
 		}
 	}
 

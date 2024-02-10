@@ -109,7 +109,6 @@ func GetUserStorageFile(c *fiber.Ctx) error {
 
 	file, err := storage.Repo.Amazon.GetUserFile(person.ID)
 	if err != nil {
-		aid.Print("(amazon)", err.Error())
 		return c.Status(500).JSON(aid.ErrorBadRequest("Failed to retrieve user file"))
 	}
 
@@ -126,7 +125,6 @@ func PutUserStorageFile(c *fiber.Ctx) error {
 
 	err := storage.Repo.Amazon.CreateUserFile(person.ID, body)
 	if err != nil {
-		aid.Print("(amazon)", err.Error())
 		return c.Status(500).JSON(aid.ErrorBadRequest("Failed to create user file"))
 	}
 

@@ -166,8 +166,6 @@ func addBanHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker 
 		}
 	}
 
-	aid.Print(expiry)
-
 	player.AddBan(reason, looker.ID, expiry)
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -192,7 +190,7 @@ func listBansHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looke
 		SetTitle("Ban History").
 		SetColor(0x2b2d31)
 
-		player.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+	player.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
 		banIssuer := person.Find(ban.IssuedBy)
 		if banIssuer == nil {
 			banIssuer = &person.Person{Discord: &storage.DB_DiscordPerson{ID: "0"}}
