@@ -1,6 +1,7 @@
 package discord
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -107,64 +108,117 @@ func whoHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func banHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func bansHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	if !looker.HasPermission(person.PermissionBan) {
+	if !looker.HasPermission(person.PermissionBansControl) {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
+	if len(i.ApplicationCommandData().Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	subCommand := i.ApplicationCommandData().Options[0]
+	if len(subCommand.Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	player := getPersonFromOptions(subCommand.Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
 	}
 
-	player.Ban()
+	lookup := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption){
+		"add": addBanHandler,
+		"clear": clearBansHandler,
+		"list": listBansHandler,
+	}
+
+	if handler, ok := lookup[subCommand.Name]; ok {
+		handler(s, i, looker, player, subCommand.Options)
+		return
+	}
+
+	s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+}
+
+func addBanHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption) {
+	reason := options[0].StringValue()
+	if reason == "" {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	var expiry string
+	for _, option := range options {
+		if option.Name == "expires" {
+			expiry = option.StringValue()
+			break
+		}
+	}
+
+	aid.Print(expiry)
+
+	player.AddBan(reason, looker.ID, expiry)
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: player.DisplayName + " has been banned.",
+			Content: player.DisplayName + " has been banned for `" + reason + "`.",
 		},
 	})
 }
 
-func unbanHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	looker := person.FindByDiscord(i.Member.User.ID)
-	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
-		return
-	}
-
-	if !looker.HasPermission(person.PermissionBan) {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
-		return
-	}
-
-	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
-	if player == nil {
-		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
-		return
-	}
-
-	player.Unban()
+func clearBansHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption) {
+	player.ClearBans()
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: player.DisplayName + " has been unbanned.",
+			Content: player.DisplayName + " has had all bans cleared.",
 		},
 	})
 }
 
-func giveItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func listBansHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption) {
+	embed := NewEmbedBuilder().
+		SetTitle("Ban History").
+		SetColor(0x2b2d31)
+
+		player.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+		banIssuer := person.Find(ban.IssuedBy)
+		if banIssuer == nil {
+			banIssuer = &person.Person{Discord: &storage.DB_DiscordPerson{ID: "0"}}
+		}
+		
+		embed.AddField(ban.Reason, "Banned by <@"+banIssuer.Discord.ID+"> on <t:"+fmt.Sprintf("%d", ban.Expiry.Unix())+":D>", false)
+		return true
+	})
+
+	if player.BanHistory.Len() <= 0 {
+		embed.SetDescription("No bans found.")
+	}
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{embed.Build()},
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+}
+
+func itemsHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
@@ -173,25 +227,56 @@ func giveItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
+	if len(i.ApplicationCommandData().Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	subCommand := i.ApplicationCommandData().Options[0]
+	if len(subCommand.Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	player := getPersonFromOptions(subCommand.Options, s)
 	if player == nil {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
 		return
 	}
 
-	item := i.ApplicationCommandData().Options[0].StringValue()
+	lookup := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption){
+		"add": addItemHandler,
+		"remove": removeItemHandler,
+		"fill": fillItemsHandler,
+	}
+
+	if handler, ok := lookup[subCommand.Name]; ok {
+		handler(s, i, looker, player, subCommand.Options)
+		return
+	}
+
+	s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+}
+
+func addItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption) {
+	if !looker.HasPermission(person.PermissionItemControl) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	item := options[0].StringValue()
 	if item == "" {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 		return
 	}
 
-	qty := i.ApplicationCommandData().Options[1].IntValue()
+	qty := options[1].IntValue()
 	if qty <= 0 {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 		return
 	}
 
-	profile := i.ApplicationCommandData().Options[2].StringValue()
+	profile := options[2].StringValue()
 	if profile == "" {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 		return
@@ -222,37 +307,25 @@ func giveItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func takeItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	looker := person.FindByDiscord(i.Member.User.ID)
-	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
-		return
-	}
-
+func removeItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption) {
 	if !looker.HasPermission(person.PermissionItemControl) {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
-	if player == nil {
-		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
-		return
-	}
-
-	item := i.ApplicationCommandData().Options[0].StringValue()
+	item := options[0].StringValue()
 	if item == "" {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 		return
 	}
 
-	qty := i.ApplicationCommandData().Options[1].IntValue()
+	qty := options[1].IntValue()
 	if qty <= 0 {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 		return
 	}
 
-	profile := i.ApplicationCommandData().Options[2].StringValue()
+	profile := options[2].StringValue()
 	if profile == "" {
 		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
 		return
@@ -273,7 +346,6 @@ func takeItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	default:
 		foundItem.Quantity -= int(qty)
 		foundItem.Save()
-
 		if foundItem.Quantity <= 0 {
 			player.GetProfileFromType(profile).Items.DeleteItem(foundItem.ID)
 			remove = true
@@ -294,31 +366,18 @@ func takeItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func giveEverythingHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	looker := person.FindByDiscord(i.Member.User.ID)
-	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
-		return
-	}
-
+func fillItemsHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker *person.Person, player *person.Person, options []*discordgo.ApplicationCommandInteractionDataOption) {
 	if !looker.HasPermission(person.PermissionItemControl) || !looker.HasPermission(person.PermissionLockerControl) {
 		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
 		return
 	}
 
-	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
-	if player == nil {
-		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
-		return
-	}
-	
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 	})
 
 	fortnite.GiveEverything(player)
-
-	str := player.DisplayName + "has been granted everything." 
+	str := player.DisplayName + "has been granted all items."
 	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 		Content: &str,
 	})

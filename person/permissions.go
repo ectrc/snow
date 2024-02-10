@@ -4,18 +4,22 @@ type Permission int64
 
 // DO NOT MOVE THE ORDER OF THESE PERMISSIONS AS THEY ARE USED IN THE DATABASE
 const (
+	// random utility permissions
 	PermissionLookup Permission = 1 << iota
-	PermissionBan
 	PermissionInformation
+
+	// control permissions
+	PermissionBansControl
 	PermissionItemControl
 	PermissionLockerControl
 	PermissionPermissionControl
+
 	// user roles, not really permissions but implemented as such
 	PermissionOwner
 	PermissionDonator
 
 	// special permissions
-	PermissionAll          = PermissionLookup | PermissionBan | PermissionInformation | PermissionItemControl | PermissionLockerControl | PermissionPermissionControl
+	PermissionAll          = PermissionLookup | PermissionBansControl | PermissionInformation | PermissionItemControl | PermissionLockerControl | PermissionPermissionControl
 	PermissionAllWithRoles = PermissionAll | PermissionOwner | PermissionDonator
 )
 
@@ -36,7 +40,7 @@ func (p Permission) GetName() string {
 		return "Lookup"
 	}
 
-	if p&PermissionBan != 0 {
+	if p&PermissionBansControl != 0 {
 		return "Ban"
 	}
 

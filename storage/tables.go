@@ -1,6 +1,10 @@
 package storage
 
-import "github.com/lib/pq"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type Tabler interface {
 	TableName() string
@@ -210,7 +214,7 @@ type DB_BanStatus struct {
 	ID string `gorm:"primary_key"`
 	PersonID string `gorm:"index"`
 	IssuedBy string
-	Expiry int64
+	Expiry time.Time
 	Reason string
 }
 

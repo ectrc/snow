@@ -54,6 +54,9 @@ type Storage interface {
 
 	SaveDiscordPerson(person *DB_DiscordPerson)
 	DeleteDiscordPerson(personId string)
+
+	SaveBanStatus(ban *DB_BanStatus)
+	DeleteBanStatus(banId string)
 }
 
 type Repository struct {
@@ -225,4 +228,12 @@ func (r *Repository) SaveDiscordPerson(person *DB_DiscordPerson) {
 
 func (r *Repository) DeleteDiscordPerson(personId string) {
 	r.Storage.DeleteDiscordPerson(personId)
+}
+
+func (r *Repository) SaveBanStatus(ban *DB_BanStatus) {
+	r.Storage.SaveBanStatus(ban)
+}
+
+func (r *Repository) DeleteBanStatus(banId string) {
+	r.Storage.DeleteBanStatus(banId)
 }

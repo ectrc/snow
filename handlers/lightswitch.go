@@ -14,14 +14,7 @@ import (
 func GetLightswitchBulkStatus(c *fiber.Ctx) error {
 	person := c.Locals("person").(*person.Person)
 
-	isBanned := false
-	for _, ban := range person.BanHistory {
-		expres := time.Unix(ban.Expiry, 0)
-		if time.Now().Before(expres) {
-			isBanned = true
-			break
-		}
-	}
+	ban := person.GetLatestActiveBan()
 
 	return c.Status(fiber.StatusOK).JSON([]aid.JSON{{
 		"serviceInstanceId": "fortnite",
@@ -29,7 +22,7 @@ func GetLightswitchBulkStatus(c *fiber.Ctx) error {
 		"message": "fortnite is up.",
 		"maintenanceUri": nil,
 		"allowedActions": []string{"PLAY","DOWNLOAD"},
-		"banned": isBanned,
+		"banned": ban != nil && time.Now().Before(ban.Expiry),
 		"launcherInfoDTO": aid.JSON{
 			"appName":"Fortnite",
 			"namespace":"fn",

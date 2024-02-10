@@ -48,7 +48,7 @@ func addCommands() {
 
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
-			Name: "me",
+			Name: "account",
 			Description: "Lookup your own information.",
 		},
 		Handler: meHandler,
@@ -89,23 +89,49 @@ func addCommands() {
 		AdminOnly: true,
 	})
 
-	addCommand(&DiscordCommand{
-		Command: &discordgo.ApplicationCommand{
-			Name: "ban",
-			Description: "Ban a player from using the bot.",
+	bansOptions := append([]*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionString,
+			Name: "reason",
+			Description: "The reason for the ban.",
+			Required: true,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionString,
+			Name: "expires",
+			Description: "The time the ban expires. (e.g. 1y, 1w, 1d, 1h, 1m, 1s) (default: 1w)",
+			Required: false,
+		},
+	}, personOptions...)
+
+	bansSubCommands := []*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "add",
+			Description: "Ban a player from using this service.",
+			Options: bansOptions,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "clear",
+			Description: "Clear all bans from a player.",
 			Options: personOptions,
 		},
-		Handler: banHandler,
-		AdminOnly: true,
-	})
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "list",
+			Description: "List all previous bans from a player.",
+			Options: personOptions,
+		},
+	}
 
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
-			Name: "unban",
-			Description: "Unban a player from using the bot.",
-			Options: personOptions,
+			Name: "bans",
+			Description: "Perform an action on a player's bans.",
+			Options: bansSubCommands,
 		},
-		Handler: unbanHandler,
+		Handler: bansHandler,
 		AdminOnly: true,
 	})
 
@@ -125,38 +151,71 @@ func addCommands() {
 		{
 			Type: discordgo.ApplicationCommandOptionString,
 			Name: "profile",
-			Description: "common_core, athena, common_public, profile0, collections, creative",
+			Description: "The profile to give/take the item from.",
 			Required: true,
+			Choices: []*discordgo.ApplicationCommandOptionChoice{
+				{
+					Name: "Athena",
+					Value: "athena",
+				},
+				{
+					Name: "Common Core",
+					Value: "common_core",
+				},
+				{
+					Name: "Profile0",
+					Value: "profile0",
+				},
+				{
+					Name: "Creative",
+					Value: "creative",
+				},
+				{
+					Name: "Collections",
+					Value: "collections",
+				},
+				{
+					Name: "Common Public",
+					Value: "common_public",
+				},
+			},
 		},
 	}, personOptions...)
 
-	addCommand(&DiscordCommand{
-		Command: &discordgo.ApplicationCommand{
-			Name: "give",
+	grantSubCommands := []*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "add",
 			Description: "Grant a player an item in the game.",
 			Options: grantOptions,
 		},
-		Handler: giveItemHandler,
-		AdminOnly: true,
-	})
-
-	addCommand(&DiscordCommand{
-		Command: &discordgo.ApplicationCommand{
-			Name: "take",
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "remove",
 			Description: "Take an item from a player in the game.",
 			Options: grantOptions,
 		},
-		Handler: takeItemHandler,
-		AdminOnly: true,
-	})
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "fill",
+			Description: "Grant a player all items in the game.",
+			Options: personOptions,
+		},
+		{
+			Type: discordgo.ApplicationCommandOptionSubCommand,
+			Name: "clear",
+			Description: "Reset their locker to default.",
+			Options: personOptions,
+		},
+	}
 
 	addCommand(&DiscordCommand{
 		Command: &discordgo.ApplicationCommand{
-			Name: "everything",
-			Description: "Give a player full locker",
-			Options: personOptions,
+			Name: "items",
+			Description: "Perform an action on a player's items.",
+			Options: grantSubCommands,
 		},
-		Handler: giveEverythingHandler,
+		Handler: itemsHandler,
 		AdminOnly: true,
 	})
 
@@ -215,7 +274,7 @@ func addCommands() {
 		{
 			Type: discordgo.ApplicationCommandOptionSubCommand,
 			Name: "remove",
-			Description: "Rake a permission from a player.",
+			Description: "Remove a permission from a player.",
 			Options: permissionOptions,
 		},
 	}

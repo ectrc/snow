@@ -251,3 +251,11 @@ func (s *PostgresStorage) SaveDiscordPerson(discordPerson *DB_DiscordPerson) {
 func (s *PostgresStorage) DeleteDiscordPerson(discordPersonId string) {
 	s.Postgres.Delete(&DB_DiscordPerson{}, "id = ?", discordPersonId)
 }
+
+func (s *PostgresStorage) SaveBanStatus(banStatus *DB_BanStatus) {
+	s.Postgres.Save(banStatus)
+}
+
+func (s *PostgresStorage) DeleteBanStatus(banStatusId string) {
+	s.Postgres.Delete(&DB_BanStatus{}, "id = ?", banStatusId)
+}

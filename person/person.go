@@ -20,7 +20,7 @@ type Person struct {
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
 	Discord *storage.DB_DiscordPerson
-	BanHistory []storage.DB_BanStatus
+	BanHistory aid.GenericSyncMap[storage.DB_BanStatus]
 	Relationships aid.GenericSyncMap[Relationship]
 }
 
@@ -188,7 +188,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		ID: databasePerson.ID,
 		DisplayName: databasePerson.DisplayName,
 		Permissions: Permission(databasePerson.Permissions),
-		BanHistory: databasePerson.BanHistory,
+		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
@@ -198,6 +198,10 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		Discord: &databasePerson.Discord,
 		RefundTickets: databasePerson.RefundTickets,
 		Relationships: aid.GenericSyncMap[Relationship]{},
+	}
+
+	for _, ban := range databasePerson.BanHistory {
+		person.BanHistory.Set(ban.ID, &ban)
 	}
 
 	if !shallow {
@@ -262,24 +266,53 @@ func (p *Person) SaveShallow() {
 	storage.Repo.SavePerson(dbPerson)
 }
 
-func (p *Person) Ban() {
-	p.BanHistory = append(p.BanHistory, storage.DB_BanStatus{
-		ID: uuid.New().String(),
-		PersonID: p.ID,
-		IssuedBy: "system",
-		Reason: "Banned by system",
-		Expiry: time.Now().AddDate(0, 0, 7).Unix(),
-	})
+func (p *Person) AddBan(reason string, issuedBy string, expiry ...string) {
+	t := time.Now().AddDate(0, 0, 7)
 
-	p.SaveShallow()
-}
-
-func (p *Person) Unban() {
-	for _, ban := range p.BanHistory {
-		ban.Expiry = time.Now().Unix()
+	if len(expiry) > 0 && expiry[0] != "" {
+		parsed, err := aid.ParseDuration(expiry[0])
+		if err == nil {
+			t = time.Now().Add(parsed)
+			aid.Print("Parsed duration for ban expiry:", t.Format("2006-01-02T15:04:05.999Z"))
+		} else {
+			aid.Print("Failed to parse duration for ban expiry:", err)
+		}
 	}
 
-	p.SaveShallow()
+	ban := &storage.DB_BanStatus{
+		ID: uuid.New().String(),
+		PersonID: p.ID,
+		IssuedBy: issuedBy,
+		Reason: reason,
+		Expiry: t,
+	}
+
+	p.BanHistory.Set(ban.ID, ban)
+	storage.Repo.SaveBanStatus(ban)
+}
+
+func (p *Person) ClearBans() {
+	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+		ban.Expiry = time.Now()
+		storage.Repo.SaveBanStatus(ban)
+		return true
+	})
+}
+
+func (p *Person) GetLatestActiveBan() *storage.DB_BanStatus {
+	var latestBan *storage.DB_BanStatus
+	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+		if latestBan == nil || ban.Expiry.After(latestBan.Expiry) {
+			latestBan = ban
+		}
+		return true
+	})
+
+	if latestBan != nil && latestBan.Expiry.Before(time.Now()) {
+		return nil
+	}
+
+	return latestBan
 }
 
 func (p *Person) AddPermission(permission Permission) {
@@ -305,7 +338,7 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: int64(p.Permissions),
-		BanHistory: p.BanHistory,
+		BanHistory: []storage.DB_BanStatus{},
 		RefundTickets: p.RefundTickets,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
@@ -324,6 +357,11 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		"collections": p.CollectionsProfile,
 		"creative": p.CreativeProfile,
 	}
+
+	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+		dbPerson.BanHistory = append(dbPerson.BanHistory, *ban)
+		return true
+	})
 
 	for profileType, profile := range profilesToConvert {
 		dbProfile := storage.DB_Profile{
@@ -374,7 +412,7 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: int64(p.Permissions),
-		BanHistory: p.BanHistory,
+		BanHistory: []storage.DB_BanStatus{},
 		RefundTickets: p.RefundTickets,
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
@@ -385,11 +423,16 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 		dbPerson.Discord = *p.Discord
 	}
 
+	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+		dbPerson.BanHistory = append(dbPerson.BanHistory, *ban)
+		return true
+	})
+
 	return &dbPerson
 }
 
 func (p *Person) Snapshot() *PersonSnapshot {
-	return &PersonSnapshot{
+	snapshot := &PersonSnapshot{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: int64(p.Permissions),
@@ -399,9 +442,16 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		Profile0Profile: *p.Profile0Profile.Snapshot(),
 		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
-		BanHistory: p.BanHistory,
+		BanHistory: []storage.DB_BanStatus{},
 		Discord: *p.Discord,
 	}
+
+	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
+		snapshot.BanHistory = append(snapshot.BanHistory, *ban)
+		return true
+	})
+
+	return snapshot
 } 
 
 func (p *Person) Delete() {

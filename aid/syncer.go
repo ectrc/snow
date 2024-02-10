@@ -56,3 +56,12 @@ func (s *GenericSyncMap[T]) ChangeKey(oldKey, newKey string) {
 	s.Set(newKey, v)
 	s.Delete(oldKey)
 }
+
+func (s *GenericSyncMap[T]) Len() int {
+	count := 0
+	s.m.Range(func(_, _ interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
