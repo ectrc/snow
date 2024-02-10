@@ -56,6 +56,36 @@ func PostCreateFriend(c *fiber.Ctx) error {
 }
 
 func DeleteFriend(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+	
+	relationship, found := person.Relationships.Get(c.Params("wanted"))
+	if !found {
+		return c.Status(404).JSON(aid.ErrorNotFound)
+	}
+
+	from, found := socket.JabberSockets.Get(relationship.From.ID)
+	if found {
+		from.JabberSendMessageToPerson(aid.JSON{
+			"type": "com.epicgames.friends.core.apiobjects.FriendRemoval",
+			"timestamp": time.Now().Format(time.RFC3339),
+			"payload": relationship.GenerateFortniteFriendRemovalEntry(p.GenerateTypeFromPerson),
+		})
+		from.JabberNotifyFriends()
+	}
+
+	towards, found := socket.JabberSockets.Get(relationship.Towards.ID)
+	if found {
+		towards.JabberSendMessageToPerson(aid.JSON{
+			"type": "com.epicgames.friends.core.apiobjects.FriendRemoval",
+			"timestamp": time.Now().Format(time.RFC3339),
+			"payload": relationship.GenerateFortniteFriendRemovalEntry(p.GenerateTypeTowardsPerson),
+		})
+		towards.JabberNotifyFriends()
+	}
+
+	relationship.Delete()
+	person.Relationships.Delete(c.Params("friend"))
+
 	return c.SendStatus(204)
 }
 

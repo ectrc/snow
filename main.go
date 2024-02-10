@@ -135,6 +135,7 @@ func main() {
 	friends.Delete("/public/friends/:accountId/:wanted", handlers.DeleteFriend)
 	friends.Get("/:version/:accountId/summary", handlers.GetFriendListSummary)
 	friends.Post("/:version/:accountId/friends/:wanted", handlers.PostCreateFriend)
+	friends.Delete("/:version/:accountId/friends/:wanted", handlers.DeleteFriend)
 
 	game := fortnite.Group("/game/v2")
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)

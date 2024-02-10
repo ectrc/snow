@@ -50,6 +50,22 @@ func (r *Relationship) GenerateFortniteFriendEntry(t RelationshipGenerateType) a
 	return result
 }
 
+func (r *Relationship) GenerateFortniteFriendRemovalEntry(t RelationshipGenerateType) aid.JSON {
+	result := aid.JSON{
+		"reason": "DELETED",
+	}
+
+	switch t {
+	case GenerateTypeFromPerson:
+		result["accountId"] = r.Towards.ID
+	case GenerateTypeTowardsPerson:
+		result["accountId"] = r.From.ID
+	}
+
+	return result
+}
+
+
 func (r *Relationship) GenerateFortniteSummaryEntry(t RelationshipGenerateType) aid.JSON {
 	result := aid.JSON{
 		"created": time.Now().Add(-time.Hour * 24 * 3).Format(time.RFC3339),
