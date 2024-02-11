@@ -47,7 +47,6 @@ func init() {
 	discord.IntialiseClient()
 	fortnite.PreloadCosmetics()
 	fortnite.GenerateRandomStorefront()
-	fortnite.GeneratePlaylistImages()
 
 	for _, username := range aid.Config.Accounts.Gods {
 		found := person.FindByDisplay(username)
@@ -153,14 +152,16 @@ func main() {
 	lightswitch.Use(handlers.MiddlewareFortnite)
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
 
+	party := r.Group("/party/api/v1/Fortnite")
+	party.Use(handlers.MiddlewareFortnite)
+	party.Get("/user/:accountId", handlers.GetUserParties)
+
 	snow := r.Group("/snow")
-	snow.Get("/image/:playlist", handlers.GetPlaylistImage)
-	if aid.Config.API.Debug {
-		snow.Get("/cache", handlers.GetCachedPlayers)
-		snow.Get("/config", handlers.GetSnowConfig)
-		snow.Get("/sockets", handlers.GetConnectedSockets)
-		snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
-	}
+	snow.Use(handlers.MiddlewareOnlyDebug)
+	snow.Get("/cache", handlers.GetCachedPlayers)
+	snow.Get("/config", handlers.GetSnowConfig)
+	snow.Get("/sockets", handlers.GetConnectedSockets)
+	snow.Get("/cosmetics", handlers.GetPreloadedCosmetics)
 
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)

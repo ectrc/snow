@@ -22,6 +22,7 @@ type Person struct {
 	Discord *storage.DB_DiscordPerson
 	BanHistory aid.GenericSyncMap[storage.DB_BanStatus]
 	Relationships aid.GenericSyncMap[Relationship]
+	Parties aid.GenericSyncMap[Party]
 }
 
 func NewPerson() *Person {
