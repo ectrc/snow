@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"strings"
 
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
@@ -71,70 +70,8 @@ func colorDifference(c1, c2 colours) float64 {
 	return math.Sqrt(float64(diffRed*diffRed + diffGreen*diffGreen + diffBlue*diffBlue))
 }
 
-func GetCharacterImage(characterId string) image.Image {
-	character, ok := Cosmetics.Items[characterId]
-	if !ok {
-		return getRandomCharacterImage()
-	}
-	
-	response, err := http.Get(character.Images.Featured)
-	if err != nil {
-		return getRandomCharacterImage()
-	}
-	defer response.Body.Close()
-
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	image, _, err := image.Decode(bytes.NewReader(b))
-	if err != nil {
-		panic(err)
-	}
-
-	return image
-}
-
 func getRandomCharacterImage() image.Image {
-	found := false
-	var character FAPI_Cosmetic
-	for !found {
-		character = Cosmetics.GetRandomItemByType("AthenaCharacter")
-
-		if character.Images.Featured == "" {
-			continue
-		}
-
-		continueLoop := false
-		for _, set := range SETS_NOT_ALLOWED {
-			if strings.Contains(character.Set.Value, set) {
-				continueLoop = true
-				break
-			}
-		}
-
-		if continueLoop {
-			continue
-		}
-
-		if character.Introduction.BackendValue < 2 {
-			continue
-		}
-
-		for _, tag := range character.GameplayTags {
-			if strings.Contains(tag, "StarterPack") {
-				continueLoop = true
-				break
-			}
-		}
-		if continueLoop {
-			continue
-		}
-
-		found = true
-	}
-
+	character := RandomItemWithFeaturedImage()
 	response, err := http.Get(character.Images.Featured)
 	if err != nil {
 		panic(err)
@@ -168,28 +105,8 @@ func getRandomCharacterImageWithSimilarColour(colour colours) image.Image {
 func GenerateSoloImage() {
 	background := *storage.Asset("background.png")
 
-	itemFound := Cosmetics.GetRandomItemByType("AthenaCharacter")
-	for itemFound.Images.Featured == "" {
-		itemFound = Cosmetics.GetRandomItemByType("AthenaCharacter")
-	}
-
-	res, err := http.Get(itemFound.Images.Featured)
-	if err != nil {
-		panic(err)
-	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		panic(err)
-	}
-
+	soloPlayer := getRandomCharacterImage()
 	bg, _, err := image.Decode(bytes.NewReader(background))
-	if err != nil {
-		panic(err)
-	}
-
-	soloPlayer, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		panic(err)
 	}
@@ -223,7 +140,6 @@ func GenerateDuoImage() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	m := image.NewRGBA(bg.Bounds())
 	draw.Draw(m, m.Bounds(), bg, image.Point{0, 0}, draw.Src)
@@ -378,6 +294,5 @@ func GeneratePlaylistImages() {
 	GenerateDuoImage()
 	GenerateTrioImage()
 	GenerateSquadImage()
-
 	aid.Print("(snow) generated playlist images")
 }

@@ -45,9 +45,10 @@ func init() {
 
 func init() {
 	discord.IntialiseClient()
-	fortnite.PreloadCosmetics(aid.Config.Fortnite.Season)
+	fortnite.PreloadCosmetics()
 	fortnite.GenerateRandomStorefront()
 	fortnite.GeneratePlaylistImages()
+
 
 	for _, username := range aid.Config.Accounts.Gods {
 		found := person.FindByDisplay(username)

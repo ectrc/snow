@@ -11,7 +11,7 @@ import (
 )
 
 func GetPreloadedCosmetics(c *fiber.Ctx) error {
-	return c.JSON(fortnite.Cosmetics)
+	return c.JSON(fortnite.External)
 }
 
 func GetPlaylistImage(c *fiber.Ctx) error {

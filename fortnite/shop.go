@@ -360,14 +360,9 @@ func GenerateRandomStorefront() {
 			break
 		}
 
-		item := Cosmetics.GetRandomItemByType("AthenaCharacter")
+		item := RandomItemByType("AthenaCharacter")
 		entry := NewCatalogEntry("athena")
 		entry.SetSection("Daily")
-
-		if item.DisplayAssetPath2 == "" {
-			i--
-			continue
-		}
 		entry.SetNewDisplayAsset(item.DisplayAssetPath2)
 
 		if item.DisplayAssetPath != "" {
@@ -378,8 +373,8 @@ func GenerateRandomStorefront() {
 		entry.SetTileSize("Normal")
 		entry.Priority = 1
 
-		if item.Backpack != "" {
-			entry.AddGrant("AthenaBackpack:" + item.Backpack)
+		if item.Backpack != nil  {
+			entry.AddGrant("AthenaBackpack:" + item.Backpack.ID)
 		}
 
 		if storefront.CheckIfOfferIsDuplicate(*entry) {
@@ -390,7 +385,7 @@ func GenerateRandomStorefront() {
 	}
 	
 	for i := 0; i < 6; i++ {
-		item := Cosmetics.GetRandomItemByNotType("AthenaCharacter")
+		item := RandomItemByNotType("AthenaCharacter")
 		entry := NewCatalogEntry("athena")
 		entry.SetSection("Daily")
 
@@ -426,7 +421,7 @@ func GenerateRandomStorefront() {
 
 	setsAdded := 0
 	for len(weekly.CatalogEntries) < minimumItems || setsAdded < minimumSets {
-		set := Cosmetics.GetRandomSet()
+		set := RandomSet()
 		
 		itemsAdded := 0
 		itemsToAdd := []*Entry{}
@@ -434,10 +429,6 @@ func GenerateRandomStorefront() {
 			entry := NewCatalogEntry("athena")
 			entry.SetSection("Featured")
 			entry.SetPanel(set.BackendName)
-
-			if item.DisplayAssetPath2 == "" {
-				continue
-			}
 			entry.SetNewDisplayAsset(item.DisplayAssetPath2)
 
 			if item.Type.BackendValue == "AthenaCharacter" {

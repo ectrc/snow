@@ -31,7 +31,7 @@ func NewFortnitePerson(displayName string, everything bool) *p.Person {
 func GiveEverything(person *p.Person) {
 	items := make([]storage.DB_Item, 0)
 
-	for _, item := range Cosmetics.Items {
+	for _, item := range External.FortniteItems {
 		if strings.Contains(strings.ToLower(item.ID), "random") {
 			continue
 		}

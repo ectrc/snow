@@ -2,6 +2,7 @@ package storage
 
 import (
 	"embed"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -21,7 +22,7 @@ func Asset(file string) (*[]byte) {
 	return &data
 }
 
-func HttpAsset(file string) (*[]byte) {
+func HttpAsset[T interface{}](file string) (*T) {
 	client := http.Client{}
 	
 	resp, err := client.Get("https://raw.githubusercontent.com/ectrc/ectrc/main/" + file)
@@ -34,5 +35,11 @@ func HttpAsset(file string) (*[]byte) {
 		return nil
 	}
 
-	return &data
+	var assetData T
+	err = json.Unmarshal(data, &assetData)
+	if err != nil {
+		return nil
+	}
+
+	return &assetData
 }
