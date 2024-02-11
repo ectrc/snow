@@ -18,13 +18,13 @@ var (
 
 type ExternalDataClient struct {
 	h *http.Client
-	FortniteSets map[string]*FortniteSet
-	FortniteItems map[string]*FortniteItem
-	FortniteItemsWithDisplayAssets map[string]*FortniteItem
-	FortniteItemsWithFeaturedImage []*FortniteItem
-	TypedFortniteItems map[string][]*FortniteItem
-	TypedFortniteItemsWithDisplayAssets map[string][]*FortniteItem
-	SnowVariantTokens map[string]SnowCosmeticVariantToken
+	FortniteSets map[string]*FortniteSet `json:"sets"`
+	FortniteItems map[string]*FortniteItem `json:"items"`
+	FortniteItemsWithDisplayAssets map[string]*FortniteItem `json:"-"`
+	FortniteItemsWithFeaturedImage []*FortniteItem `json:"-"`
+	TypedFortniteItems map[string][]*FortniteItem `json:"-"`
+	TypedFortniteItemsWithDisplayAssets map[string][]*FortniteItem `json:"-"`
+	SnowVariantTokens map[string]SnowCosmeticVariantToken `json:"-"`
 }
 
 func NewExternalDataClient() *ExternalDataClient {
