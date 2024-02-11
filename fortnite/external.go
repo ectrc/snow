@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -15,7 +14,6 @@ import (
 
 var (
 	External *ExternalDataClient
-	assetRegex = regexp.MustCompile(`DAv2_([A-Za-z]+)_`)
 )
 
 type ExternalDataClient struct {

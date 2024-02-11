@@ -49,7 +49,6 @@ func init() {
 	fortnite.GenerateRandomStorefront()
 	fortnite.GeneratePlaylistImages()
 
-
 	for _, username := range aid.Config.Accounts.Gods {
 		found := person.FindByDisplay(username)
 		if found == nil {
