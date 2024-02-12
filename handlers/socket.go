@@ -43,7 +43,7 @@ func WebsocketConnection(c *websocket.Conn) {
 	}
 }
 
-func GetConnectedSockets(c *fiber.Ctx) error {
+func GetSnowConnectedSockets(c *fiber.Ctx) error {
 	jabber := aid.JSON{}
 	socket.JabberSockets.Range(func(key string, value *socket.Socket[socket.JabberData]) bool {
 		jabber[key] = value

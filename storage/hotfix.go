@@ -5,6 +5,11 @@ import (
 )
 
 func GetDefaultEngine() []byte {
+	/*[OnlineSubsystemMcp]
+bUsePartySystemV2=true
+
+[OnlineSubsystemMcp.OnlinePartySystemMcpAdapter]
+bUsePartySystemV2=true*/
 	return []byte(`
 [OnlineSubsystemMcp.Xmpp]
 bUseSSL=false
@@ -15,12 +20,6 @@ ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?"
 bUseSSL=false
 Protocol=ws
 ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?"
-
-[OnlineSubsystemMcp]
-bUsePartySystemV2=true
-
-[OnlineSubsystemMcp.OnlinePartySystemMcpAdapter]
-bUsePartySystemV2=true
 
 [XMPP]
 bEnableWebsockets=true

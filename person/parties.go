@@ -8,20 +8,44 @@ import (
 	"github.com/google/uuid"
 )
 
+type PartyPing struct{
+	Person *Person
+	Party *Party
+}
+
 type PartyMember struct{
 	Person *Person
 	ConnectionID string
 	Meta map[string]interface{}
 	Connections map[string]aid.JSON
 	Role string
+	JoinedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (pm *PartyMember) GenerateFortnitePartyMember() aid.JSON {
+	connections := []aid.JSON{}
+	for _, connection := range pm.Connections {
+		connections = append(connections, connection)
+	}
+
+	return aid.JSON{
+		"account_id": pm.Person.ID,
+		"role": pm.Role,
+		"meta": pm.Meta,
+		"joined_at": pm.JoinedAt.Format(time.RFC3339),
+		"connections": connections,
+		"revision": 0,
+	}
 }
 
 type Party struct{
 	ID string
-	Members []*PartyMember
+	Members map[string]*PartyMember
 	Config map[string]interface{}
 	Meta map[string]interface{}
 	m sync.Mutex
+	CreatedAt time.Time
 }
 
 var (
@@ -31,16 +55,29 @@ var (
 func NewParty() *Party {
 	party := &Party{
 		ID: uuid.New().String(),
-		Members: []*PartyMember{},
-		Config: make(map[string]interface{}),
+		Members: make(map[string]*PartyMember),
+		Config: map[string]interface{}{
+			"type": "DEFAULT",
+			"sub_type": "default",
+			"intention_ttl:": 60,
+			"invite_ttl:": 60,
+		},
 		Meta: make(map[string]interface{}),
+		CreatedAt: time.Now(),
 	}
 
 	Parties.Set(party.ID, party)
 	return party
 }
 
-func (p *Party) AddMember(person *Person) {
+func (p *Party) GetMember(person *Person) *PartyMember {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	return p.Members[person.ID]
+}
+
+func (p *Party) AddMember(person *Person, role string) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
@@ -48,10 +85,11 @@ func (p *Party) AddMember(person *Person) {
 		Person: person,
 		Meta: make(map[string]interface{}),
 		Connections: make(map[string]aid.JSON),
-		Role: "MEMBER",
+		Role: role,
+		JoinedAt: time.Now(),
 	}
 
-	p.Members = append(p.Members, partyMember)
+	p.Members[person.ID] = partyMember
 	person.Parties.Set(p.ID, p)
 	// xmpp to person and rest of party to say new member!
 }
@@ -60,77 +98,91 @@ func (p *Party) RemoveMember(person *Person) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
-	for i, member := range p.Members {
-		if member.Person == person {
-			p.Members = append(p.Members[:i], p.Members[i+1:]...)
-			break
-		}
-	}
-
+	delete(p.Members, person.ID)
 	if len(p.Members) == 0 {
 		Parties.Delete(p.ID)
 	}
 
 	person.Parties.Delete(p.ID)
-	// xmpp to person and rest of party to say member left!
 }
 
-func (p *Party) UpdateMeta(key string, value interface{}) {
+func (p *Party) UpdateMeta(m map[string]interface{}) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
-	p.Meta[key] = value
-	// xmpp to rest of party to say meta updated!
-}
-
-func (p *Party) DeleteMeta(key string) {
-	p.m.Lock()
-	defer p.m.Unlock()
-
-	delete(p.Meta, key)
-	// xmpp to rest of party to say meta deleted!
-}
-
-func (p *Party) UpdateMemberMeta(person *Person, key string, value interface{}) {
-	p.m.Lock()
-	defer p.m.Unlock()
-
-	for _, member := range p.Members {
-		if member.Person == person {
-			member.Meta[key] = value
-			// xmpp to person and rest of party to say member meta updated!
-			break
-		}
+	for key, value := range m {
+		p.Meta[key] = value
 	}
 }
 
-func (p *Party) DeleteMemberMeta(person *Person, key string) {
+func (p *Party) DeleteMeta(keys []string) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
-	for _, member := range p.Members {
-		if member.Person == person {
-			delete(member.Meta, key)
-			// xmpp to person and rest of party to say member meta deleted!
-			break
-		}
+	for _, key := range keys {
+		delete(p.Meta, key)
 	}
 }
 
-func (p *Party) UpdateConfig(key string, value interface{}) {
+func (p *Party) UpdateMemberMeta(person *Person, m map[string]interface{}) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
-	p.Config[key] = value
-	// xmpp to rest of party to say config updated!
+	member, ok := p.Members[person.ID]
+	if !ok {
+		return
+	}
+
+	for key, value := range m {
+		member.Meta[key] = value
+	}
 }
 
-func (p *Party) DeleteConfig(key string) {
+func (p *Party) UpdateMemberRevision(person *Person, revision int) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
-	delete(p.Config, key)
-	// xmpp to rest of party to say config deleted!
+	member, ok := p.Members[person.ID]
+	if !ok {
+		return
+	}
+
+	member.Meta["revision"] = revision
+}
+
+func (p *Party) DeleteMemberMeta(person *Person, keys []string) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	member, ok := p.Members[person.ID]
+	if !ok {
+		return
+	}
+
+	for _, key := range keys {
+		delete(member.Meta, key)
+	}
+}
+
+func (p *Party) UpdateMemberConnections(person *Person, m aid.JSON) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	member, ok := p.Members[person.ID]
+	if !ok {
+		return
+	}
+
+	member.Connections[m["id"].(string)] = m
+}
+
+func (p *Party) UpdateConfig(m map[string]interface{}) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	for key, value := range m {
+		p.Config[key] = value
+	}
 }
 
 func (p *Party) GenerateFortniteParty() aid.JSON {
@@ -139,21 +191,19 @@ func (p *Party) GenerateFortniteParty() aid.JSON {
 
 	party := aid.JSON{
 		"id": p.ID,
-		"members": aid.JSON{},
 		"config": p.Config,
 		"meta": p.Meta,
-		"created_at": "0000-00-00T00:00:00Z",
+		"applicants": []aid.JSON{},
+		"members": []aid.JSON{},
+		"invites": []aid.JSON{},
+		"intentions": []aid.JSON{},
+		"created_at": p.CreatedAt.Format(time.RFC3339),
 		"updated_at": time.Now().Format(time.RFC3339),
 		"revision": 0,
 	}
 
 	for _, member := range p.Members {
-		party["members"].(aid.JSON)[member.Person.ID] = aid.JSON{
-			"account_id": member.Person.ID,
-			"role": member.Role,
-			"meta": member.Meta,
-			"connections": member.Connections,
-		}
+		party["members"] = append(party["members"].([]aid.JSON), member.GenerateFortnitePartyMember())
 	}
 
 	return party

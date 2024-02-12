@@ -44,12 +44,31 @@ func PostTokenClientCredentials(c *fiber.Ctx, body *FortniteTokenBody) error {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Client Credentials is disabled."))
 	}
 
+	clientCredentials, err := aid.JWTSign(aid.JSON{
+    "creation_date": time.Now().Format("2006-01-02T15:04:05.999Z"),
+		"clsvc": "prod-fn",
+		"t": "s",
+		"mver": false,
+		"clid": aid.Hash([]byte(c.IP())),
+		"ic": true,
+		"exp": 1707772234,
+		"iat": 1707757834,
+		"jti": "snow-revoke",
+		"pfpid": "prod-fn",
+		"am": "client_credentials",
+  })
+  if err != nil {
+    return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
+  }
+
 	return c.Status(200).JSON(aid.JSON{
-		"access_token": "snow",
+		"access_token": clientCredentials,
+		"application_id": "fghi4567FNFBKFz3E4TROb0bmPS8h1GW",
 		"token_type": "bearer",
 		"client_id": aid.Hash([]byte(c.IP())),
-		"client_service": "fortnite",
+		"client_service": "prod-fn",
 		"internal_client": true,
+		"product_id": "prod-fn",
 		"expires_in": 3600,
 		"expires_at": time.Now().Add(time.Hour).Format("2006-01-02T15:04:05.999Z"),
 	})

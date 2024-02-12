@@ -23,6 +23,7 @@ type Person struct {
 	BanHistory aid.GenericSyncMap[storage.DB_BanStatus]
 	Relationships aid.GenericSyncMap[Relationship]
 	Parties aid.GenericSyncMap[Party]
+	Pings aid.GenericSyncMap[PartyPing]
 }
 
 func NewPerson() *Person {
@@ -37,6 +38,10 @@ func NewPerson() *Person {
 		Profile0Profile: NewProfile("profile0"),
 		CollectionsProfile: NewProfile("collections"),
 		CreativeProfile: NewProfile("creative"),
+		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
+		Relationships: aid.GenericSyncMap[Relationship]{},
+		Parties: aid.GenericSyncMap[Party]{},
+		Pings: aid.GenericSyncMap[PartyPing]{},
 	}
 }
 
@@ -52,6 +57,10 @@ func NewPersonWithCustomID(id string) *Person {
 		Profile0Profile: NewProfile("profile0"),
 		CollectionsProfile: NewProfile("collections"),
 		CreativeProfile: NewProfile("creative"),
+		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
+		Relationships: aid.GenericSyncMap[Relationship]{},
+		Parties: aid.GenericSyncMap[Party]{},
+		Pings: aid.GenericSyncMap[PartyPing]{},
 	}
 }
 
@@ -199,6 +208,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		Discord: &databasePerson.Discord,
 		RefundTickets: databasePerson.RefundTickets,
 		Relationships: aid.GenericSyncMap[Relationship]{},
+		Parties: aid.GenericSyncMap[Party]{},
 	}
 
 	for _, ban := range databasePerson.BanHistory {

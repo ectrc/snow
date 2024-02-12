@@ -89,7 +89,6 @@ func (c *ExternalDataClient) LoadExternalData() {
 	for _, setValue := range addNumericStylesToSets {
 		set, found := c.FortniteSets[setValue]
 		if !found {
-			aid.Print("set not found: " + setValue)
 			continue
 		}
 

@@ -415,7 +415,7 @@ func GenerateRandomStorefront() {
 	}
 
 	minimumSets := 4
-	if aid.Config.Fortnite.Season < 11 {
+	if aid.Config.Fortnite.Season <+ 12 {
 		minimumSets = 3
 	}
 

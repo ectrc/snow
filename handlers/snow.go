@@ -16,7 +16,7 @@ func MiddlewareOnlyDebug(c *fiber.Ctx) error {
 	return c.SendStatus(403)
 }
 
-func GetPreloadedCosmetics(c *fiber.Ctx) error {
+func GetSnowPreloadedCosmetics(c *fiber.Ctx) error {
 	return c.JSON(fortnite.External)
 }
 
@@ -42,7 +42,7 @@ func GetPlayer(c *fiber.Ctx) error {
 	})
 }
 
-func GetCachedPlayers(c *fiber.Ctx) error {
+func GetSnowCachedPlayers(c *fiber.Ctx) error {
 	persons := p.AllFromCache()
 	players := make([]p.PersonSnapshot, len(persons))
 
@@ -58,4 +58,19 @@ func GetSnowConfig(c *fiber.Ctx) error {
 		"basic": aid.Config,		
 		"amazon": storage.Repo.Amazon,
 	})
+}
+
+func GetSnowParties(c *fiber.Ctx) error {
+	parties := []aid.JSON{}
+
+	p.Parties.Range(func(key string, value *p.Party) bool {
+		parties = append(parties, value.GenerateFortniteParty())
+		return true
+	})
+
+	return c.JSON(parties)
+}
+
+func GetSnowShop(c *fiber.Ctx) error {
+	return c.JSON(fortnite.StaticCatalog)
 }
