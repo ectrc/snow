@@ -3,7 +3,6 @@ package socket
 import (
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
@@ -172,23 +171,37 @@ func jabberPresenceJoinGroupchat(socket *Socket[JabberData], parsed *etree.Docum
 }
 
 func jabberMessageHandler(socket *Socket[JabberData], parsed *etree.Document) error {
-	if parsed.FindElement("/message/body") == nil {
-		return nil
-	}
-
 	message := parsed.FindElement("/message")
-	target := message.SelectAttr("to").Value
-	parts := strings.Split(target, "@")
-
-	if len(parts) != 2 {
+	if message.FindElement("/body") == nil {
 		return nil
 	}
 
-	if reciever, ok := JabberSockets.Get(parts[0]); ok {
-		reciever.Write([]byte(`<message xmlns="jabber:client" from="`+ socket.Data.JabberID +`" to="`+ target +`" id="`+ message.SelectAttr("id").Value +`">
-			<body>`+ message.FindElement("/message/body").Text() +`</body>
-		</message>`))
+	towards := message.SelectAttr("to")
+	if towards == nil {
+		return nil
 	}
+
+	redirect := map[string]func(*Socket[JabberData], *etree.Document) error {
+		"chat": jabberMessageChatHandler,
+		"groupchat": jabberMessageGroupchatHandler,
+	}
+
+	if handler, ok := redirect[towards.Value]; ok {
+		if err := handler(socket, parsed); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// TODO: IMPLEMENT WHISPERING
+
+func jabberMessageChatHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	return nil
+}
+
+func jabberMessageGroupchatHandler(socket *Socket[JabberData], parsed *etree.Document) error {
 	return nil
 }
 

@@ -14,6 +14,7 @@ func EmitPartyMemberJoined(party *person.Party, joiningMember *person.PartyMembe
 			continue
 		}
 
+		joiningMember.IncreaseRevision()
 		s.JabberSendMessageToPerson(aid.JSON{
 			"account_id": joiningMember.Person.ID,
 			"account_dn": joiningMember.Person.DisplayName,
@@ -24,7 +25,7 @@ func EmitPartyMemberJoined(party *person.Party, joiningMember *person.PartyMembe
 			"ns": "Fortnite",
 			"party_id": party.ID,
 			"sent": time.Now().Format(time.RFC3339),
-			"revision": 0,
+			"revision": joiningMember.Revision,
 			"type": "com.epicgames.social.party.notification.v0.MEMBER_JOINED",
 		})
 
@@ -47,20 +48,21 @@ func EmitPartyMemberJoined(party *person.Party, joiningMember *person.PartyMembe
 	}
 }
 
-func EmitPartyMemberLeft(party *person.Party, member *person.PartyMember) {
+func EmitPartyMemberLeft(party *person.Party, leavingMember *person.PartyMember) {
 	for _, m := range party.Members {
 		s, ok := JabberSockets.Get(m.Person.ID)
 		if !ok {
 			continue
 		}
 
+		leavingMember.IncreaseRevision()
 		s.JabberSendMessageToPerson(aid.JSON{
-			"account_id": member.Person.ID,
+			"account_id": leavingMember.Person.ID,
 			"member_state_updated": aid.JSON{},
 			"ns": "Fortnite",
 			"party_id": party.ID,
 			"sent": time.Now().Format(time.RFC3339),
-			"revision": 0,
+			"revision": leavingMember.Revision,
 			"type": "com.epicgames.social.party.notification.v0.MEMBER_LEFT",
 		})
 	}
@@ -73,6 +75,7 @@ func EmitPartyMemberMetaUpdated(party *person.Party, member *person.PartyMember,
 			continue
 		}
 
+		member.IncreaseRevision()
 		s.JabberSendMessageToPerson(aid.JSON{
 			"account_id": member.Person.ID,
 			"account_dn": member.Person.DisplayName,
@@ -84,7 +87,7 @@ func EmitPartyMemberMetaUpdated(party *person.Party, member *person.PartyMember,
 			"ns": "Fortnite",
 			"party_id": party.ID,
 			"sent": time.Now().Format(time.RFC3339),
-			"revision": 0,
+			"revision": member.Revision,
 			"type": "com.epicgames.social.party.notification.v0.MEMBER_STATE_UPDATED",
 		})
 	}
@@ -97,6 +100,7 @@ func EmitPartyMetaUpdated(party *person.Party, override map[string]interface{}, 
 			continue
 		}
 
+		party.IncreaseRevision()
 		s.JabberSendMessageToPerson(aid.JSON{
 			"captain_id": party.Captain.Person.ID,
 			"party_state_updated": update,
@@ -113,11 +117,9 @@ func EmitPartyMetaUpdated(party *person.Party, override map[string]interface{}, 
 			"ns": "Fortnite",
 			"party_id": party.ID,
 			"sent": time.Now().Format(time.RFC3339),
-			"revision": 0,
+			"revision": party.Revision,
 			"type": "com.epicgames.social.party.notification.v0.PARTY_UPDATED",
 		})
-
-		aid.Print("EmitPartyMetaUpdated party", party.ID, "to", m.Person.DisplayName)
 	}
 }
 
@@ -128,13 +130,14 @@ func EmitPartyNewCaptain(party *person.Party) {
 			continue
 		}
 
+		party.IncreaseRevision()
 		s.JabberSendMessageToPerson(aid.JSON{
 			"account_id": party.Captain.Person.ID,
 			"account_dn": party.Captain.Person.DisplayName,
 			"ns": "Fortnite",
 			"party_id": party.ID,
 			"sent": time.Now().Format(time.RFC3339),
-			"revision": 0,
+			"revision": party.Revision,
 			"type": "com.epicgames.social.party.notification.v0.MEMBER_NEW_CAPTAIN",
 		})
 	}
@@ -154,7 +157,7 @@ func EmitPartyInvite(invite *person.PartyInvite) {
 		"sent_at": invite.CreatedAt.Format(time.RFC3339),
 		"updated_at": invite.UpdatedAt.Format(time.RFC3339),
 		"friends_ids": []string{},
-		"members_count": 0,
+		"members_count": len(invite.Party.Members),
 		"party_id": invite.Party.ID,
 		"ns": "Fortnite",
 		"sent": time.Now().Format(time.RFC3339),

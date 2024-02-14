@@ -117,8 +117,10 @@ func PostPartyCreate(c *fiber.Ctx) error {
 	party.AddMember(person)
 	party.UpdateMemberMeta(person, body.JoinInformation.Meta)
 	party.UpdateMemberConnection(person, body.JoinInformation.Connection)
-	party.ChangeNewCaptain()
-	socket.EmitPartyMemberJoined(party, party.GetMember(person))
+
+	member := party.GetMember(person)
+	party.PromoteMember(member)
+	socket.EmitPartyMemberJoined(party, member)
 
 	return c.Status(200).JSON(party.GenerateFortniteParty())
 }
@@ -134,11 +136,9 @@ func PatchPartyUpdateState(c *fiber.Ctx) error {
 		} `json:"meta"`
 	}
 
-	
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
 	}
-	aid.PrintJSON(body)
 
 	party, ok := person.Parties.Get(c.Params("partyId"))
 	if !ok {
@@ -212,8 +212,8 @@ func DeletePartyMember(c *fiber.Ctx) error {
 	party.RemoveMember(person)
 	
 	if party.Captain.Person.ID == person.ID && len(party.Members) > 0 {
-		party.ChangeNewCaptain()
-		go socket.EmitPartyNewCaptain(party)
+		party.PromoteMember(party.GetFirstMember())
+		socket.EmitPartyNewCaptain(party)
 	}
 
 	return c.SendStatus(204)
@@ -266,21 +266,6 @@ func PostPartyJoin(c *fiber.Ctx) error {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
 	}
 
-	// joinability, ok := party.Config["joinability"].(string)
-	// if ok && joinability != "OPEN" {
-	// 	invite, ok := person.Invites.Get(c.Params("partyId"))
-	// 	if !ok {
-	// 		return c.Status(400).JSON(aid.ErrorBadRequest("Invite Not Found"))
-	// 	}
-
-	// 	if invite.Party.ID != party.ID {
-	// 		return c.Status(400).JSON(aid.ErrorBadRequest("Invite Not Found"))
-	// 	}
-
-	// 	person.Invites.Delete(c.Params("partyId"))
-	// 	party.RemoveInvite(invite)
-	// }
-
 	party.AddMember(person)
 	party.UpdateMemberMeta(person, body.Meta)
 	party.UpdateMemberConnection(person, body.Connection)
@@ -294,4 +279,26 @@ func PostPartyJoin(c *fiber.Ctx) error {
 		"party_id": party.ID,
 		"status": "JOINED",
 	})
+}
+
+func PostPartyPromoteMember(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+	party, ok := person.Parties.Get(c.Params("partyId"))
+	if !ok {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+
+	member := party.GetMember(p.Find(c.Params("accountId")))
+	if member == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Member Not Found"))
+	}
+
+	if party.Captain.Person.ID != person.ID {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Not Captain"))
+	}
+
+	party.PromoteMember(member)
+	socket.EmitPartyNewCaptain(party)
+
+	return c.SendStatus(204)
 }

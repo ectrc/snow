@@ -162,12 +162,12 @@ func main() {
 	party.Post("/parties", handlers.PostPartyCreate)
 	party.Post("/parties/:partyId/invites/:accountId", handlers.PostPartyInvite)
 	party.Post("/parties/:partyId/members/:accountId/join", handlers.PostPartyJoin)
+	party.Post("/parties/:partyId/members/:accountId/promote", handlers.PostPartyPromoteMember)
 	party.Patch("/parties/:partyId", handlers.PatchPartyUpdateState)
 	party.Patch("/parties/:partyId/members/:accountId/meta", handlers.PatchPartyUpdateMemberState)
 	party.Delete("/parties/:partyId/members/:accountId", handlers.DeletePartyMember)
 
 	// post /parties/:partyId/members/:accountId/conferences/connection (join a voip channel)
-	// delete /parties/:partyId/members/:accountid (remove a person from a party)
 	
 	// get /user/:accountId/pings/:pinger/friendId/parties (get pings from a friend) 
 	// post /user/:accountId/pings/:pinger/join (join a party from a ping)

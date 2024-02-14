@@ -55,6 +55,11 @@ type PartyMember struct{
 	Role string
 	JoinedAt time.Time
 	UpdatedAt time.Time
+	Revision int
+}
+
+func (pm *PartyMember) IncreaseRevision() {
+	pm.Revision++
 }
 
 func (pm *PartyMember) GenerateFortnitePartyMember() aid.JSON {
@@ -67,7 +72,7 @@ func (pm *PartyMember) GenerateFortnitePartyMember() aid.JSON {
 		"meta": pm.Meta,
 		"joined_at": pm.JoinedAt.Format(time.RFC3339),
 		"connections": []aid.JSON{conn},
-		"revision": 0,
+		"revision": pm.Revision,
 	}
 }
 
@@ -79,6 +84,7 @@ type Party struct{
 	Config map[string]interface{}
 	Meta map[string]interface{}
 	CreatedAt time.Time
+	Revision int
 	m sync.Mutex
 }
 
@@ -105,6 +111,13 @@ func NewParty() *Party {
 	return party
 }
 
+func (p *Party) IncreaseRevision() {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	p.Revision++
+}
+
 func (p *Party) GetMember(person *Person) *PartyMember {
 	p.m.Lock()
 	defer p.m.Unlock()
@@ -112,16 +125,24 @@ func (p *Party) GetMember(person *Person) *PartyMember {
 	return p.Members[person.ID]
 }
 
-func (p *Party) ChangeNewCaptain() {
+func (p *Party) PromoteMember(member *PartyMember) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	member.Role = "CAPTAIN"
+	member.UpdatedAt = time.Now()
+	p.Captain = member
+}
+
+func (p *Party) GetFirstMember() *PartyMember {
 	p.m.Lock()
 	defer p.m.Unlock()
 
 	for _, member := range p.Members {
-		p.Captain = member
-		p.Captain.Role = "CAPTAIN"
-		p.Captain.UpdatedAt = time.Now()
-		break
+		return member
 	}
+
+	return nil
 }
 
 func (p *Party) AddMember(person *Person) {

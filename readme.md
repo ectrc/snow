@@ -13,7 +13,6 @@
 
 ## What's up next?
 
-- **Party System V2** Currently it relies on the automatic XMPP solution which is very hard to keep track of.
 - Seeded randomization for the **Item Shop** instead of a random number generator. This will ensure that even if the backend is restarted, the same random items will be in the shop during that day.
 - Purchasing the **Battle Pass**. This will require the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
 - Interaction with a Game Server to handle **Event Tracking** for player statistics and challenges. This will be a very large task as a new specialised game server will need to be created.
@@ -33,4 +32,4 @@ And once battle royale is completed ...
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or pull request if you would like to contribute. Make sure to follow the same format (2 space indents) and style! Make sure to keep commits concise and readable e.g. do not change formating to mess up code review!
+Contributions are welcome! Please open an issue or pull request if you would like to contribute. Make sure to follow the same formatting and to keep commits concise and readable e.g. do not change line indents to mess up code review!
