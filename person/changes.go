@@ -4,7 +4,7 @@ import "github.com/ectrc/snow/aid"
 
 type FullProfileUpdate struct {
 	ChangeType string `json:"changeType"`
-	Profile aid.JSON `json:"profile"`
+	Profile interface{} `json:"profile"`
 }
 
 type StatModified struct {

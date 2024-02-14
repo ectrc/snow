@@ -152,12 +152,10 @@ func main() {
 
 	party := r.Group("/party/api/v1/Fortnite")
 	party.Use(handlers.MiddlewareFortnite)
-	
 	party.Get("/user/:accountId", handlers.GetPartiesForUser)
 	party.Get("/user/:accountId/settings/privacy", handlers.GetPartyUserPrivacy)
 	party.Get("/user/:accountId/notifications/undelivered/count", handlers.GetPartyNotifications)
 	party.Get("/user/:accountId/pings/:friendId/parties", handlers.GetPartyPingsFromFriend)
-
 	party.Get("/parties/:partyId", handlers.GetPartyForMember)
 	party.Post("/parties", handlers.PostPartyCreate)
 	party.Post("/parties/:partyId/invites/:accountId", handlers.PostPartyInvite)
@@ -166,9 +164,7 @@ func main() {
 	party.Patch("/parties/:partyId", handlers.PatchPartyUpdateState)
 	party.Patch("/parties/:partyId/members/:accountId/meta", handlers.PatchPartyUpdateMemberState)
 	party.Delete("/parties/:partyId/members/:accountId", handlers.DeletePartyMember)
-
 	// post /parties/:partyId/members/:accountId/conferences/connection (join a voip channel)
-	
 	// get /user/:accountId/pings/:pinger/friendId/parties (get pings from a friend) 
 	// post /user/:accountId/pings/:pinger/join (join a party from a ping)
 	// post /user/:friendId/pings/:accountId (send a ping)

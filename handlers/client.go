@@ -17,7 +17,7 @@ import (
 var (
 	clientActions = map[string]func(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 		"QueryProfile": clientQueryProfileAction,
-		"ClientQuestLogin": clientQueryProfileAction,
+		"ClientQuestLogin": clientClientQuestLoginAction,
 		"MarkItemSeen": clientMarkItemSeenAction,
 		"SetItemFavoriteStatusBatch": clientSetItemFavoriteStatusBatchAction,
 		"EquipBattleRoyaleCustomization": clientEquipBattleRoyaleCustomizationAction,
@@ -89,28 +89,28 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 	delete(profileSnapshots, profile.Type)
 
 	multiUpdate := []aid.JSON{}
-		for key := range profileSnapshots {
-			profile := person.GetProfileFromType(key)
-			if profile == nil {
-				continue
-			}
-			profile.Revision++
-			
-			if len(profile.Changes) == 0 {
-				continue
-			}
-			
-			multiUpdate = append(multiUpdate, aid.JSON{
-				"profileId": profile.Type,
-				"profileRevision": profile.Revision,
-				"profileCommandRevision": profile.Revision,
-				"profileChangesBaseRevision": profile.Revision - 1,
-				"profileChanges": profile.Changes,
-			})
-			
-			profile.ClearProfileChanges()
-			go profile.Save()
+	for key := range profileSnapshots {
+		profile := person.GetProfileFromType(key)
+		if profile == nil {
+			continue
 		}
+		profile.Revision++
+		
+		if len(profile.Changes) == 0 {
+			continue
+		}
+		
+		multiUpdate = append(multiUpdate, aid.JSON{
+			"profileId": profile.Type,
+			"profileRevision": profile.Revision,
+			"profileCommandRevision": profile.Revision,
+			"profileChangesBaseRevision": profile.Revision - 1,
+			"profileChanges": profile.Changes,
+		})
+		
+		profile.ClearProfileChanges()
+		go profile.Save()
+	}
 
 	return c.Status(200).JSON(aid.JSON{
 		"profileId": c.Query("profileId"),
@@ -127,6 +127,10 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 
 func clientQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	profile.CreateFullProfileUpdateChange()
+	return nil
+}
+
+func clientClientQuestLoginAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	return nil
 }
 
@@ -663,6 +667,17 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		},
 		"primary": true,
 	})
+
+	affiliate := person.CommonCoreProfile.Attributes.GetAttributeByKey("mtx_affiliate")
+	if affiliate == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid affiliate attribute"))
+	}
+
+	creator := p.Find(p.AttributeConvert[string](affiliate))
+	if creator != nil {
+		creator.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += body.ExpectedTotalPrice
+		creator.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += body.ExpectedTotalPrice
+	}
 
 	return nil
 }
