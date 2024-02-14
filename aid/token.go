@@ -17,6 +17,7 @@ func JWTSign(m JSON) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token.Header["kid"] = "g__VKjSSmqJ0xZj1RYkLGKQ7dnHiM9MLhFVwKPySDB4"
 	return token.SignedString([]byte(Config.JWT.Secret))
 }
 

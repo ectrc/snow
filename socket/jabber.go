@@ -13,13 +13,14 @@ import (
 
 type JabberData struct {
 	JabberID string
+	PartyID string
 	LastPresence string
 }
 
 var jabberHandlers = map[string]func(*Socket[JabberData], *etree.Document) error {
 	"open": jabberOpenHandler,
 	"iq": jabberIqRootHandler,
-	"presence": jabberPresenceHandler,
+	"presence": jabberPresenceRootHandler,
 	"message": jabberMessageHandler,
 }
 
@@ -87,6 +88,7 @@ func jabberIqSetHandler(socket *Socket[JabberData], parsed *etree.Document) erro
 	socket.ID = person.ID
 	socket.Person = person
 	socket.Data.JabberID = snowId + "@prod.ol.epicgames.com/" + parsed.FindElement("/iq/query/resource").Text()
+	socket.Data.PartyID = person.DisplayName + ":" + person.ID + parsed.FindElement("/iq/query/resource").Text()
 
 	socket.Write([]byte(`<iq xmlns="jabber:client" type="result" id="_xmpp_auth1" from="prod.ol.epicgames.com" to="`+ socket.Data.JabberID +`" />`))
 	return nil
@@ -98,13 +100,74 @@ func jabberIqGetHandler(socket *Socket[JabberData], parsed *etree.Document) erro
 	return nil
 }
 
-func jabberPresenceHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+func jabberPresenceRootHandler(socket *Socket[JabberData], parsed *etree.Document) error {
 	status := parsed.FindElement("/presence/status")
 	if status == nil {
-		return nil
+		return jabberPresenceJoinGroupchat(socket, parsed)
 	}
+
 	socket.Data.LastPresence = status.Text()
 	socket.JabberNotifyFriends()
+
+	return nil
+}
+
+func jabberPresenceJoinGroupchat(socket *Socket[JabberData], parsed *etree.Document) error {
+	towards := parsed.FindElement("/presence").SelectAttr("to").Value
+
+	partyId := aid.Regex(towards, `Party-(.*?)@`)
+	if partyId == nil {
+		return nil
+	}
+
+	party, ok := person.Parties.Get(*partyId)
+	if !ok {
+		return nil
+	}
+
+	for _, member := range party.Members {
+		if member.Person.ID == socket.ID {
+			return nil
+		}
+	
+		memberSocket, ok := JabberSockets.Get(member.Person.ID)
+		if !ok {
+			continue
+		}
+		memberPartyId := "Party-" + party.ID + "@muc.prod.ol.epicgames.com/" + memberSocket.Data.PartyID
+		memberRole := aid.Ternary[string](party.Captain.Person.ID == member.Person.ID, "moderator", "participant")
+		memberAffiliation := aid.Ternary[string](party.Captain.Person.ID == member.Person.ID, "owner", "none")
+
+		socket.Write([]byte(`<presence xmlns="jabber:client" from="`+ memberPartyId +`" to="`+ socket.Data.JabberID +`">
+			<x xmlns="http://jabber.org/protocol/muc#user">
+				<item 
+					affiliation="`+ memberAffiliation +`" 
+					role="`+ memberRole +`" 
+					jid="`+ memberSocket.Data.JabberID +`"
+					nick="`+ memberPartyId +`"
+				/>
+			</x>
+		</presence>`))
+	}
+
+	socketPartyId := "Party-" + party.ID + "@muc.prod.ol.epicgames.com/" + socket.Data.PartyID
+	socketRole := aid.Ternary[string](party.Captain.Person.ID == socket.ID, "moderator", "participant")
+	socketAffiliation := aid.Ternary[string](party.Captain.Person.ID == socket.ID, "owner", "none")
+
+	socket.Write([]byte(`<presence xmlns="jabber:client" from="`+ socketPartyId +`" to="`+ socket.Data.JabberID +`">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item 
+				affiliation="`+ socketAffiliation +`" 
+				role="`+ socketRole +`" 
+				jid="`+ socket.Data.JabberID +`"
+				nick="`+ socketPartyId +`"
+			/>
+			<status code="110"/>
+			<status code="100"/>
+			<status code="170"/>
+		</x>
+	</presence>`))
+
 	return nil
 }
 
@@ -175,4 +238,8 @@ func (s *Socket[T]) JabberNotifyFriends() {
 
 		return true
 	})
+
+	jabberSocket.Write([]byte(`<presence xmlns="jabber:client" type="available" from="`+ jabberSocket.Data.JabberID +`" to="`+ jabberSocket.Data.JabberID +`">
+		<status>`+ jabberSocket.Data.LastPresence +`</status>
+	</presence>`))
 }

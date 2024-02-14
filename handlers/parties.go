@@ -1,15 +1,13 @@
 package handlers
 
 import (
-	"time"
-
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/socket"
 	"github.com/gofiber/fiber/v2"
 )
 
-func GetUserParties(c *fiber.Ctx) error {
+func GetPartiesForUser(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
 
 	response := aid.JSON{
@@ -24,10 +22,15 @@ func GetUserParties(c *fiber.Ctx) error {
 		return true
 	})
 
+	person.Invites.Range(func(key string, invite *p.PartyInvite) bool {
+		response["invites"] = append(response["invites"].([]aid.JSON), invite.GenerateFortnitePartyInvite())
+		return true
+	})
+
 	return c.Status(200).JSON(response)
 }
 
-func GetUserPartyPrivacy(c *fiber.Ctx) error {
+func GetPartyUserPrivacy(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
 
 	recieveIntents := person.CommonCoreProfile.Attributes.GetAttributeByKey("party.recieveIntents")
@@ -46,25 +49,47 @@ func GetUserPartyPrivacy(c *fiber.Ctx) error {
 	})
 }
 
-func GetUserPartyNotifications(c *fiber.Ctx) error {
+func GetPartyNotifications(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
 	return c.Status(200).JSON(aid.JSON{
 		"pings": 0,
-		"invites": 0,
+		"invites": person.Invites.Len(),
 	})
 }
 
 func GetPartyForMember(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
 
-	party, ok := person.Parties.Get(c.Params("partyId"))
+	party, ok := p.Parties.Get(c.Params("partyId"))
 	if !ok {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
 	}
 
+	aid.Print(person.DisplayName, " is getting party ", party.ID)
+
 	return c.Status(200).JSON(party.GenerateFortniteParty())
 }
 
-func PostCreateParty(c *fiber.Ctx) error {
+func GetPartyPingsFromFriend(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+
+	friend := p.Find(c.Params("friendId"))
+	if friend == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Friend Not Found"))
+	}
+
+	pings := []aid.JSON{}
+	person.Invites.Range(func(key string, ping *p.PartyInvite) bool {
+		if ping.Inviter.ID == friend.ID {
+			pings = append(pings, ping.Party.GenerateFortniteParty())
+		}
+		return true
+	})
+
+	return c.Status(200).JSON(pings)
+}
+
+func PostPartyCreate(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
 	
 	person.Parties.Range(func(key string, party *p.Party) bool {
@@ -89,41 +114,16 @@ func PostCreateParty(c *fiber.Ctx) error {
 	party.UpdateMeta(body.Meta)
 	party.UpdateConfig(body.Config)
 	
-	party.AddMember(person, "CAPTAIN")
+	party.AddMember(person)
 	party.UpdateMemberMeta(person, body.JoinInformation.Meta)
-
-	body.JoinInformation.Connection["connected_at"] = time.Now().Format(time.RFC3339)
-	body.JoinInformation.Connection["updated_at"] = time.Now().Format(time.RFC3339)
-	party.UpdateMemberConnections(person, body.JoinInformation.Connection)
-
-	member := party.GetMember(person)
-	if member == nil {
-		return c.Status(400).JSON(aid.ErrorBadRequest("Failed to create party"))
-	}
-
-	s, ok := socket.JabberSockets.Get(person.ID)
-	if !ok {
-		return c.Status(400).JSON(aid.ErrorBadRequest("No socket connection found"))
-	}
-
-	s.JabberSendMessageToPerson(aid.JSON{
-		"ns": "Fortnite",
-		"party_id": party.ID,
-		"account_id": person.ID,
-		"account_dn": person.DisplayName,
-		"connection": body.JoinInformation.Connection,
-		"member_state_updated": member.Meta,
-		"updated_at": member.UpdatedAt.Format(time.RFC3339),
-		"joined_at": member.JoinedAt.Format(time.RFC3339),
-		"sent": time.Now().Format(time.RFC3339),
-		"revision": 0,
-		"type": "com.epicgames.social.party.notification.v0.MEMBER_JOINED",
-	})
+	party.UpdateMemberConnection(person, body.JoinInformation.Connection)
+	party.ChangeNewCaptain()
+	socket.EmitPartyMemberJoined(party, party.GetMember(person))
 
 	return c.Status(200).JSON(party.GenerateFortniteParty())
 }
 
-func PatchUpdateParty(c *fiber.Ctx) error {
+func PatchPartyUpdateState(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
 
 	var body struct {
@@ -134,9 +134,11 @@ func PatchUpdateParty(c *fiber.Ctx) error {
 		} `json:"meta"`
 	}
 
+	
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
 	}
+	aid.PrintJSON(body)
 
 	party, ok := person.Parties.Get(c.Params("partyId"))
 	if !ok {
@@ -155,11 +157,12 @@ func PatchUpdateParty(c *fiber.Ctx) error {
 	party.UpdateConfig(body.Config)
 	party.UpdateMeta(body.Meta.Update)
 	party.DeleteMeta(body.Meta.Delete)
+	socket.EmitPartyMetaUpdated(party, body.Meta.Update, body.Meta.Delete, body.Meta.Update)
 
-	return c.Status(200).JSON(party.GenerateFortniteParty())
+	return c.SendStatus(204)
 }
 
-func PatchUpdatePartyMemberMeta(c *fiber.Ctx) error {
+func PatchPartyUpdateMemberState(c *fiber.Ctx) error {
 	person := c.Locals("person").(*p.Person)
 
 	var body struct {
@@ -187,6 +190,108 @@ func PatchUpdatePartyMemberMeta(c *fiber.Ctx) error {
 
 	party.UpdateMemberMeta(person, body.Update)
 	party.DeleteMemberMeta(person, body.Delete)
+	socket.EmitPartyMemberMetaUpdated(party, member, body.Update, body.Delete)
 
-	return c.Status(200).JSON(party.GenerateFortniteParty())
+	return c.SendStatus(204)
+}
+
+func DeletePartyMember(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+
+	party, ok := person.Parties.Get(c.Params("partyId"))
+	if !ok {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+
+	member := party.GetMember(person)
+	if member == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Not in Party"))
+	}
+
+	socket.EmitPartyMemberLeft(party, member)
+	party.RemoveMember(person)
+	
+	if party.Captain.Person.ID == person.ID && len(party.Members) > 0 {
+		party.ChangeNewCaptain()
+		go socket.EmitPartyNewCaptain(party)
+	}
+
+	return c.SendStatus(204)
+}
+
+func PostPartyInvite(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+
+	var body map[string]interface{}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
+	}
+
+	towards := p.Find(c.Params("accountId"))
+	if towards == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Person Not Found"))
+	}
+
+	party, ok := person.Parties.Get(c.Params("partyId"))
+	if !ok {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+	
+	invite := p.NewPartyInvite(party, person, towards, body)
+	party.AddInvite(invite)
+	towards.Invites.Set(party.ID, invite)
+
+	socket.EmitPartyInvite(invite)
+
+	return c.SendStatus(204)
+}
+
+func PostPartyJoin(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+	if person.Parties.Len() != 0 {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Already in a party"))
+	}
+
+	party, ok := p.Parties.Get(c.Params("partyId"))
+	if !ok {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+
+	var body struct {
+		Meta map[string]interface{} `json:"meta"`
+		Connection aid.JSON `json:"connection"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
+	}
+
+	// joinability, ok := party.Config["joinability"].(string)
+	// if ok && joinability != "OPEN" {
+	// 	invite, ok := person.Invites.Get(c.Params("partyId"))
+	// 	if !ok {
+	// 		return c.Status(400).JSON(aid.ErrorBadRequest("Invite Not Found"))
+	// 	}
+
+	// 	if invite.Party.ID != party.ID {
+	// 		return c.Status(400).JSON(aid.ErrorBadRequest("Invite Not Found"))
+	// 	}
+
+	// 	person.Invites.Delete(c.Params("partyId"))
+	// 	party.RemoveInvite(invite)
+	// }
+
+	party.AddMember(person)
+	party.UpdateMemberMeta(person, body.Meta)
+	party.UpdateMemberConnection(person, body.Connection)
+	
+	member := party.GetMember(person)
+	socket.EmitPartyMemberJoined(party, member)
+	socket.EmitPartyMemberMetaUpdated(party, party.GetMember(person), body.Meta, []string{})
+	socket.EmitPartyMetaUpdated(party, party.Meta, []string{}, map[string]interface{}{})
+
+	return c.Status(200).JSON(aid.JSON{
+		"party_id": party.ID,
+		"status": "JOINED",
+	})
 }

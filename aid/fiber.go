@@ -18,9 +18,9 @@ func FiberLogger() fiber.Handler {
 	})
 }
 
-func FiberLimiter() fiber.Handler {
+func FiberLimiter(n int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        100,
+		Max:        n,
 		Expiration: 1 * time.Minute,
 	})
 }

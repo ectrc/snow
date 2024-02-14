@@ -77,7 +77,7 @@ func main() {
 	})
 
 	r.Use(aid.FiberLogger())
-	r.Use(aid.FiberLimiter())
+	r.Use(aid.FiberLimiter(100))
 	r.Use(aid.FiberCors())
 
 	r.Get("/region", handlers.GetRegion)
@@ -110,6 +110,7 @@ func main() {
 
 	storefront := fortnite.Group("/storefront/v2")
 	storefront.Use(handlers.MiddlewareFortnite)
+	storefront.Use(aid.FiberLimiter(4))
 	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
 	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
 
@@ -151,15 +152,23 @@ func main() {
 
 	party := r.Group("/party/api/v1/Fortnite")
 	party.Use(handlers.MiddlewareFortnite)
-	party.Get("/user/:accountId", handlers.GetUserParties)
-	party.Get("/user/:accountId/settings/privacy", handlers.GetUserPartyPrivacy)
-	party.Get("/user/:accountId/notifications/undelivered/count", handlers.GetUserPartyNotifications)
-	party.Post("/parties", handlers.PostCreateParty)
+	
+	party.Get("/user/:accountId", handlers.GetPartiesForUser)
+	party.Get("/user/:accountId/settings/privacy", handlers.GetPartyUserPrivacy)
+	party.Get("/user/:accountId/notifications/undelivered/count", handlers.GetPartyNotifications)
+	party.Get("/user/:accountId/pings/:friendId/parties", handlers.GetPartyPingsFromFriend)
+
 	party.Get("/parties/:partyId", handlers.GetPartyForMember)
-	party.Patch("/parties/:partyId", handlers.PatchUpdateParty)
-	party.Patch("/parties/:partyId/members/:accountId/meta", handlers.PatchUpdatePartyMemberMeta)
+	party.Post("/parties", handlers.PostPartyCreate)
+	party.Post("/parties/:partyId/invites/:accountId", handlers.PostPartyInvite)
+	party.Post("/parties/:partyId/members/:accountId/join", handlers.PostPartyJoin)
+	party.Patch("/parties/:partyId", handlers.PatchPartyUpdateState)
+	party.Patch("/parties/:partyId/members/:accountId/meta", handlers.PatchPartyUpdateMemberState)
+	party.Delete("/parties/:partyId/members/:accountId", handlers.DeletePartyMember)
+
 	// post /parties/:partyId/members/:accountId/conferences/connection (join a voip channel)
 	// delete /parties/:partyId/members/:accountid (remove a person from a party)
+	
 	// get /user/:accountId/pings/:pinger/friendId/parties (get pings from a friend) 
 	// post /user/:accountId/pings/:pinger/join (join a party from a ping)
 	// post /user/:friendId/pings/:accountId (send a ping)
