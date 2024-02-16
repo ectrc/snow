@@ -24,7 +24,7 @@ And once battle royale is completed ...
 
 ## Feature List
 
-- **XMPP** From builds 3.6 onwards, season 1 and 2 are planned.
+- **XMPP** On every single build. Season 1 & 2 use TCP, Season 3 onwards use Websockets.
 - **Friends** On every builds with the ability to add and remove friends.
 - **Party System V2** This replaces the legacy xmpp driven party system.
 - **Gifting** Of any item shop entry to any friend.
