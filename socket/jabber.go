@@ -63,16 +63,17 @@ func JabberSocketOnMessage(socket *Socket[JabberData], message []byte) {
 			socket.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, err.Error()))
 			return
 		}
+
 		return
 	}
 
-	aid.Print("jabber message not handled", parsed.Root().Tag)
+	aid.Print("jabber message handled")
 }
 
 func jabberStreamHandler(socket *Socket[JabberData], parsed *etree.Document) error {
-	socket.Write([]byte(`<stream:stream xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" to="prod.ol.epicgames.com" id="`+ socket.ID +`" version="1.0" xml:lang="en">`))
-	socket.Write([]byte(`<stream:features xmlns:stream="http://etherx.jabber.org/streams" />`))
-	socket.Write([]byte(`<open xmlns="urn:ietf:params:xml:ns:xmpp-framing" from="prod.ol.epicgames.com" version="1.0" id="`+ socket.ID +`" />`))
+	socket.Write([]byte(`<stream:stream id="`+socket.ID+`" from="prod.ol.epicgames.com" xml:lang="*" version="1.0" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client"/>`))
+	// socket.Write([]byte(`<open xmlns="urn:ietf:params:xml:ns:xmpp-framing" from="prod.ol.epicgames.com" version="1.0" id="`+ socket.ID +`" />`))
+	// socket.Write([]byte(`<stream:features xmlns:stream="http://etherx.jabber.org/streams" id="`+ socket.ID +`" />`))
 	return nil
 }
 
