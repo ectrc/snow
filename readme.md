@@ -22,6 +22,19 @@ And once battle royale is completed ...
 
 - **Save The World**
 
+## Feature List
+
+- **XMPP** From builds 3.6 onwards, season 1 and 2 are planned.
+- **Friends** On every builds with the ability to add and remove friends.
+- **Party System V2** This replaces the legacy xmpp driven party system.
+- **Gifting** Of any item shop entry to any friend.
+- **Locker Loadouts** On seasons 12 onwards, this allows for the saving and loading of multiple locker presets.
+- **Item Refunding** Of previous shop purchases, will use a refund ticket if refunded in time.
+- **Universal Item Shop** Works on all builds and will be updated every 24 hours.
+- **Client Settings Storage** Uses amazon buckets to store client settings.
+- **Support A Creator 5%** Use any display name and each purchase will give them 5% of the vbucks spent.
+- **Discord Bot** Very useful to control players, their inventory and their settings
+
 ## Supported MCP Actions
 
 `QueryProfile`, `ClientQuestLogin`, `MarkItemSeen`, `SetItemFavoriteStatusBatch`, `EquipBattleRoyaleCustomization`, `SetBattleRoyaleBanner`, `SetCosmeticLockerSlot`, `SetCosmeticLockerBanner`, `SetCosmeticLockerName`, `CopyCosmeticLoadout`, `DeleteCosmeticLoadout`, `PurchaseCatalogEntry`, `GiftCatalogEntry`, `RemoveGiftBox`, `RefundMtxPurchase`, `SetAffiliateName`, `SetReceiveGiftsEnabled`

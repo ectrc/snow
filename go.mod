@@ -15,7 +15,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.5.0
 	github.com/lib/pq v1.10.9
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/r3labs/diff/v3 v3.0.1
 	gopkg.in/ini.v1 v1.67.0
 	gorm.io/driver/postgres v1.5.3

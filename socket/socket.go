@@ -14,9 +14,14 @@ type MatchmakerData struct {
 	Region string
 }
 
+type WebSocket interface {
+	WriteMessage(messageType int, data []byte) error
+	ReadMessage() (messageType int, p []byte, err error)
+}
+
 type Socket[T JabberData | MatchmakerData] struct {
 	ID string
-	Connection *websocket.Conn
+	Connection WebSocket
 	Data *T
 	Person *person.Person
 	M sync.Mutex
@@ -29,7 +34,7 @@ func (s *Socket[T]) Write(payload []byte) {
 	s.Connection.WriteMessage(websocket.TextMessage, payload)
 }
 
-func newSocket[T JabberData | MatchmakerData](conn *websocket.Conn, data ...T) *Socket[T] {
+func newSocket[T JabberData | MatchmakerData](conn WebSocket, data ...T) *Socket[T] {
 	additional := data[0]
 
 	return &Socket[T]{
@@ -39,7 +44,7 @@ func newSocket[T JabberData | MatchmakerData](conn *websocket.Conn, data ...T) *
 	}
 }
 
-func NewJabberSocket(conn *websocket.Conn, id string, data JabberData) *Socket[JabberData] {
+func NewJabberSocket(conn WebSocket, id string, data JabberData) *Socket[JabberData] {
 	socket := newSocket[JabberData](conn, data)
 	socket.ID = id
 	return socket

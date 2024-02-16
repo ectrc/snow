@@ -5,7 +5,6 @@ import (
 	"github.com/ectrc/snow/socket"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
 func MiddlewareWebsocket(c *fiber.Ctx) error {
@@ -22,7 +21,7 @@ func MiddlewareWebsocket(c *fiber.Ctx) error {
 		protocol = "matchmaking"
 	}
 
-	c.Locals("identifier", uuid.New().String())
+	c.Locals("identifier", "ws-"+aid.RandomString(8))
 	c.Locals("protocol", protocol)
 
 	return c.Next()

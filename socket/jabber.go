@@ -3,6 +3,7 @@ package socket
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
@@ -17,6 +18,7 @@ type JabberData struct {
 }
 
 var jabberHandlers = map[string]func(*Socket[JabberData], *etree.Document) error {
+	"stream": jabberStreamHandler,
 	"open": jabberOpenHandler,
 	"iq": jabberIqRootHandler,
 	"presence": jabberPresenceRootHandler,
@@ -24,8 +26,11 @@ var jabberHandlers = map[string]func(*Socket[JabberData], *etree.Document) error
 }
 
 func HandleNewJabberSocket(identifier string) {
+	aid.Print("new jabber handle: " + identifier)
+
 	socket, ok := JabberSockets.Get(identifier)
 	if !ok {
+		aid.Print("socket not found", identifier)
 		return
 	}
 	defer JabberSockets.Delete(socket.ID)
@@ -33,27 +38,47 @@ func HandleNewJabberSocket(identifier string) {
 	for {
 		_, message, failed := socket.Connection.ReadMessage()
 		if failed != nil {
+			aid.Print("jabber message failed", failed)
 			break
 		}
+		
+		JabberSocketOnMessage(socket, message)
+	}
+}
 
-		parsed := etree.NewDocument()
-		if err := parsed.ReadFromBytes(message); err != nil {
+func JabberSocketOnMessage(socket *Socket[JabberData], message []byte) {
+	if strings.Contains(string(message), `">`) {
+		message = []byte(strings.ReplaceAll(string(message), `">`, `"/>`))
+	}
+
+	aid.Print("jabber message", string(message))
+	parsed := etree.NewDocument()
+	if err := parsed.ReadFromString(string(message)); err != nil {
+		aid.Print("jabber message failed to parse", err)
+		return
+	}
+
+	if handler, ok := jabberHandlers[parsed.Root().Tag]; ok {
+		if err := handler(socket, parsed); err != nil {
+			socket.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, err.Error()))
 			return
 		}
-
-		if handler, ok := jabberHandlers[parsed.Root().Tag]; ok {
-			if err := handler(socket, parsed); err != nil {
-				socket.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, err.Error()))
-				return
-			}
-		}
+		return
 	}
+
+	aid.Print("jabber message not handled", parsed.Root().Tag)
+}
+
+func jabberStreamHandler(socket *Socket[JabberData], parsed *etree.Document) error {
+	socket.Write([]byte(`<stream:stream xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" to="prod.ol.epicgames.com" id="`+ socket.ID +`" version="1.0" xml:lang="en">`))
+	socket.Write([]byte(`<stream:features xmlns:stream="http://etherx.jabber.org/streams" />`))
+	socket.Write([]byte(`<open xmlns="urn:ietf:params:xml:ns:xmpp-framing" from="prod.ol.epicgames.com" version="1.0" id="`+ socket.ID +`" />`))
+	return nil
 }
 
 func jabberOpenHandler(socket *Socket[JabberData], parsed *etree.Document) error {
 	socket.Write([]byte(`<open xmlns="urn:ietf:params:xml:ns:xmpp-framing" from="prod.ol.epicgames.com" version="1.0" id="`+ socket.ID +`" />`))
 	socket.Write([]byte(`<stream:features xmlns:stream="http://etherx.jabber.org/streams" />`))
-
 	return nil
 }
 

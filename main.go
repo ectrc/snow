@@ -192,11 +192,16 @@ func main() {
 		aid.Print("(fiber) listening on " + aid.Config.API.Host + ":" + ld.Port)
 		return nil
 	})
-
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
+
+	if aid.Config.Fortnite.Season <= 2 {
+		t := handlers.NewServer()
+		go t.Listen()
+	}
 
 	err := r.Listen("0.0.0.0" + aid.Config.API.Port)
 	if err != nil {
-		panic(fmt.Sprintf("(fiber) ailed to listen: %v", err))
+		panic(fmt.Sprintf("(fiber) failed to listen: %v", err))
 	}
+
 }
