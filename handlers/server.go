@@ -40,9 +40,9 @@ func PostServerProfileAction(c *fiber.Ctx) error {
 		"profileRevision": profile.Revision,
 		"profileCommandRevision": profile.Revision,
 		"profileChangesBaseRevision": profile.Revision - 1,
-		"profileChanges": []aid.JSON{},
-		"multiUpdate": []aid.JSON{},
-		"notifications": []aid.JSON{},
+		"profileChanges": profileChanges,
+		"multiUpdate": multiUpdate,
+		"notifications": notifications,
 		"responseVersion": 1,
 		"serverTime": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})

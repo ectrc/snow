@@ -24,8 +24,8 @@ And once battle royale is completed ...
 
 ## Feature List
 
-- **XMPP** On every single build. Season 1 & 2 use TCP, Season 3 onwards use Websockets.
-- **Friends** On every builds with the ability to add and remove friends.
+- **XMPP** For interacting with friends, parties and gifting.
+- **Friends** On every build, this will allow for adding, removing and blocking friends.
 - **Party System V2** This replaces the legacy xmpp driven party system.
 - **Gifting** Of any item shop entry to any friend.
 - **Locker Loadouts** On seasons 12 onwards, this allows for the saving and loading of multiple locker presets.
