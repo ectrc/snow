@@ -24,6 +24,7 @@ type Person struct {
 	Relationships aid.GenericSyncMap[Relationship]
 	Parties aid.GenericSyncMap[Party]
 	Invites aid.GenericSyncMap[PartyInvite]
+	Intentions aid.GenericSyncMap[PartyIntention]
 }
 
 func NewPerson() *Person {
@@ -42,6 +43,7 @@ func NewPerson() *Person {
 		Relationships: aid.GenericSyncMap[Relationship]{},
 		Parties: aid.GenericSyncMap[Party]{},
 		Invites: aid.GenericSyncMap[PartyInvite]{},
+		Intentions: aid.GenericSyncMap[PartyIntention]{},
 	}
 }
 
@@ -61,6 +63,7 @@ func NewPersonWithCustomID(id string) *Person {
 		Relationships: aid.GenericSyncMap[Relationship]{},
 		Parties: aid.GenericSyncMap[Party]{},
 		Invites: aid.GenericSyncMap[PartyInvite]{},
+		Intentions: aid.GenericSyncMap[PartyIntention]{},
 	}
 }
 
@@ -210,6 +213,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		Relationships: aid.GenericSyncMap[Relationship]{},
 		Parties: aid.GenericSyncMap[Party]{},
 		Invites: aid.GenericSyncMap[PartyInvite]{},
+		Intentions: aid.GenericSyncMap[PartyIntention]{},
 	}
 
 	for _, ban := range databasePerson.BanHistory {

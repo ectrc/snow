@@ -240,8 +240,11 @@ func PostPartyInvite(c *fiber.Ctx) error {
 	invite := p.NewPartyInvite(party, person, towards, body)
 	party.AddInvite(invite)
 	towards.Invites.Set(party.ID, invite)
-
 	socket.EmitPartyInvite(invite)
+
+	if c.QueryBool("sendPing", false) {
+		socket.EmitPartyPingFromInvite(invite)
+	}
 
 	return c.SendStatus(204)
 }
@@ -255,6 +258,16 @@ func PostPartyJoin(c *fiber.Ctx) error {
 	party, ok := p.Parties.Get(c.Params("partyId"))
 	if !ok {
 		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+
+	if party.Config["joinability"] != "OPEN" {
+		invite := party.GetInvite(person)
+		if invite == nil {
+			return c.Status(400).JSON(aid.ErrorBadRequest("No Invite Found"))
+		}
+
+		party.RemoveInvite(invite)
+		person.Invites.Delete(party.ID)
 	}
 
 	var body struct {
@@ -299,6 +312,101 @@ func PostPartyPromoteMember(c *fiber.Ctx) error {
 
 	party.PromoteMember(member)
 	socket.EmitPartyNewCaptain(party)
+
+	return c.SendStatus(204)
+}
+
+func PostPartyCreateIntention(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+
+	var body map[string]interface{}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
+	}
+
+	towards := p.Find(c.Params("friendId"))
+	if towards == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Person Not Found"))
+	}
+
+	var party *p.Party
+	towards.Parties.Range(func(key string, p *p.Party) bool {
+		party = p
+		return false
+	})
+
+	if party == nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+
+	intention := p.NewPartyIntention(party, person, towards, body)
+	party.AddIntention(intention)
+	person.Intentions.Set(towards.ID, intention)
+	socket.EmitPartyIntention(intention)
+
+	return c.Status(204).JSON(intention.GenerateFortnitePartyIntention())
+}
+
+func PostPartyJoinFromPing(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+	if person.Parties.Len() != 0 {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Already in a party"))
+	}
+
+	party, ok := p.Parties.Get(c.Params("partyId"))
+	if !ok {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Party Not Found"))
+	}
+
+	intention, ok := person.Intentions.Get(c.Params("friendId"))
+	if !ok {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Intention Not Found"))
+	}
+
+	if intention.Party.ID != party.ID {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Intention Not for this party"))
+	}
+
+	var body struct {
+		Meta map[string]interface{} `json:"meta"`
+		Connection aid.JSON `json:"connection"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Request"))
+	}
+
+	party.AddMember(person)
+	party.UpdateMemberMeta(person, body.Meta)
+	party.UpdateMemberConnection(person, body.Connection)
+	party.RemoveIntention(intention)
+	
+	member := party.GetMember(person)
+	socket.EmitPartyMemberJoined(party, member)
+	socket.EmitPartyMemberMetaUpdated(party, party.GetMember(person), body.Meta, []string{})
+	socket.EmitPartyMetaUpdated(party, party.Meta, []string{}, map[string]interface{}{})
+
+	return c.Status(200).JSON(aid.JSON{
+		"party_id": party.ID,
+		"status": "JOINED",
+	})
+}
+
+func PostPartyDeletePings(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+	
+	friend := p.Find(c.Params("friendId"))
+	if friend == nil {
+		c.Status(400).JSON(aid.ErrorBadRequest("Friend Not Found"))
+		return nil
+	}
+
+	person.Intentions.Delete(friend.ID)
+	friend.Parties.Range(func(key string, party *p.Party) bool {
+		intent := party.GetIntention(person)
+		party.RemoveIntention(intent)
+		return true
+	})
 
 	return c.SendStatus(204)
 }

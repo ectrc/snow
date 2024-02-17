@@ -164,3 +164,51 @@ func EmitPartyInvite(invite *person.PartyInvite) {
 		"type": "com.epicgames.social.party.notification.v0.INITIAL_INVITE",
 	})
 }
+
+func EmitPartyIntention(invite *person.PartyIntention) {
+	s, ok := JabberSockets.Get(invite.Towards.ID)
+	if !ok {
+		return
+	}
+
+	s.JabberSendMessageToPerson(aid.JSON{
+		"requester_id": invite.Requester.ID,
+		"requester_dn": invite.Requester.DisplayName,
+		"requester_pl": "win",
+		"requester_pl_dn": invite.Requester.DisplayName,
+		"requestee_id": invite.Towards.ID,
+		"meta": invite.Meta,
+		"sent_at": invite.CreatedAt.Format(time.RFC3339),
+		"friends_ids": []string{},
+		"members_count": len(invite.Party.Members),
+		"party_id": invite.Party.ID,
+		"ns": "Fortnite",
+		"sent": time.Now().Format(time.RFC3339),
+		"type": "com.epicgames.social.party.notification.v0.INITIAL_INTENTION",
+	})
+}
+
+func EmitPartyPingFromInvite(i *person.PartyInvite) {
+	s, ok := JabberSockets.Get(i.Towards.ID)
+	if !ok {
+		return
+	}
+
+	meta := i.Meta
+	meta["urn:epic:member:dn_s"] = i.Inviter.DisplayName
+	meta["urn:epic:invite:platformdata_s"] = "RequestToJoin"
+	meta["urn:epic:conn:platform_s"] = "WIN"
+	meta["urn:epic:conn:platform:dn_s"] = i.Inviter.DisplayName
+
+	s.JabberSendMessageToPerson(aid.JSON{
+		"expires_at": i.CreatedAt.Add(time.Minute * 60).Format(time.RFC3339),
+		"pinger_id": i.Inviter.ID,
+		"pinger_dn": i.Inviter.DisplayName,
+		"pinger_pl": "win",
+		"pinger_pl_dn": i.Inviter.DisplayName,
+		"meta": meta,
+		"ns": "Fortnite",
+		"sent": time.Now().Format(time.RFC3339),
+		"type": "com.epicgames.social.party.notification.v0.PING",
+	})
+}

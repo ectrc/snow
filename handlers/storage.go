@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
+	"time"
 
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/person"
@@ -26,12 +27,12 @@ func (c *cloudstorage) Add(name string, bytes []byte) error {
 		"hash256": hex.EncodeToString(sumation256[:]),
 		"length": len(bytes),
 		"contentType": "application/octet-stream",
-		"uploaded": aid.TimeStartOfDay(),
+		"uploaded": time.Now().Format(time.RFC3339),
 		"storageType": "S3",
 		"storageIds": aid.JSON{
 			"primary": "primary",
 		},
-		"doNotCache": false,
+		"doNotCache": true,
 	})
 
 	return nil

@@ -156,6 +156,8 @@ func main() {
 	party.Get("/user/:accountId/settings/privacy", handlers.GetPartyUserPrivacy)
 	party.Get("/user/:accountId/notifications/undelivered/count", handlers.GetPartyNotifications)
 	party.Get("/user/:accountId/pings/:friendId/parties", handlers.GetPartyPingsFromFriend)
+	party.Post("/user/:accountId/pings/:friendId/join", handlers.PostPartyJoinFromPing)
+	party.Delete("/user/:accountId/pings/:friendId", handlers.PostPartyDeletePings)
 	party.Get("/parties/:partyId", handlers.GetPartyForMember)
 	party.Post("/parties", handlers.PostPartyCreate)
 	party.Post("/parties/:partyId/invites/:accountId", handlers.PostPartyInvite)
@@ -164,12 +166,7 @@ func main() {
 	party.Patch("/parties/:partyId", handlers.PatchPartyUpdateState)
 	party.Patch("/parties/:partyId/members/:accountId/meta", handlers.PatchPartyUpdateMemberState)
 	party.Delete("/parties/:partyId/members/:accountId", handlers.DeletePartyMember)
-	// post /parties/:partyId/members/:accountId/conferences/connection (join a voip channel)
-	// get /user/:accountId/pings/:pinger/friendId/parties (get pings from a friend) 
-	// post /user/:accountId/pings/:pinger/join (join a party from a ping)
-	// post /user/:friendId/pings/:accountId (send a ping)
-	// delete /user/:accountId/pings/:pinger/friendId (delete pings)
-	// post /members/:friendId/intentions/:accountId (send an invite and add invite to party)
+	party.Post("/members/:friendId/intentions/:accountId", handlers.PostPartyCreateIntention)
 
 	snow := r.Group("/snow")
 	snow.Use(handlers.MiddlewareOnlyDebug)
@@ -195,13 +192,12 @@ func main() {
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
 
 	if aid.Config.Fortnite.Season <= 2 {
-		t := handlers.NewServer()
-		go t.Listen()
+		// t := handlers.NewServer()
+		// go t.Listen()
 	}
 
 	err := r.Listen("0.0.0.0" + aid.Config.API.Port)
 	if err != nil {
 		panic(fmt.Sprintf("(fiber) failed to listen: %v", err))
 	}
-
 }

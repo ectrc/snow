@@ -8,6 +8,40 @@ import (
 	"github.com/google/uuid"
 )
 
+type PartyIntention struct{
+	Party *Party `json:"-"`
+	Requester *Person `json:"-"`
+	Towards *Person `json:"-"`
+	Meta map[string]interface{}
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+func NewPartyIntention(party *Party, requester *Person, towards *Person, meta map[string]interface{}) *PartyIntention {
+	return &PartyIntention{
+		Party: party,
+		Requester: requester,
+		Towards: towards,
+		Meta: meta,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(time.Minute * 60),
+	}
+}
+
+func (pi *PartyIntention) GenerateFortnitePartyIntention() aid.JSON {
+	return aid.JSON{
+		"requester_id": pi.Requester.ID,
+		"requester_dn": pi.Requester.DisplayName,
+		"requester_pl": "",
+		"requester_pl_dn": "",
+		"requestee_id": pi.Towards.ID,
+		"meta": pi.Meta,
+		"expires_at": pi.ExpiresAt.Format(time.RFC3339),
+		"sent_at": pi.CreatedAt.Format(time.RFC3339),
+	}
+}
+
+
 type PartyInvite struct{
 	Party *Party `json:"-"`
 	Inviter *Person `json:"-"`
@@ -81,6 +115,7 @@ type Party struct{
 	Captain *PartyMember
 	Members map[string]*PartyMember
 	Invites []*PartyInvite
+	Intentions []*PartyIntention
 	Config map[string]interface{}
 	Meta map[string]interface{}
 	CreatedAt time.Time
@@ -95,15 +130,16 @@ var (
 func NewParty() *Party {
 	party := &Party{
 		ID: uuid.New().String(),
-		Members: make(map[string]*PartyMember),
+		Members: map[string]*PartyMember{},
 		Config: map[string]interface{}{
 			"type": "DEFAULT",
 			"sub_type": "default",
 			"intention_ttl:": 60,
 			"invite_ttl:": 60,
 		},
-		Meta: make(map[string]interface{}),
+		Meta: map[string]interface{}{},
 		Invites: []*PartyInvite{},
+		Intentions: []*PartyIntention{},
 		CreatedAt: time.Now(),
 	}
 
@@ -261,6 +297,19 @@ func (p *Party) AddInvite(invite *PartyInvite) {
 	p.Invites = append(p.Invites, invite)
 }
 
+func (p *Party) GetInvite(person *Person) *PartyInvite {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	for _, invite := range p.Invites {
+		if invite.Towards == person {
+			return invite
+		}
+	}
+
+	return nil
+}
+
 func (p *Party) RemoveInvite(invite *PartyInvite) {
 	p.m.Lock()
 	defer p.m.Unlock()
@@ -268,6 +317,38 @@ func (p *Party) RemoveInvite(invite *PartyInvite) {
 	for i, v := range p.Invites {
 		if v == invite {
 			p.Invites = append(p.Invites[:i], p.Invites[i+1:]...)
+			break
+		}
+	}
+}
+
+func (p *Party) AddIntention(intention *PartyIntention) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	p.Intentions = append(p.Intentions, intention)
+}
+
+func (p *Party) GetIntention(person *Person) *PartyIntention {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	for _, intention := range p.Intentions {
+		if intention.Towards == person {
+			return intention
+		}
+	}
+
+	return nil
+}
+
+func (p *Party) RemoveIntention(intention *PartyIntention) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	for i, v := range p.Intentions {
+		if v == intention {
+			p.Intentions = append(p.Intentions[:i], p.Intentions[i+1:]...)
 			break
 		}
 	}
@@ -296,6 +377,10 @@ func (p *Party) GenerateFortniteParty() aid.JSON {
 
 	for _, invite := range p.Invites {
 		party["invites"] = append(party["invites"].([]aid.JSON), invite.GenerateFortnitePartyInvite())
+	}
+
+	for _, intention := range p.Intentions {
+		party["intentions"] = append(party["intentions"].([]aid.JSON), intention.GenerateFortnitePartyIntention())
 	}
 
 	return party
