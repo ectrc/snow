@@ -241,7 +241,6 @@ func GetRandomItemWithDisplayAssetOfNotType(notType string) *FortniteItem {
 	return &flat[aid.RandomInt(0, len(flat))]
 }
 
-
 func GetRandomSet() *FortniteSet {
 	sets := []FortniteSet{}
 	for _, set := range External.FortniteSets {

@@ -84,9 +84,5 @@ func GetDiscordOAuthURL(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(aid.ErrorInternalServer)
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name: "access_token",
-		Value: access,
-	})
-	return c.Redirect("http://" + aid.Config.API.Host + aid.Config.API.FrontendPort + "/attempt")
+	return c.Redirect("snow://auth:" + access)
 }

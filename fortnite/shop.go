@@ -52,17 +52,23 @@ var (
 		},
 	}
 
-	dailyItemLookup = map[int]int{
-		2: 4,
-		4: 6,
-		13: 10,
+	dailyItemLookup = []struct {
+		Season int
+		Items int
+	}{
+		{2, 4},
+		{4, 6},
+		{13, 10},
 	}
 
-	weeklySetLookup = map[int]int{
-		2: 2,
-		4: 3,
-		11: 4,
-		13: 3,
+	weeklySetLookup = []struct {
+		Season int
+		Sets int
+	}{
+		{2, 2},
+		{4, 3},
+		{11, 4},
+		{13, 3},
 	}
 )
 
@@ -71,27 +77,31 @@ func price(rarity, type_ string) int {
 }
 
 func dailyItems(season int) int {
-	var items int
+	currentValue := 4
 
-	for s, i := range dailyItemLookup {
-		if season >= s {
-			items = i
+	for _, item := range dailyItemLookup {
+		if item.Season > season {
+			continue
 		}
+
+		currentValue = item.Items
 	}
 
-	return items
+	return currentValue
 }
 
 func weeklySets(season int) int {
-	var sets int
+	currentValue := 2
 
-	for s, i := range weeklySetLookup {
-		if season >= s {
-			sets = i
+	for _, set := range weeklySetLookup {
+		if set.Season > season {
+			continue
 		}
+
+		currentValue = set.Sets
 	}
 
-	return sets
+	return currentValue
 }
 
 type FortniteCatalogSectionOffer struct {
