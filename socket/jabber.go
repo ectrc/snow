@@ -3,7 +3,6 @@ package socket
 import (
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
@@ -26,11 +25,8 @@ var jabberHandlers = map[string]func(*Socket[JabberData], *etree.Document) error
 }
 
 func HandleNewJabberSocket(identifier string) {
-	aid.Print("new jabber handle: " + identifier)
-
 	socket, ok := JabberSockets.Get(identifier)
 	if !ok {
-		aid.Print("socket not found", identifier)
 		return
 	}
 	defer JabberSockets.Delete(socket.ID)
@@ -38,7 +34,6 @@ func HandleNewJabberSocket(identifier string) {
 	for {
 		_, message, failed := socket.Connection.ReadMessage()
 		if failed != nil {
-			aid.Print("jabber message failed", failed)
 			break
 		}
 		
@@ -47,14 +42,8 @@ func HandleNewJabberSocket(identifier string) {
 }
 
 func JabberSocketOnMessage(socket *Socket[JabberData], message []byte) {
-	if strings.Contains(string(message), `">`) {
-		message = []byte(strings.ReplaceAll(string(message), `">`, `"/>`))
-	}
-
-	aid.Print("jabber message", string(message))
 	parsed := etree.NewDocument()
 	if err := parsed.ReadFromString(string(message)); err != nil {
-		aid.Print("jabber message failed to parse", err)
 		return
 	}
 
@@ -63,11 +52,8 @@ func JabberSocketOnMessage(socket *Socket[JabberData], message []byte) {
 			socket.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, err.Error()))
 			return
 		}
-
 		return
 	}
-
-	aid.Print("jabber message handled")
 }
 
 func jabberStreamHandler(socket *Socket[JabberData], parsed *etree.Document) error {

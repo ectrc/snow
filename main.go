@@ -21,7 +21,6 @@ var configFile []byte
 
 func init() {
 	aid.LoadConfig(configFile)
-
 	var device storage.Storage
 	switch aid.Config.Database.Type {
 	case "postgres":
@@ -46,7 +45,7 @@ func init() {
 func init() {
 	discord.IntialiseClient()
 	fortnite.PreloadCosmetics()
-	fortnite.GenerateRandomStorefront()
+	fortnite.NewRandomFortniteCatalog()
 
 	for _, username := range aid.Config.Accounts.Gods {
 		found := person.FindByDisplay(username)
@@ -192,8 +191,8 @@ func main() {
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
 
 	if aid.Config.Fortnite.Season <= 2 {
-		// t := handlers.NewServer()
-		// go t.Listen()
+		t := handlers.NewServer()
+		go t.Listen()
 	}
 
 	err := r.Listen("0.0.0.0" + aid.Config.API.Port)

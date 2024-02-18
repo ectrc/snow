@@ -13,7 +13,6 @@
 
 ## What's up next?
 
-- Seeded randomization for the **Item Shop** instead of a random number generator. This will ensure that even if the backend is restarted, the same random items will be in the shop during that day.
 - Purchasing the **Battle Pass**. This will require the Battle Pass Storefront ID for every build. I am yet to think of a solution for this.
 - Interaction with a Game Server to handle **Event Tracking** for player statistics and challenges. This will be a very large task as a new specialised game server will need to be created.
 - After the game server addition, a **Matchmaking System** will be added to match players together for a game. It will use a bin packing algorithm to ensure that games are filled as much as possible.
@@ -27,10 +26,10 @@ And once battle royale is completed ...
 - **XMPP** For interacting with friends, parties and gifting.
 - **Friends** On every build, this will allow for adding, removing and blocking friends.
 - **Party System V2** This replaces the legacy xmpp driven party system.
+- **Automatic Item Shop** Will automatically update the item shop for the day, for all builds.
 - **Gifting** Of any item shop entry to any friend.
 - **Locker Loadouts** On seasons 12 onwards, this allows for the saving and loading of multiple locker presets.
 - **Item Refunding** Of previous shop purchases, will use a refund ticket if refunded in time.
-- **Universal Item Shop** Works on all builds and will be updated every 24 hours.
 - **Client Settings Storage** Uses amazon buckets to store client settings.
 - **Support A Creator 5%** Use any display name and each purchase will give them 5% of the vbucks spent.
 - **Discord Bot** Very useful to control players, their inventory and their settings

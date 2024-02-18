@@ -601,12 +601,12 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		return fmt.Errorf("invalid Body")
 	}
 
-	offer := fortnite.StaticCatalog.GetOfferById(body.OfferID)
+	offer := fortnite.GetOfferByOfferId(body.OfferID)
 	if offer == nil {
 		return fmt.Errorf("offer not found")
 	}
 
-	if offer.Price != body.ExpectedTotalPrice {
+	if offer.TotalPrice != body.ExpectedTotalPrice {
 		return fmt.Errorf("invalid price")
 	}
 
@@ -629,7 +629,7 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 	vbucks.Save()
 	profile0Vbucks.Save()
 
-	if offer.ProfileType != "athena" {
+	if offer.Meta.ProfileId != "athena" {
 		return fmt.Errorf("save the world not implemeted yet")
 	}
 
@@ -637,15 +637,16 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 	purchase := p.NewPurchase(body.OfferID, body.ExpectedTotalPrice)
 	for i := 0; i < body.PurchaseQuantity; i++ {
 		for _, grant := range offer.Grants {
-			if profile.Items.GetItemByTemplateID(grant) != nil {
-				item := profile.Items.GetItemByTemplateID(grant)
+			templateId := grant.Type.BackendValue + ":" + grant.ID
+			if profile.Items.GetItemByTemplateID(templateId) != nil {
+				item := profile.Items.GetItemByTemplateID(templateId)
 				item.Quantity++
 				go item.Save()
 
 				continue
 			}
 
-			item := p.NewItem(grant, 1)
+			item := p.NewItem(templateId, 1)
 			person.AthenaProfile.Items.AddItem(item)
 			purchase.AddLoot(item)
 
@@ -653,7 +654,7 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 				"itemType": item.TemplateID,
 				"itemGuid": item.ID,
 				"quantity": item.Quantity,
-				"itemProfile": offer.ProfileType,
+				"itemProfile": offer.Meta.ProfileId,
 			})
 		}
 	}
@@ -746,12 +747,12 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		return fmt.Errorf("invalid Body")
 	}
 
-	offer := fortnite.StaticCatalog.GetOfferById(body.OfferId)
+	offer := fortnite.GetOfferByOfferId(body.OfferId)
 	if offer == nil {
 		return fmt.Errorf("offer not found")
 	}
 
-	if offer.Price != body.ExpectedTotalPrice {
+	if offer.TotalPrice != body.ExpectedTotalPrice {
 		return fmt.Errorf("invalid price")
 	}
 
@@ -762,13 +763,13 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		}
 
 		for _, grant := range offer.Grants {
-			if receiverPerson.AthenaProfile.Items.GetItemByTemplateID(grant) != nil {
+			if receiverPerson.AthenaProfile.Items.GetItemByTemplateID(grant.Type.BackendValue + ":" + grant.ID) != nil {
 				return fmt.Errorf("one or more receivers has one of the items")
 			}
 		}
 	}
 
-	price := offer.Price * len(body.ReceiverAccountIds)
+	price := offer.TotalPrice * len(body.ReceiverAccountIds)
 
 	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
 	if vbucks == nil {
@@ -793,8 +794,8 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		receiverPerson := p.Find(receiverAccountId)
 		gift := p.NewGift(body.GiftWrapTemplateId, 1, person.ID, body.PersonalMessage)
 		for _, grant := range offer.Grants {
-			item := p.NewItem(grant, 1)
-			item.ProfileType = offer.ProfileType
+			item := p.NewItem(grant.Type.BackendValue + ":" + grant.ID, 1)
+			item.ProfileType = offer.Meta.ProfileId
 			gift.AddLoot(item)
 		}
 		

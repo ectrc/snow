@@ -1,7 +1,6 @@
 package aid
 
 import (
-	m "math/rand"
 	"os"
 	"os/signal"
 	"regexp"
@@ -13,20 +12,6 @@ func WaitForExit() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
-}
-
-func RandomString(n int) string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-	s := make([]rune, n)
-	for i := range s {
-		s[i] = letters[m.Intn(len(letters))]
-	}
-	return string(s)
-}
-
-func RandomInt(min, max int) int {
-	return m.Intn(max - min) + min
 }
 
 func FormatNumber(number int) string {
@@ -60,7 +45,6 @@ func ToHex(number int) string {
 }
 
 func Regex(str, regex string) *string {
-	// reg := regexp.MustCompile(`(?:CID_)(\d+|A_\d+)(?:_.+)`).FindStringSubmatch(strings.Join(split[:], "_"))
 	reg := regexp.MustCompile(regex).FindStringSubmatch(str)
 	if len(reg) > 1 {
 		return &reg[1]

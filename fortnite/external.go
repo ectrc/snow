@@ -157,7 +157,7 @@ func (c *ExternalDataClient) AddDisplayAssetToItem(displayAsset string) {
 	if found == nil && split[0] == "CID" {
 		r := aid.Regex(strings.Join(split[:], "_"), `(?:CID_)(\d+|A_\d+)(?:_.+)`)
 		if r != nil {
-			found = ItemByShallowID(*r)
+			found = GetItemByShallowID(*r)
 		}
 	}
 
@@ -193,7 +193,7 @@ func PreloadCosmetics() error {
 	return nil
 }
 
-func ItemByShallowID(shallowID string) *FortniteItem {
+func GetItemByShallowID(shallowID string) *FortniteItem {
 	for _, item := range External.TypedFortniteItems["AthenaCharacter"] {
 		if strings.Contains(item.ID, shallowID) {
 			return item
@@ -203,43 +203,54 @@ func ItemByShallowID(shallowID string) *FortniteItem {
 	return nil
 }
 
-func RandomItemByType(itemType string) *FortniteItem {
-	items := External.TypedFortniteItemsWithDisplayAssets[itemType]
+func GetRandomItemWithDisplayAsset() *FortniteItem {
+	items := External.FortniteItemsWithDisplayAssets
 	if len(items) == 0 {
 		return nil
 	}
 
-	return items[aid.RandomInt(0, len(items))]
+	flat := []FortniteItem{}
+	for _, item := range items {
+		flat = append(flat, *item)
+	}
+
+	slices.SortFunc[[]FortniteItem](flat, func(a, b FortniteItem) int {
+		return strings.Compare(a.ID, b.ID)
+	})
+
+	return &flat[aid.RandomInt(0, len(flat))]
 }
 
-func RandomItemByNotType(notItemType string) *FortniteItem {
-	allItems := []*FortniteItem{}
-
-	for key, items := range External.TypedFortniteItemsWithDisplayAssets {
-		if key == notItemType {
+func GetRandomItemWithDisplayAssetOfNotType(notType string) *FortniteItem {
+	flat := []FortniteItem{}
+	
+	for t, items := range External.TypedFortniteItemsWithDisplayAssets {
+		if t == notType {
 			continue
 		}
 
-		allItems = append(allItems, items...)
+		for _, item := range items {
+			flat = append(flat, *item)
+		}
 	}
 
-	return allItems[aid.RandomInt(0, len(allItems))]
+	slices.SortFunc[[]FortniteItem](flat, func(a, b FortniteItem) int {
+		return strings.Compare(a.ID, b.ID)
+	})
+
+	return &flat[aid.RandomInt(0, len(flat))]
 }
 
-func RandomItemWithFeaturedImage() *FortniteItem {
-	items := External.FortniteItemsWithFeaturedImage
-	if len(items) == 0 {
-		return nil
-	}
 
-	return items[aid.RandomInt(0, len(items))]
-}
-
-func RandomSet() *FortniteSet {
-	sets := []*FortniteSet{}
+func GetRandomSet() *FortniteSet {
+	sets := []FortniteSet{}
 	for _, set := range External.FortniteSets {
-		sets = append(sets, set)
+		sets = append(sets, *set)
 	}
 
-	return sets[aid.RandomInt(0, len(sets))]
+	slices.SortFunc[[]FortniteSet](sets, func(a, b FortniteSet) int {
+		return strings.Compare(a.BackendName, b.BackendName)
+	})
+
+	return &sets[aid.RandomInt(0, len(sets))]
 }

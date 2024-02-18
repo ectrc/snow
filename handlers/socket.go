@@ -21,7 +21,7 @@ func MiddlewareWebsocket(c *fiber.Ctx) error {
 		protocol = "matchmaking"
 	}
 
-	c.Locals("identifier", "ws-"+aid.RandomString(8))
+	c.Locals("identifier", "ws-"+aid.RandomString(18))
 	c.Locals("protocol", protocol)
 
 	return c.Next()

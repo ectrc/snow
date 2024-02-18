@@ -105,7 +105,7 @@ func (t *tcpServer) handle(conn net.Conn) {
 		c: &conn,
 		buffer: make([]byte, 1024),
 	}
-	tcpClient.jabber = socket.NewJabberSocket(tcpClient, "tcp-"+aid.RandomString(8), socket.JabberData{})
+	tcpClient.jabber = socket.NewJabberSocket(tcpClient, "tcp-"+aid.RandomString(18), socket.JabberData{})
 	socket.JabberSockets.Set(tcpClient.jabber.ID, tcpClient.jabber)
 
 	tcpClient.loop()

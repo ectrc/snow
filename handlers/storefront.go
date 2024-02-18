@@ -5,15 +5,13 @@ import (
 
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
-	"github.com/ectrc/snow/person"
 	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetStorefrontCatalog(c *fiber.Ctx) error {
-	person := c.Locals("person").(*person.Person)
-	
-	return c.Status(fiber.StatusOK).JSON(fortnite.StaticCatalog.GenerateFortniteCatalog(person))
+	shop := fortnite.NewRandomFortniteCatalog()
+	return c.Status(200).JSON(shop.GenerateFortniteCatalog())
 }
 
 func GetStorefrontKeychain(c *fiber.Ctx) error {
@@ -23,5 +21,5 @@ func GetStorefrontKeychain(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(aid.JSON{"error":err.Error()})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(keychain)
+	return c.Status(200).JSON(keychain)
 }

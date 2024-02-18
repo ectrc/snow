@@ -72,5 +72,6 @@ func GetSnowParties(c *fiber.Ctx) error {
 }
 
 func GetSnowShop(c *fiber.Ctx) error {
-	return c.JSON(fortnite.StaticCatalog)
+	shop := fortnite.NewRandomFortniteCatalog()
+	return c.JSON(shop.GenerateFortniteCatalog())
 }

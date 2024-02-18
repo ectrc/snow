@@ -17,6 +17,10 @@ func TimeEndOfWeekString() string {
 	return time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 23, 59, 59, 999999999, time.Now().Location()).AddDate(0, 0, 7).Format("2006-01-02T15:04:05.999Z")
 }
 
+func CurrentDayUnix() int64 {
+	return time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location()).Unix()
+}
+
 // everything below is taken from the golang standard library I just added the extra units to the map
 
 var unitMap = map[string]uint64{
