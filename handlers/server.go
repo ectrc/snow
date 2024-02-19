@@ -29,7 +29,7 @@ func PostServerProfileAction(c *fiber.Ctx) error {
 	multiUpdate := []aid.JSON{}
 	notifications := []aid.JSON{}
 
-	if action, ok := serverActions[c.Query("action")]; ok {
+	if action, ok := serverActions[c.Params("action")]; ok {
 		if err := action(c, person, profile, &profileChanges, &multiUpdate, &notifications); err != nil {
 			return c.Status(500).JSON(aid.ErrorBadRequest(err.Error()))
 		}
