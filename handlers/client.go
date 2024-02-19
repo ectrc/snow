@@ -279,7 +279,7 @@ func clientSetItemFavoriteStatusBatchAction(c *fiber.Ctx, person *p.Person, prof
 	return nil
 }
 
-func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error { 
+func clientSetCosmeticLockerSlotAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
 		Category string `json:"category" binding:"required"` // item type e.g. Character
 		ItemToSlot string `json:"itemToSlot" binding:"required"` // template id
@@ -800,15 +800,7 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		}
 		
 		receiverPerson.CommonCoreProfile.Gifts.AddGift(gift).Save()
-
-		socket, ok := socket.JabberSockets.Get(receiverPerson.ID)
-		if ok {
-			socket.JabberSendMessageToPerson(aid.JSON{
-				"payload": aid.JSON{},
-				"type": "com.epicgames.gift.received",
-				"timestamp": time.Now().Format("2006-01-02T15:04:05.999Z"),
-			})
-		}
+		socket.EmitGiftReceived(receiverPerson)
 	}
 
 	return nil
@@ -823,17 +815,18 @@ func clientRemoveGiftBoxAction(c *fiber.Ctx, person *p.Person, profile *p.Profil
 		return fmt.Errorf("invalid Body")
 	}
 
-	gift := profile.Gifts.GetGift(body.GiftBoxItemId)
+	gift := person.CommonCoreProfile.Gifts.GetGift(body.GiftBoxItemId)
 	if gift == nil {
 		return fmt.Errorf("gift not found")
 	}
+
+	aid.Print(gift.TemplateID)
 
 	for _, item := range gift.Loot {
 		person.GetProfileFromType(item.ProfileType).Items.AddItem(item).Save()
 	}
 
-	profile.Gifts.DeleteGift(gift.ID)
-
+	person.CommonCoreProfile.Gifts.DeleteGift(gift.ID)
 	return nil
 }
 

@@ -8,13 +8,14 @@ import (
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/socket"
 	"github.com/ectrc/snow/storage"
 )
 
 func informationHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
 		return
 	}
 
@@ -46,7 +47,7 @@ func informationHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 func whoHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
 		return
 	}
 
@@ -111,7 +112,7 @@ func whoHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 func bansHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
 		return
 	}
 
@@ -216,7 +217,7 @@ func listBansHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looke
 func itemsHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
 		return
 	}
 
@@ -385,7 +386,7 @@ func fillItemsHandler(s *discordgo.Session, i *discordgo.InteractionCreate, look
 func permissionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	looker := person.FindByDiscord(i.Member.User.ID)
 	if looker == nil {
-		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
 		return
 	}
 
@@ -455,4 +456,64 @@ func permissionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+}
+
+func rewardHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	looker := person.FindByDiscord(i.Member.User.ID)
+	if looker == nil {
+		s.InteractionRespond(i.Interaction, &ErrorNoAccount)
+		return
+	}
+
+	if !looker.HasPermission(person.PermissionItemControl) {
+		s.InteractionRespond(i.Interaction, &ErrorNoPermission)
+		return
+	}
+
+	if len(i.ApplicationCommandData().Options) <= 0 {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	packType := i.ApplicationCommandData().Options[0].StringValue()
+	if packType == "" {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidArguments)
+		return
+	}
+
+	player := getPersonFromOptions(i.ApplicationCommandData().Options, s)
+	if player == nil {
+		s.InteractionRespond(i.Interaction, &ErrorInvalidDisplayOrDiscord)
+		return
+	}
+
+	funcLookup := map[string]func(*person.Person){
+		"twitch_prime_1": fortnite.GrantRewardTwitchPrime1,
+		"twitch_prime_2": fortnite.GrantRewardTwitchPrime2,
+		"samsung_galaxy": fortnite.GrantRewardSamsungGalaxy,
+		"samsung_ikonik": fortnite.GrantRewardSamsungIkonic,
+		"honor_guard": fortnite.GrantRewardHonorGuard,
+		"mfa": fortnite.GrantRewardTwoFactor,
+	}
+
+	nameLookup := map[string]string{
+		"twitch_prime_1": "Twitch Prime Drop 1",
+		"twitch_prime_2": "Twitch Prime Drop 2",
+		"samsung_galaxy": "Samsung Galaxy",
+		"samsung_ikonik": "Samsung IKONIK",
+		"honor_guard": "Honor Guard",
+		"mfa": "Multi Factor Authentication",
+	}
+
+	if handler, ok := funcLookup[packType]; ok {
+		handler(player)
+		socket.EmitGiftReceived(player)
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: player.DisplayName + " has been given the reward `" + nameLookup[packType] + "`.",
+			},
+		})
+		return
+	}
 }

@@ -103,6 +103,11 @@ bShouldCheckIfPlatformAllowed=false`)
 func GetDefaultRuntime() []byte {
 	return []byte(`
 [/Script/FortniteGame.FortRuntimeOptions]
+!DisabledFrontendNavigationTabs=ClearArray
+;+DisabledFrontendNavigationTabs=(TabName="AthenaChallenges",TabState=EFortRuntimeOptionTabState::Hidden)
+;+DisabledFrontendNavigationTabs=(TabName="Showdown",TabState=EFortRuntimeOptionTabState::Hidden)
+;+DisabledFrontendNavigationTabs=(TabName="AthenaStore",TabState=EFortRuntimeOptionTabState::Hidden)
+
 bEnableGlobalChat=true
 bDisableGifting=false
 bDisableGiftingPC=false

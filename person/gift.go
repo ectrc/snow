@@ -120,6 +120,9 @@ func (g *Gift) Save() {
 	}
 
 	storage.Repo.SaveGift(g.ToDatabase(g.ProfileID))
+	for _, item := range g.Loot {
+		item.SaveLoot(g.ID)
+	}
 }
 
 func (g *Gift) Snapshot() GiftSnapshot {

@@ -4,7 +4,6 @@ import (
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
-	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,28 +19,6 @@ func GetSnowPreloadedCosmetics(c *fiber.Ctx) error {
 	return c.JSON(fortnite.External)
 }
 
-func GetPlayerLocker(c *fiber.Ctx) error {
-	person := c.Locals("person").(*p.Person)
-
-	items := make([]p.Item, 0)
-	person.AthenaProfile.Items.RangeItems(func(key string, value *p.Item) bool {
-		items = append(items, *value)
-		return true
-	})
-
-	return c.JSON(items)
-}
-
-func GetPlayer(c *fiber.Ctx) error {
-	person := c.Locals("person").(*p.Person)
-
-	return c.JSON(aid.JSON{
-		"id": person.ID,
-		"displayName": person.DisplayName,
-		"discord": person.Discord,
-	})
-}
-
 func GetSnowCachedPlayers(c *fiber.Ctx) error {
 	persons := p.AllFromCache()
 	players := make([]p.PersonSnapshot, len(persons))
@@ -50,14 +27,7 @@ func GetSnowCachedPlayers(c *fiber.Ctx) error {
 		players[i] = *person.Snapshot()
 	}
 
-	return c.JSON(players)
-}
-
-func GetSnowConfig(c *fiber.Ctx) error {
-	return c.JSON(aid.JSON{
-		"basic": aid.Config,		
-		"amazon": storage.Repo.Amazon,
-	})
+	return c.Status(200).JSON(players)
 }
 
 func GetSnowParties(c *fiber.Ctx) error {
@@ -74,4 +44,15 @@ func GetSnowParties(c *fiber.Ctx) error {
 func GetSnowShop(c *fiber.Ctx) error {
 	shop := fortnite.NewRandomFortniteCatalog()
 	return c.JSON(shop.GenerateFortniteCatalog())
+}
+
+// 
+
+func GetPlayer(c *fiber.Ctx) error {
+	person := c.Locals("person").(*p.Person)
+	return c.Status(200).JSON(person.Snapshot())
+}
+
+func GetPlayerOkay(c *fiber.Ctx) error {
+	return c.Status(200).SendString("okay")
 }

@@ -24,7 +24,7 @@ type ExternalDataClient struct {
 	FortniteItemsWithFeaturedImage []*FortniteItem `json:"-"`
 	TypedFortniteItems map[string][]*FortniteItem `json:"-"`
 	TypedFortniteItemsWithDisplayAssets map[string][]*FortniteItem `json:"-"`
-	SnowVariantTokens map[string]SnowCosmeticVariantToken `json:"-"`
+	SnowVariantTokens map[string]*FortniteVariantToken `json:"variants"`
 }
 
 func NewExternalDataClient() *ExternalDataClient {
@@ -36,7 +36,7 @@ func NewExternalDataClient() *ExternalDataClient {
 		FortniteItemsWithFeaturedImage: []*FortniteItem{},
 		TypedFortniteItems: make(map[string][]*FortniteItem),
 		TypedFortniteItemsWithDisplayAssets: make(map[string][]*FortniteItem),
-		SnowVariantTokens: make(map[string]SnowCosmeticVariantToken),
+		SnowVariantTokens: make(map[string]*FortniteVariantToken),
 	}
 }
 
@@ -70,7 +70,7 @@ func (c *ExternalDataClient) LoadExternalData() {
 		c.AddBackpackToItem(item)
 	}
 
-	displayAssets := storage.HttpAsset[[]string]("QKnwROGzQjYm1W9xu9uL3VrbSA0tnVj6NJJtEChUdAb3DF8uN.json")
+	displayAssets := storage.HttpAsset[[]string]("assets.snow.json")
 	if displayAssets == nil {
 		return
 	}
@@ -79,11 +79,26 @@ func (c *ExternalDataClient) LoadExternalData() {
 		c.AddDisplayAssetToItem(displayAsset)
 	}
 
-	variantTokens := storage.HttpAsset[map[string]SnowCosmeticVariantToken]("QF3nHCFt1vhELoU4q1VKTmpxnk20c2iAiBEBzlbzQAY.json")
+	variantTokens := storage.HttpAsset[map[string]SnowCosmeticVariantToken]("variants.snow.json")
 	if variantTokens == nil {
 		return
 	}
-	c.SnowVariantTokens = *variantTokens
+	
+	for k, v := range *variantTokens {
+		item := c.FortniteItems[v.Item]
+		if item == nil {
+			continue
+		}
+
+		c.SnowVariantTokens[k] = &FortniteVariantToken{
+			Grants: v.Grants,
+			Item: item,
+			Name: v.Name,
+			Gift: v.Gift,
+			Equip: v.Equip,
+			Unseen: v.Unseen,
+		}
+	}
 
 	addNumericStylesToSets := []string{"Soccer", "Football", "ScaryBall"} 
 	for _, setValue := range addNumericStylesToSets {

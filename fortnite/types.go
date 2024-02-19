@@ -80,8 +80,21 @@ type SnowCosmeticVariantToken struct {
 		Channel string `json:"channel"`
 		Value   string `json:"value"`
 	} `json:"grants"`
+	Item   string `json:"item"`
 	Name   string `json:"name"`
 	Gift   bool   `json:"gift"`
 	Equip  bool   `json:"equip"`
 	Unseen bool   `json:"unseen"`
+}
+
+type FortniteVariantToken struct {
+	Grants []struct {
+		Channel string `json:"channel"`
+		Value   string `json:"value"`
+	} `json:"grants"`
+	Item   *FortniteItem `json:"item"`
+	Name   string        `json:"name"`
+	Gift   bool          `json:"gift"`
+	Equip  bool          `json:"equip"`
+	Unseen bool          `json:"unseen"`
 }

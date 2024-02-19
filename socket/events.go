@@ -7,6 +7,19 @@ import (
 	"github.com/ectrc/snow/person"
 )
 
+func EmitGiftReceived(person *person.Person) {
+	s, ok := JabberSockets.Get(person.ID)
+	if !ok {
+		return
+	}
+
+	s.JabberSendMessageToPerson(aid.JSON{
+		"payload": aid.JSON{},
+		"type": "com.epicgames.gift.received",
+		"timestamp": time.Now().Format("2006-01-02T15:04:05.999Z"),
+	})
+}
+
 func EmitPartyMemberJoined(party *person.Party, joiningMember *person.PartyMember) {
 	for _, partyMember := range party.Members {
 		s, ok := JabberSockets.Get(partyMember.Person.ID)

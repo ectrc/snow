@@ -288,6 +288,51 @@ func addCommands() {
 		Handler: permissionHandler,
 		AdminOnly: true,
 	})
+
+	rewardOptions := append([]*discordgo.ApplicationCommandOption{
+		{
+			Type: discordgo.ApplicationCommandOptionString,
+			Name: "reward",
+			Description: "The reward bundle to give to the player.",
+			Required: true,
+			Choices: []*discordgo.ApplicationCommandOptionChoice{
+				{
+					Name: "Twitch Prime Drop 1",
+					Value: "twitch_prime_1",
+				},
+				{
+					Name: "Twitch Prime Drop 2",
+					Value: "twitch_prime_2",
+				},
+				{
+					Name: "Samsung Galaxy",
+					Value: "samsung_galaxy",
+				},
+				{
+					Name: "Samsung IKONIK",
+					Value: "samsung_ikonik",
+				},
+				{
+					Name: "Honor Guard",
+					Value: "honor_guard",
+				},
+				{
+					Name: "Multi Factor Authentication",
+					Value: "mfa",
+				},
+			},
+		},
+	}, personOptions...)
+
+	addCommand(&DiscordCommand{
+		Command: &discordgo.ApplicationCommand{
+			Name: "reward",
+			Description: "Gift a player a item reward bundle!",
+			Options: rewardOptions,
+		},
+		Handler: rewardHandler,
+		AdminOnly: true,
+	})
 }
 
 func getPersonFromOptions(opts []*discordgo.ApplicationCommandInteractionDataOption, s *discordgo.Session) *person.Person {

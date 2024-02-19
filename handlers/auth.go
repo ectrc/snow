@@ -251,12 +251,12 @@ func MiddlewareFortnite(c *fiber.Ctx) error {
 func MiddlewareWeb(c *fiber.Ctx) error {
 	snowId, err := aid.GetSnowFromToken(c.Get("Authorization"))
 	if err != nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.JSON{"error":"Invalid Access Token"})
 	}
 
 	person := p.Find(snowId)
 	if person == nil {
-		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
+		return c.Status(fiber.StatusForbidden).JSON(aid.JSON{"error":"Invalid Access Token"})
 	}
 
 	c.Locals("person", person)

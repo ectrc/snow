@@ -65,3 +65,12 @@ func (s *GenericSyncMap[T]) Len() int {
 	})
 	return count
 }
+
+func (s *GenericSyncMap[T]) Snapshot() *map[string]*T {
+	m := make(map[string]*T)
+	s.Range(func(key string, value *T) bool {
+		m[key] = value
+		return true
+	})
+	return &m
+}

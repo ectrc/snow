@@ -227,6 +227,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 	if save {
 		cache.SavePerson(person)
 	}
+
 	return person
 }
 
@@ -448,6 +449,7 @@ func (p *Person) Snapshot() *PersonSnapshot {
 	snapshot := &PersonSnapshot{
 		ID: p.ID,
 		DisplayName: p.DisplayName,
+		RefundTickets: p.RefundTickets,
 		Permissions: int64(p.Permissions),
 		AthenaProfile: *p.AthenaProfile.Snapshot(),
 		CommonCoreProfile: *p.CommonCoreProfile.Snapshot(),
@@ -457,6 +459,10 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
 		BanHistory: []storage.DB_BanStatus{},
 		Discord: *p.Discord,
+		Relationships: *p.Relationships.Snapshot(),
+		Parties: *p.Parties.Snapshot(),
+		Invites: *p.Invites.Snapshot(),
+		Intentions: *p.Intentions.Snapshot(),
 	}
 
 	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {

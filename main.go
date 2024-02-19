@@ -50,7 +50,7 @@ func init() {
 	for _, username := range aid.Config.Accounts.Gods {
 		found := person.FindByDisplay(username)
 		if found == nil {
-			found = fortnite.NewFortnitePersonWithId(username, username, true)
+			found = fortnite.NewFortnitePersonWithId(username, username, aid.Config.Fortnite.Everything)
 		}
 
 		found.AddPermission(person.PermissionAllWithRoles)
@@ -63,7 +63,7 @@ func init() {
 			continue
 		}
 
-		found.AddPermission(person.PermissionOwner)
+		found.AddPermission(person.PermissionAllWithRoles)
 		aid.Print("(snow) owner account " + username + " loaded")
 	}
 }
@@ -168,21 +168,21 @@ func main() {
 	party.Post("/members/:friendId/intentions/:accountId", handlers.PostPartyCreateIntention)
 
 	snow := r.Group("/snow")
-	snow.Use(handlers.MiddlewareOnlyDebug)
-	snow.Get("/cache", handlers.GetSnowCachedPlayers)
-	snow.Get("/config", handlers.GetSnowConfig)
-	snow.Get("/sockets", handlers.GetSnowConnectedSockets)
-	snow.Get("/cosmetics", handlers.GetSnowPreloadedCosmetics)
-	snow.Get("/parties", handlers.GetSnowParties)
-	snow.Get("/shop", handlers.GetSnowShop)
-
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)
 
 	player := snow.Group("/player")
 	player.Use(handlers.MiddlewareWeb)
 	player.Get("/", handlers.GetPlayer)
-	player.Get("/locker", handlers.GetPlayerLocker)
+	player.Get("/okay", handlers.GetPlayerOkay)
+
+	debug := snow.Group("/")
+	debug.Use(handlers.MiddlewareOnlyDebug)
+	debug.Get("/cache", handlers.GetSnowCachedPlayers)
+	debug.Get("/sockets", handlers.GetSnowConnectedSockets)
+	debug.Get("/cosmetics", handlers.GetSnowPreloadedCosmetics)
+	debug.Get("/parties", handlers.GetSnowParties)
+	debug.Get("/shop", handlers.GetSnowShop)
 
 	r.Hooks().OnListen(func(ld fiber.ListenData) error {
 		aid.Print("(fiber) listening on " + aid.Config.API.Host + ":" + ld.Port)
