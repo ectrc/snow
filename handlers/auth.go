@@ -244,6 +244,10 @@ func MiddlewareFortnite(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Invalid Access Token"))
 	}
 
+	if person.GetLatestActiveBan() != nil {
+		return c.Status(fiber.StatusForbidden).JSON(aid.ErrorBadRequest("Account is banned"))
+	}
+
 	c.Locals("person", person)
 	return c.Next()
 }

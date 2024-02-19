@@ -600,8 +600,9 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
-
-	offer := fortnite.GetOfferByOfferId(body.OfferID)
+	
+	shop := fortnite.NewRandomFortniteCatalog()
+	offer := shop.FindCosmeticOfferById(body.OfferID)
 	if offer == nil {
 		return fmt.Errorf("offer not found")
 	}
@@ -701,12 +702,10 @@ func clientRefundMtxPurchaseAction(c *fiber.Ctx, person *p.Person, profile *p.Pr
 		return fmt.Errorf("not enough refund tickets")
 	}
 
-	if time.Now().After(purchase.FreeRefundExpiry) {
-		person.RefundTickets--
-	}
-
+	person.RefundTickets--
 	for _, item := range purchase.Loot {
-		profile.Items.DeleteItem(item.ID)
+		person.GetProfileFromType(item.ProfileType).Items.DeleteItem(item.ID)
+		person.GetProfileFromType(item.ProfileType).CreateItemRemovedChange(item.ID)
 	}
 	
 	purchase.RefundedAt = time.Now()
@@ -747,7 +746,8 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		return fmt.Errorf("invalid Body")
 	}
 
-	offer := fortnite.GetOfferByOfferId(body.OfferId)
+	shop := fortnite.NewRandomFortniteCatalog()
+	offer := shop.FindCosmeticOfferById(body.OfferId)
 	if offer == nil {
 		return fmt.Errorf("offer not found")
 	}
