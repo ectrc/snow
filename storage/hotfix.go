@@ -62,8 +62,7 @@ ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?"`
 	return []byte(str)
 }
 
-func GetDefaultGame() []byte {
-	return []byte(`
+func GetDefaultGame() []byte {return []byte(`
 [/Script/FortniteGame.FortGlobals]
 bAllowLogout=false
 
@@ -75,11 +74,18 @@ bIsAthenaGlobalChatEnabled=false
 
 [/Script/FortniteGame.FortOnlineAccount]
 bEnableEulaCheck=false
-bShouldCheckIfPlatformAllowed=false`)
-}
+bShouldCheckIfPlatformAllowed=false
 
-func GetDefaultRuntime() []byte {
-	return []byte(`
+[EpicPurchaseFlow]
+bUsePaymentWeb=false
+CI="http://localhost:5173/purchase"
+GameDev="http://localhost:5173/purchase"
+Stage="http://127.0.0.1:5173/purchase"
+Prod="http://127.0.0.1:5173/purchase"
+UEPlatform="FNGame"
+`)}
+
+func GetDefaultRuntime() []byte {return []byte(`
 [/Script/FortniteGame.FortRuntimeOptions]
 !DisabledFrontendNavigationTabs=ClearArray
 ;+DisabledFrontendNavigationTabs=(TabName="AthenaChallenges",TabState=EFortRuntimeOptionTabState::Hidden)
@@ -92,5 +98,4 @@ bDisableGiftingPC=false
 bDisableGiftingPS4=false
 bDisableGiftingXB=false
 !ExperimentalCohortPercent=ClearArray
-+ExperimentalCohortPercent=(CohortPercent=100,ExperimentNum=20)`)
-}
++ExperimentalCohortPercent=(CohortPercent=100,ExperimentNum=20)`)}

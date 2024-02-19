@@ -45,5 +45,14 @@ func GetStorefrontCatalogBulkOffers(c *fiber.Ctx) error {
 		response[id] = offer.GenerateFortniteCatalogBulkOfferResponse()
 	}
 
+	for _, id := range appStoreIds {
+		offer := shop.FindStarterPackById(strings.ReplaceAll(id, "app-", ""))
+		if offer == nil {
+			continue
+		}
+
+		response[id] = offer.GenerateFortniteCatalogBulkOfferResponse()
+	}
+
 	return c.Status(200).JSON(response)
 }

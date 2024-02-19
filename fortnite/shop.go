@@ -4,12 +4,227 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/ectrc/snow/aid"
 	"github.com/google/uuid"
 )
 
+type FortniteCatalogStarterPackGrant struct {
+	TemplateID string
+	Quantity int
+}
+
+func NewFortniteCatalogStarterPackGrant(templateID string, quantity int) *FortniteCatalogStarterPackGrant {
+	return &FortniteCatalogStarterPackGrant{
+		TemplateID: templateID,
+		Quantity: quantity,
+	}
+}
+
+type FortniteCatalogStarterPack struct {
+	ID string
+	DevName string
+	Grants []*FortniteCatalogStarterPackGrant
+	Meta struct {
+		IconSize string
+		BannerOverride string
+		DisplayAssetPath string
+		NewDisplayAssetPath string
+		OriginalOffer int
+		ExtraBonus int
+	}
+	Price struct {
+		PriceType string
+		PriceToPay int
+	}
+	Title string
+	Description string
+	LongDescription string
+	Priority int
+	SeasonsAllowed []int
+}
+
+func NewFortniteCatalogStarterPack(price int) *FortniteCatalogStarterPack {
+	return &FortniteCatalogStarterPack{
+		ID: "v2:/" + aid.RandomString(32),
+		Price: struct {
+			PriceType string
+			PriceToPay int	
+		}{"RealMoney", price},
+	}
+}
+
+func (f *FortniteCatalogStarterPack) GenerateFortniteCatalogStarterPackResponse() aid.JSON {
+	grantsResponse := []aid.JSON{}
+	for _, grant := range f.Grants {
+		grantsResponse = append(grantsResponse, aid.JSON{
+			"templateId": grant.TemplateID,
+			"quantity": grant.Quantity,
+		})
+	}
+
+	prices := []aid.JSON{}
+	switch f.Price.PriceType {
+	case "RealMoney":
+		prices = append(prices, aid.JSON{
+			"currencyType": "RealMoney",
+			"currencySubType": "",
+			"regularPrice": 0,
+			"dynamicRegularPrice": -1,
+			"finalPrice": 0,
+			"saleExpiration": "9999-12-31T23:59:59.999Z",
+			"basePrice": 0,
+		})
+	case "MtxCurrency":
+		prices = append(prices, aid.JSON{
+			"currencyType": "MtxCurrency",
+			"currencySubType": "",
+			"regularPrice": f.Price.PriceToPay,
+			"dynamicRegularPrice": f.Price.PriceToPay,
+			"finalPrice": f.Price.PriceToPay,
+			"saleExpiration": "9999-12-31T23:59:59.999Z",
+			"basePrice": f.Price.PriceToPay,
+		})
+	}
+
+	return aid.JSON{
+		"offerId": f.ID,
+		"devName": f.DevName,
+		"offerType": "StaticPrice",
+		"prices": prices,
+		"categories": []string{},
+		"dailyLimit": -1,
+		"weeklyLimit": -1,
+		"monthlyLimit": -1,
+		"refundable": false,
+		"appStoreId": []string{
+			"",
+			"app-" + f.ID,
+		},
+		"requirements": []aid.JSON{},
+		"metaInfo": []aid.JSON{
+			{
+				"key": "SectionId",
+				"value": "LimitedTime",
+			},
+			{
+				"key": "IconSize",
+				"value": f.Meta.IconSize,
+			},
+			{
+				"key": "BannerOverride",
+				"value": f.Meta.BannerOverride,
+			},
+			{
+				"key": "DisplayAssetPath",
+				"value": f.Meta.DisplayAssetPath,
+			},
+			{
+				"key": "NewDisplayAssetPath",
+				"value": f.Meta.NewDisplayAssetPath,
+			},
+			{
+				"key": "MtxQuantity",
+				"value": f.Meta.OriginalOffer + f.Meta.ExtraBonus,
+			},
+			{
+				"key": "MtxBonus",
+				"value": f.Meta.ExtraBonus,
+			},
+		},
+		"meta": aid.JSON{
+			"IconSize": f.Meta.IconSize,
+			"BannerOverride": f.Meta.BannerOverride,
+			"SectionID": "LimitedTime",
+			"DisplayAssetPath": f.Meta.DisplayAssetPath,
+			"NewDisplayAssetPath": f.Meta.NewDisplayAssetPath,
+			"MtxQuantity": f.Meta.OriginalOffer + f.Meta.ExtraBonus,
+			"MtxBonus": f.Meta.ExtraBonus,
+		},
+		"catalogGroup": "",
+		"catalogGroupPriority": 0,
+		"sortPriority": f.Priority,
+		"bannerOverride": f.Meta.BannerOverride,
+		"title": f.Title,
+		"shortDescription": "",
+		"description": f.Description,
+		"displayAssetPath": f.Meta.DisplayAssetPath,
+		"itemGrants": []aid.JSON{},
+	}
+}
+
+func (f *FortniteCatalogStarterPack) GenerateFortniteCatalogBulkOfferResponse() aid.JSON {
+	return aid.JSON{
+		"id": "app-" + f.ID,
+		"title": f.Title,
+		"description": f.Description,
+		"longDescription": f.LongDescription,
+		"technicalDetails": "",
+		"keyImages": []aid.JSON{},
+		"categories": []aid.JSON{},
+		"namespace": "fn",
+		"status": "ACTIVE",
+		"creationDate": time.Now().Format(time.RFC3339),
+		"lastModifiedDate": time.Now().Format(time.RFC3339),
+		"customAttributes": aid.JSON{},
+		"internalName": f.Title,
+		"recurrence": "ONCE",
+		"items": []aid.JSON{},
+		"price": DataClient.GetLocalizedPrice("GBP", f.Price.PriceToPay),
+		"currentPrice": DataClient.GetLocalizedPrice("GBP", f.Price.PriceToPay),
+		"currencyCode": "GBP",
+		"basePrice": DataClient.GetLocalizedPrice("USD", f.Price.PriceToPay),
+		"basePriceCurrencyCode": "USD",
+		"recurringPrice": 0,
+		"freeDays": 0,
+		"maxBillingCycles": 0,
+		"seller": aid.JSON{},
+		"viewableDate": time.Now().Format(time.RFC3339),
+		"effectiveDate": time.Now().Format(time.RFC3339),
+		"expiryDate": "9999-12-31T23:59:59.999Z",
+		"vatIncluded": true,
+		"isCodeRedemptionOnly": false,
+		"isFeatured": false,
+		"taxSkuId": "FN_Currency",
+		"merchantGroup": "FN_MKT",
+		"priceTier": fmt.Sprintf("%d",  DataClient.GetLocalizedPrice("USD", f.Price.PriceToPay)),
+		"urlSlug": "fortnite--" + f.Title,
+		"roleNamesToGrant": []aid.JSON{},
+		"tags": []aid.JSON{},
+		"purchaseLimit": -1,
+		"ignoreOrder": false,
+		"fulfillToGroup": false,
+		"fraudItemType": "V-Bucks",
+		"shareRevenue": false,
+		"offerType": "OTHERS",
+		"unsearchable": false,
+		"releaseDate": time.Now().Format(time.RFC3339),
+		"releaseOffer": "",
+		"title4Sort": f.Title,
+		"countriesBlacklist": []string{},
+		"selfRefundable": false,
+		"refundType": "NON_REFUNDABLE",
+		"pcReleaseDate": time.Now().Format(time.RFC3339),
+		"priceCalculationMode": "FIXED",
+		"assembleMode": "SINGLE",
+		"publisherDisplayName": "Epic Games",
+		"developerDisplayName": "Epic Games",
+		"visibilityType": "IS_LISTED",
+		"currencyDecimals": 2,
+		"allowPurchaseForPartialOwned": true,
+		"shareRevenueWithUnderageAffiliates": false,
+		"platformWhitelist": []string{},
+		"platformBlacklist": []string{},
+		"partialItemPrerequisiteCheck": false,
+		"upgradeMode": "UPGRADED_WITH_PRICE_FULL",
+	}
+}
+
+func (startPack *FortniteCatalogStarterPack) AddGrant(g *FortniteCatalogStarterPackGrant) {
+	startPack.Grants = append(startPack.Grants, g)
+}
 
 type FortniteCatalogCurrencyOffer struct {
 	ID string
@@ -339,13 +554,29 @@ func (f *FortniteCatalogSection) GetGroupedOffers() map[string][]*FortniteCatalo
 type FortniteCatalog struct {
 	Sections []*FortniteCatalogSection
 	MoneyOffers []*FortniteCatalogCurrencyOffer
+	StarterPacks []*FortniteCatalogStarterPack
 }
 
 func NewFortniteCatalog() *FortniteCatalog {
 	return &FortniteCatalog{
 		Sections: []*FortniteCatalogSection{},
 		MoneyOffers: []*FortniteCatalogCurrencyOffer{},
+		StarterPacks: []*FortniteCatalogStarterPack{},
 	}
+}
+
+func (f *FortniteCatalog) AddSection(section *FortniteCatalogSection) {
+	f.Sections = append(f.Sections, section)
+}
+
+func (f *FortniteCatalog) AddMoneyOffer(offer *FortniteCatalogCurrencyOffer) {
+	offer.Priority = -len(f.MoneyOffers)
+	f.MoneyOffers = append(f.MoneyOffers, offer)
+}
+
+func (f *FortniteCatalog) AddStarterPack(pack *FortniteCatalogStarterPack) {
+	pack.Priority = -len(f.StarterPacks)
+	f.StarterPacks = append(f.StarterPacks, pack)
 }
 
 func (f *FortniteCatalog) GenerateFortniteCatalogResponse() aid.JSON {
@@ -359,10 +590,23 @@ func (f *FortniteCatalog) GenerateFortniteCatalogResponse() aid.JSON {
 	for _, offer := range f.MoneyOffers {
 		currencyOffersResponse = append(currencyOffersResponse, offer.GenerateFortniteCatalogCurrencyOfferResponse())
 	}
-
 	catalogSectionsResponse = append(catalogSectionsResponse, aid.JSON{
 		"name": "CurrencyStorefront",
 		"catalogEntries": currencyOffersResponse,
+	})
+
+	starterPacksResponse := []aid.JSON{}
+	for _, pack := range f.StarterPacks {
+		for _, season := range pack.SeasonsAllowed {
+			if season == aid.Config.Fortnite.Season {
+				starterPacksResponse = append(starterPacksResponse, pack.GenerateFortniteCatalogStarterPackResponse())
+				break
+			}
+		}
+	}
+	catalogSectionsResponse = append(catalogSectionsResponse, aid.JSON{
+		"name": "BRStarterKits",
+		"catalogEntries": starterPacksResponse,
 	})
 
 	return aid.JSON{
@@ -395,6 +639,16 @@ func (f *FortniteCatalog) FindCurrencyOfferById(id string) *FortniteCatalogCurre
 	return nil
 }
 
+func (f *FortniteCatalog) FindStarterPackById(id string) *FortniteCatalogStarterPack {
+	for _, pack := range f.StarterPacks {
+		if pack.ID == id {
+			return pack
+		}
+	}
+
+	return nil
+}
+
 func NewRandomFortniteCatalog() *FortniteCatalog {
 	aid.SetRandom(rand.New(rand.NewSource(int64(aid.Config.Fortnite.ShopSeed) + aid.CurrentDayUnix())))
 	catalog := NewFortniteCatalog()
@@ -405,7 +659,7 @@ func NewRandomFortniteCatalog() *FortniteCatalog {
 		entry.Meta.SectionId = "Daily"
 		daily.Offers = append(daily.Offers, entry)
 	}
-	catalog.Sections = append(catalog.Sections, daily)
+	catalog.AddSection(daily)
 
 	weekly := NewFortniteCatalogSection("BRWeeklyStorefront")
 	for len(weekly.GetGroupedOffers()) < DataClient.GetStorefrontWeeklySetCount(aid.Config.Fortnite.Season) {
@@ -421,37 +675,118 @@ func NewRandomFortniteCatalog() *FortniteCatalog {
 			weekly.Offers = append(weekly.Offers, entry)
 		}
 	}
-	catalog.Sections = append(catalog.Sections, weekly)
+	catalog.AddSection(weekly)
 
 	if aid.Config.Fortnite.EnableVBucks {
 		smallCurrencyOffer := newCurrencyOfferFromName("Small Currency Pack", 1000, 0)
 		smallCurrencyOffer.Meta.IconSize = "XSmall"
 		smallCurrencyOffer.Meta.CurrencyAnalyticsName = "MtxPack1000"
-		smallCurrencyOffer.Priority = -len(catalog.MoneyOffers)
-		catalog.MoneyOffers = append(catalog.MoneyOffers, smallCurrencyOffer)
+		catalog.AddMoneyOffer(smallCurrencyOffer)
 
 		mediumCurrencyOffer := newCurrencyOfferFromName("Medium Currency Pack", 2000, 800)
 		mediumCurrencyOffer.Meta.IconSize = "Small"
 		mediumCurrencyOffer.Meta.CurrencyAnalyticsName = "MtxPack2800"
 		mediumCurrencyOffer.Meta.BannerOverride = "12PercentExtra"
-		mediumCurrencyOffer.Priority = -len(catalog.MoneyOffers)
-		catalog.MoneyOffers = append(catalog.MoneyOffers, mediumCurrencyOffer)
+		catalog.AddMoneyOffer(mediumCurrencyOffer)
 
-		intermediateCurrencyOffer := newCurrencyOfferFromName("Intermediate Currency Pack", 4000, 1000)
+		intermediateCurrencyOffer := newCurrencyOfferFromName("Intermediate Currency Pack", 6000, 1500)
 		intermediateCurrencyOffer.Meta.IconSize = "Medium"
-		intermediateCurrencyOffer.Meta.CurrencyAnalyticsName = "MtxPack5000"
+		intermediateCurrencyOffer.Meta.CurrencyAnalyticsName = "MtxPack7500"
 		intermediateCurrencyOffer.Meta.BannerOverride = "25PercentExtra"
-		intermediateCurrencyOffer.Priority = -len(catalog.MoneyOffers)
-		catalog.MoneyOffers = append(catalog.MoneyOffers, intermediateCurrencyOffer)
+		catalog.AddMoneyOffer(intermediateCurrencyOffer)
 
 		jumboCurrencyOffer := newCurrencyOfferFromName("Jumbo Currency Pack", 10000, 3500)
 		jumboCurrencyOffer.Meta.IconSize = "XLarge"
 		jumboCurrencyOffer.Meta.CurrencyAnalyticsName = "MtxPack13500"
 		jumboCurrencyOffer.Meta.BannerOverride = "35PercentExtra"
-		jumboCurrencyOffer.Priority = -len(catalog.MoneyOffers)
-		catalog.MoneyOffers = append(catalog.MoneyOffers, jumboCurrencyOffer)
-	}
+		catalog.AddMoneyOffer(jumboCurrencyOffer)
 
+		rogueAgentStarterPack := newStarterPackOfferFromName("The Rogue Agent Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_090_Athena_Commando_M_Tactical", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_030_TacticalRogue", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		rogueAgentStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_090_Athena_Commando_M_Tactical.DA_Featured_CID_090_Athena_Commando_M_Tactical"
+		rogueAgentStarterPack.SeasonsAllowed = []int{4}
+		catalog.AddStarterPack(rogueAgentStarterPack)
+
+		wingmanStarterPack := newStarterPackOfferFromName("The Wingman Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_139_Athena_Commando_M_FighterPilot", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_056_FighterPilot", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		wingmanStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_139_Athena_Commando_M_FighterPilot.DA_Featured_CID_139_Athena_Commando_M_FighterPilot"
+		wingmanStarterPack.SeasonsAllowed = []int{4, 5}
+		catalog.AddStarterPack(wingmanStarterPack)
+
+		aceStarterPack := newStarterPackOfferFromName("The Ace Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_195_Athena_Commando_F_Bling", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_101_BlingFemale", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		aceStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_195_Athena_Commando_F_Bling.DA_Featured_CID_195_Athena_Commando_F_Bling"
+		aceStarterPack.SeasonsAllowed = []int{5, 6}
+		catalog.AddStarterPack(aceStarterPack)
+
+		summitStarterPack := newStarterPackOfferFromName("The Summit Striker Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_253_Athena_Commando_M_MilitaryFashion2", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_134_MilitaryFashion", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		summitStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_253_Athena_Commando_M_MilitaryFashion2.DA_Featured_CID_253_Athena_Commando_M_MilitaryFashion2"
+		summitStarterPack.SeasonsAllowed = []int{6, 7}
+		catalog.AddStarterPack(summitStarterPack)
+
+		cobaltStarterPack := newStarterPackOfferFromName("The Cobalt Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_327_Athena_Commando_M_BlueMystery", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_203_BlueMystery", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		cobaltStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_327_Athena_Commando_M_BlueMystery.DA_Featured_CID_327_Athena_Commando_M_BlueMystery"
+		cobaltStarterPack.SeasonsAllowed = []int{7}
+		catalog.AddStarterPack(cobaltStarterPack)
+
+		lagunaStarterPack := newStarterPackOfferFromName("The Laguna Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_367_Athena_Commando_F_Tropical", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_231_TropicalFemale", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaItemWrap:Wrap_033_TropicalGirl", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		lagunaStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_367_Athena_Commando_F_Tropical.DA_Featured_CID_367_Athena_Commando_F_Tropical"
+		lagunaStarterPack.SeasonsAllowed = []int{8}
+		catalog.AddStarterPack(lagunaStarterPack)
+
+		wildeStarterPack := newStarterPackOfferFromName("The Wilde Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_420_Athena_Commando_F_WhiteTiger", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_277_WhiteTiger", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		wildeStarterPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_420_Athena_Commando_F_WhiteTiger.DA_Featured_CID_420_Athena_Commando_F_WhiteTiger"
+		wildeStarterPack.SeasonsAllowed = []int{9}
+		catalog.AddStarterPack(wildeStarterPack)
+
+		redStrikePack := newStarterPackOfferFromName("The Red Strike Pack", 499, []*FortniteCatalogStarterPackGrant{
+			NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_384_Athena_Commando_M_StreetAssassin", 1),
+			NewFortniteCatalogStarterPackGrant("AthenaBackpack:BID_247_StreetAssassin", 1),
+			NewFortniteCatalogStarterPackGrant("Currency:MtxPurchased", 600),
+		}...)
+		redStrikePack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_384_Athena_Commando_M_StreetAssasin.DA_Featured_CID_384_Athena_Commando_M_StreetAssasin"
+		redStrikePack.SeasonsAllowed = []int{10}
+		catalog.AddStarterPack(redStrikePack)
+
+		// Below is an example of a custom starter pack
+		// Uncomment to use.
+		// snowCustomPack := newStarterPackOfferFromName("Snow Gift", 0, []*FortniteCatalogStarterPackGrant{
+		// 	NewFortniteCatalogStarterPackGrant("AthenaCharacter:CID_384_Athena_Commando_M_StreetAssassin", 1),
+		// }...)
+		// snowCustomPack.Meta.DisplayAssetPath = "/Game/Catalog/DisplayAssets/DA_Featured_CID_TBD_Athena_Commando_M_RaptorArcticCamo_Bundle.DA_Featured_CID_TBD_Athena_Commando_M_RaptorArcticCamo_Bundle"
+		// snowCustomPack.SeasonsAllowed = []int{1,2,3,4,5,6,7,8,9,10}
+		// snowCustomPack.Meta.OriginalOffer = 1000
+		// snowCustomPack.Meta.ExtraBonus = 500
+		// snowCustomPack.Description = ""
+		// snowCustomPack.LongDescription = "Thank you for using Snow! Here's a special offer for you!"
+		// catalog.AddStarterPack(snowCustomPack)
+	}
 	return catalog
 }
 
@@ -487,6 +822,31 @@ func newCurrencyOfferFromName(name string, original, bonus int) *FortniteCatalog
 	offer.Title = formattedPrice + " V-Bucks"
 	offer.Description = "Buy " + formattedPrice + " Fortnite V-Bucks, the in-game currency that can be spent in Fortnite Battle Royale and Creative modes. You can purchase new customization items like Outfits, Gliders, Pickaxes, Emotes, Wraps and the latest season's Battle Pass! Gliders and Contrails may not be used in Save the World mode."
 	offer.LongDescription = "Buy " + formattedPrice + " Fortnite V-Bucks, the in-game currency that can be spent in Fortnite Battle Royale and Creative modes. You can purchase new customization items like Outfits, Gliders, Pickaxes, Emotes, Wraps and the latest season's Battle Pass! Gliders and Contrails may not be used in Save the World mode.\n\nAll V-Bucks purchased on the Epic Games Store are not redeemable or usable on Nintendo Switch™."
+
+	return offer
+}
+
+func newStarterPackOfferFromName(name string, totalPrice int, grants ...*FortniteCatalogStarterPackGrant) *FortniteCatalogStarterPack {
+	mainString := "Jump into Fortnite Battle Royale with the " + strings.ReplaceAll(name, "The ", "") + ". Includes:\n\n- 600 V-Bucks"
+
+	for _, grant := range grants {
+		fortniteItem := DataClient.FortniteItems[strings.Split(grant.TemplateID, ":")[1]]
+		if fortniteItem != nil {
+			mainString += "\n- " + fortniteItem.Name + " " + fortniteItem.Type.DisplayValue + " - Battle Royale Only"
+		}
+	}
+
+	offer := NewFortniteCatalogStarterPack(totalPrice)
+	offer.DevName = name + "StarterPack"
+	offer.Title = name
+	offer.Description = mainString
+	offer.LongDescription = mainString + "\n\nV-Bucks are an in-game currency that can be spent in both the Battle Royale PvP mode and the Save the World PvE campaign. In Battle Royale, you can use V-bucks to purchase new customization items like outfits, emotes, pickaxes, gliders, and more! In Save the World you can purchase Llama Pinata card packs that contain weapon, trap and gadget schematics as well as new Heroes and more! \n\nNote: Items do not transfer between the Battle Royale mode and the Save the World campaign."
+	offer.Meta.OriginalOffer = 500
+	offer.Meta.ExtraBonus = 100
+
+	for _, grant := range grants {
+		offer.AddGrant(grant)
+	}
 
 	return offer
 }

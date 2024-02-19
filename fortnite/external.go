@@ -29,6 +29,7 @@ type dataClient struct {
 	StorefrontDailyItemCountLookup []struct{Season int;Items int} `json:"-"`
 	StorefrontWeeklySetCountLookup []struct{Season int;Sets int} `json:"-"`
 	StorefrontCurrencyOfferPriceLookup map[string]map[int]int `json:"-"`
+	StorefrontCurrencyMultiplier map[string]float64 `json:"-"`
 }
 
 func NewDataClient() *dataClient {
@@ -98,14 +99,20 @@ func NewDataClient() *dataClient {
 				1000: 999,
 				2800: 2499,
 				5000: 3999,
+				7500: 5999,
 				13500: 9999,
 			},
 			"GBP": {
 				1000: 799,
 				2800: 1999,
 				5000: 3499,
+				7500: 4999,
 				13500: 7999,
 			},
+		},
+		StorefrontCurrencyMultiplier: map[string]float64{
+			"USD": 1.2503128911,
+			"GBP": 1.0,
 		},
 	}
 }
@@ -298,6 +305,10 @@ func (c *dataClient) GetStorefrontCosmeticOfferPrice(rarity string, type_ string
 
 func (c *dataClient) GetStorefrontCurrencyOfferPrice(currency string, amount int) int {
 	return c.StorefrontCurrencyOfferPriceLookup[currency][amount]
+}
+
+func (c *dataClient) GetLocalizedPrice(currency string, amount int) int {
+	return int(float64(amount) * c.StorefrontCurrencyMultiplier[currency])
 }
 
 func PreloadCosmetics() error {

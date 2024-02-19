@@ -30,7 +30,7 @@ And once battle royale is completed ...
 - **Gifting** Of any item shop entry to any friend.
 - **Locker Loadouts** On seasons 12 onwards, this allows for the saving and loading of multiple locker presets.
 - **Item Refunding** Of previous shop purchases, will use a refund ticket if refunded in time.
-- **V-Bucks Purchasing** By V-Bucks and Starter Packs right from the in-game store!
+- **V-Bucks Purchasing** Buy V-Bucks and Starter Packs right from the in-game store!
 - **Client Settings Storage** Uses amazon buckets to store client settings.
 - **Giftable Bundles** Players can recieve bundles, e.g. Twitch Prime, and gift them to friends.
 - **Support A Creator 5%** Use any display name and each purchase will give them 5% of the vbucks spent.
