@@ -112,6 +112,7 @@ func main() {
 	storefront.Use(aid.FiberLimiter(4))
 	storefront.Get("/catalog", handlers.GetStorefrontCatalog)
 	storefront.Get("/keychain", handlers.GetStorefrontKeychain)
+	r.Get("/catalog/api/shared/bulk/offers", handlers.GetStorefrontCatalogBulkOffers)
 
 	matchmaking := fortnite.Group("/matchmaking")
 	matchmaking.Get("/session/findPlayer/:accountId", handlers.GetMatchmakingSession)

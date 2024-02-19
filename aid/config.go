@@ -49,6 +49,7 @@ type CS struct {
 		Password bool
 		DisableClientCredentials bool
 		ShopSeed int
+		EnableVBucks bool
 	}
 }
 
@@ -175,4 +176,5 @@ func LoadConfig(file []byte) {
 	Config.Fortnite.Password = !(cfg.Section("fortnite").Key("disable_password").MustBool(false))
 	Config.Fortnite.DisableClientCredentials = cfg.Section("fortnite").Key("disable_client_credentials").MustBool(false)
 	Config.Fortnite.ShopSeed = cfg.Section("fortnite").Key("shop_seed").MustInt(0)
+	Config.Fortnite.EnableVBucks = cfg.Section("fortnite").Key("enable_vbucks").MustBool(false)
 }

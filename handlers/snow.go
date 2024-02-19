@@ -16,7 +16,7 @@ func MiddlewareOnlyDebug(c *fiber.Ctx) error {
 }
 
 func GetSnowPreloadedCosmetics(c *fiber.Ctx) error {
-	return c.JSON(fortnite.External)
+	return c.JSON(fortnite.DataClient)
 }
 
 func GetSnowCachedPlayers(c *fiber.Ctx) error {
@@ -43,7 +43,7 @@ func GetSnowParties(c *fiber.Ctx) error {
 
 func GetSnowShop(c *fiber.Ctx) error {
 	shop := fortnite.NewRandomFortniteCatalog()
-	return c.JSON(shop.GenerateFortniteCatalog())
+	return c.JSON(shop.GenerateFortniteCatalogResponse())
 }
 
 // 
