@@ -4,6 +4,8 @@
 
 > Performance first, feature-rich universal Fortnite private server backend written in Go.
 
+Snow will no longer be updated. I have reached a point where I would need a game server to make it worth adding new features, e.g. Leaderboards, Challenges etc. In the future I may continue but for the time being no updates will occur. If you would like to contribute I will still review each request!
+
 ## Overview
 
 - **Single File** It will embed all of the external files inside of one executable! This allows the backend to be ran anywhere with no setup _(after initial config)_!
