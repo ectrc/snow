@@ -13,6 +13,9 @@ type PersonSnapshot struct {
 	Profile0Profile     ProfileSnapshot
 	CollectionsProfile  ProfileSnapshot
 	CreativeProfile     ProfileSnapshot
+	CurrentSeasonStats	SeasonStats
+	AllSeasonsStats			[]SeasonStats
+	Receipts            []storage.DB_Receipt
 	BanHistory          []storage.DB_BanStatus
 	Discord             storage.DB_DiscordPerson
 	Relationships				map[string]*Relationship
@@ -25,6 +28,7 @@ type ProfileSnapshot struct {
 	ID         string
 	Items      map[string]ItemSnapshot
 	Gifts      map[string]GiftSnapshot
+	Variants   map[string]VariantChannel
 	Quests     map[string]Quest
 	Attributes map[string]Attribute
 	Loadouts   map[string]Loadout

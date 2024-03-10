@@ -18,6 +18,7 @@ type Profile struct {
 	Attributes *AttributeMutex
 	Loadouts *LoadoutMutex
 	Purchases *PurchaseMutex
+	VariantTokens *VariantTokenMutex
 	Type string
 	Revision int
 	Changes []interface{}
@@ -34,6 +35,7 @@ func NewProfile(profile string) *Profile {
 		Attributes: NewAttributeMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Loadouts: NewLoadoutMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Purchases: NewPurchaseMutex(&storage.DB_Profile{ID: id, Type: profile}),
+		VariantTokens: NewVariantTokenMutex(&storage.DB_Profile{ID: id, Type: profile}),
 		Type: profile,
 		Revision: 0,
 		Changes: []interface{}{},
@@ -47,6 +49,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 	attributes := NewAttributeMutex(profile)
 	loadouts := NewLoadoutMutex(profile)
 	purchases := NewPurchaseMutex(profile)
+	variantTokens := NewVariantTokenMutex(profile)
 
 	for _, item := range profile.Items {
 		items.AddItem(FromDatabaseItem(&item))
@@ -54,6 +57,10 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 
 	for _, gift := range profile.Gifts {
 		gifts.AddGift(FromDatabaseGift(&gift))
+	}
+
+	for _, variantToken := range profile.VariantTokens {
+		variantTokens.AddVariantToken(FromDatabaseVariantToken(&variantToken))
 	}
 
 	for _, quest := range profile.Quests {
@@ -87,6 +94,7 @@ func FromDatabaseProfile(profile *storage.DB_Profile) *Profile {
 		Attributes: attributes,
 		Loadouts: loadouts,
 		Purchases: purchases,
+		VariantTokens: variantTokens,
 		Type: profile.Type,
 		Revision: profile.Revision,
 		Changes: []interface{}{},
@@ -109,6 +117,11 @@ func (p *Profile) GenerateFortniteProfileEntry() aid.JSON {
 
 	p.Gifts.RangeGifts(func(id string, gift *Gift) bool {
 		items[id] = gift.GenerateFortniteGiftEntry()
+		return true
+	})
+
+	p.VariantTokens.RangeVariantTokens(func(id string, variantToken *VariantToken) bool {
+		items[id] = variantToken.GenerateFortniteVariantTokenEntry()
 		return true
 	})
 
@@ -146,6 +159,7 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 	quests := map[string]Quest{}
 	attributes := map[string]Attribute{}
 	loadouts := map[string]Loadout{}
+	variantTokens := map[string]VariantToken{}
 
 	p.Items.RangeItems(func(id string, item *Item) bool {
 		items[id] = item.Snapshot()
@@ -169,6 +183,11 @@ func (p *Profile) Snapshot() *ProfileSnapshot {
 
 	p.Loadouts.RangeLoadouts(func(id string, loadout *Loadout) bool {
 		loadouts[id] = *loadout
+		return true
+	})
+
+	p.VariantTokens.RangeVariantTokens(func(id string, variantToken *VariantToken) bool {
+		variantTokens[id] = *variantToken
 		return true
 	})
 
@@ -212,10 +231,12 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 				item := p.Items.GetItem(change.Path[1])
 				p.CreateItemAttributeChangedChange(item, change.Path[2])
 
-				slotType := loadout.GetSlotFromItemTemplateID(item.TemplateID)
-				slotValue := loadout.GetItemFromSlot(slotType)
-				if slotValue != nil && slotValue.ID == item.ID {
-					p.CreateLoadoutChangedChange(loadout, slotType + "ID")
+				if loadout != nil {
+					slotType := loadout.GetSlotFromItemTemplateID(item.TemplateID)
+					slotValue := loadout.GetItemFromSlot(slotType)
+					if slotValue != nil && slotValue.ID == item.ID {
+						p.CreateLoadoutChangedChange(loadout, slotType + "ID")
+					}
 				}
 			}
 		case "Quests":
@@ -229,6 +250,14 @@ func (p *Profile) Diff(b *ProfileSnapshot) []diff.Change {
 		case "Gifts":
 			if change.Type == "create" && change.Path[2] == "ID" {
 				p.CreateGiftAddedChange(p.Gifts.GetGift(change.Path[1]))
+			}
+
+			if change.Type == "delete" && change.Path[2] == "ID" {
+				p.CreateItemRemovedChange(change.Path[1])
+			}
+		case "VariantTokens":
+			if change.Type == "create" && change.Path[2] == "ID" {
+				p.CreateVariantTokenAddedChange(p.VariantTokens.GetVariantToken(change.Path[1]))
 			}
 
 			if change.Type == "delete" && change.Path[2] == "ID" {
@@ -307,6 +336,19 @@ func (p *Profile) CreateGiftAddedChange(gift *Gift) {
 		ChangeType: "itemAdded",
 		ItemId: gift.ID,
 		Item: gift.GenerateFortniteGiftEntry(),
+	})
+}
+
+func (p *Profile) CreateVariantTokenAddedChange(variantToken *VariantToken) {
+	if variantToken == nil {
+		fmt.Println("error getting variant token from profile", variantToken.ID)
+		return
+	}
+
+	p.Changes = append(p.Changes, ItemAdded{
+		ChangeType: "itemAdded",
+		ItemId: variantToken.ID,
+		Item: variantToken.GenerateFortniteVariantTokenEntry(),
 	})
 }
 
@@ -443,6 +485,7 @@ func (p *Profile) ToDatabase() *storage.DB_Profile {
 		Type: p.Type,
 		Items: []storage.DB_Item{},
 		Gifts: []storage.DB_Gift{},
+		VariantTokens: []storage.DB_VariantToken{},
 		Quests: []storage.DB_Quest{},
 		Loadouts: []storage.DB_Loadout{},
 		Purchases: []storage.DB_Purchase{},
@@ -450,13 +493,18 @@ func (p *Profile) ToDatabase() *storage.DB_Profile {
 		Revision: p.Revision,
 	}
 
-	// p.Items.RangeItems(func(id string, item *Item) bool {
-	// 	dbProfile.Items = append(dbProfile.Items, *item.ToDatabase(dbProfile.PersonID))
-	// 	return true
-	// })
+	p.Items.RangeItems(func(id string, item *Item) bool {
+		dbProfile.Items = append(dbProfile.Items, *item.ToDatabase(dbProfile.PersonID))
+		return true
+	}) // slow
 
 	p.Gifts.RangeGifts(func(id string, gift *Gift) bool {
 		dbProfile.Gifts = append(dbProfile.Gifts, *gift.ToDatabase(dbProfile.PersonID))
+		return true
+	})
+
+	p.VariantTokens.RangeVariantTokens(func(id string, variantToken *VariantToken) bool {
+		dbProfile.VariantTokens = append(dbProfile.VariantTokens, *variantToken.ToDatabase(dbProfile.PersonID))
 		return true
 	})
 

@@ -100,7 +100,7 @@ func PostTokenExchangeCode(c *fiber.Ctx, body *FortniteTokenBody) error {
     return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Exchange Code"))
   }
 
-  if expire.Add(time.Hour).Before(time.Now()) {
+  if expire.Add(time.Minute).Before(time.Now()) {
     return c.Status(400).JSON(aid.ErrorBadRequest("Invalid Exchange Code"))
   }
 

@@ -2,11 +2,9 @@ package fortnite
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
-	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
 )
 
@@ -29,39 +27,14 @@ func NewFortnitePerson(displayName string, everything bool) *p.Person {
 }
 
 func GiveEverything(person *p.Person) {
-	items := make([]storage.DB_Item, 0)
-
 	for _, item := range DataClient.FortniteItems {
-		if strings.Contains(strings.ToLower(item.ID), "random") {
-			continue
-		}
-
-		has := person.AthenaProfile.Items.GetItemByTemplateID(item.ID)
-		if has != nil {
-			continue
-		}
-
-		new := p.NewItem(item.Type.BackendValue + ":" + item.ID, 1)
-		new.HasSeen = true
-
-		grouped := map[string][]string{}
-		for _, variant := range item.Variants {
-			grouped[variant.Channel] = []string{}
-			
-			for _, option := range variant.Options {
-				grouped[variant.Channel] = append(grouped[variant.Channel], option.Tag)
-			}
-		}
-
-		for channel, tags := range grouped {
-			new.AddChannel(new.NewChannel(channel, tags, tags[0]))
-		}
-
-		person.AthenaProfile.Items.AddItem(new)
-		items = append(items, *new.ToDatabase(person.AthenaProfile.ID))
+		GrantToPerson(person, NewItemGrant(item.Type.BackendValue+":"+item.ID, 1))
 	}
 
-	storage.Repo.BulkCreateItems(&items)
+	for key := range DataClient.SnowVariantTokens {
+		GrantToPerson(person, NewItemGrant("CosmeticVariantToken:"+key, 1))
+	}
+
 	person.Save()
 }
 
@@ -78,25 +51,21 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 	for _, item := range defaultCommonCoreItems {
 		if item == "HomebaseBannerIcon:StandardBanner" {
 			for i := 1; i < 32; i++ {
-				item := p.NewItem(item+strconv.Itoa(i), 1)
-				item.HasSeen = true
-				person.CommonCoreProfile.Items.AddItem(item).Save()
+				GrantToPerson(person, NewItemGrant(item+strconv.Itoa(i), 1))
 			}
 			continue
 		}
 
 		if item == "HomebaseBannerColor:DefaultColor" {
 			for i := 1; i < 22; i++ {
-				item := p.NewItem(item+strconv.Itoa(i), 1)
-				item.HasSeen = true
-				person.CommonCoreProfile.Items.AddItem(item).Save()
+				GrantToPerson(person, NewItemGrant(item+strconv.Itoa(i), 1))
 			}
 			continue
 		}
 
 		if item == "Currency:MtxPurchased" {
-			person.CommonCoreProfile.Items.AddItem(p.NewItem(item, 0)).Save()
-			person.Profile0Profile.Items.AddItem(p.NewItem(item, 0)).Save()
+			person.CommonCoreProfile.Items.AddItem(p.NewItem(item, 9999999)).Save()
+			person.Profile0Profile.Items.AddItem(p.NewItem(item, 99999999)).Save()
 			continue
 		}
 
@@ -111,10 +80,11 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("inventory_limit_bonus", 0)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("daily_rewards", []aid.JSON{})).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("competitive_identity", aid.JSON{})).Save()
+	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("permissions", []aid.JSON{})).Save()
+	
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("season_update", 0)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("season_num", aid.Config.Fortnite.Season)).Save()
-	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("permissions", []aid.JSON{})).Save()
-
+	
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("accountLevel", 1)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("level", 1)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("xp", 0)).Save()
@@ -122,10 +92,14 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("rested_xp", 0)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("rested_xp_mult", 0)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("rested_xp_exchange", 0)).Save()
-
+	
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("book_purchased", false)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("book_level", 1)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("book_xp", 0)).Save()
+
+	seasonStats := p.NewSeasonStats(aid.Config.Fortnite.Season)
+	seasonStats.PersonID = person.ID
+	seasonStats.Save()
 
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("favorite_character", person.AthenaProfile.Items.GetItemByTemplateID("AthenaCharacter:CID_001_Athena_Commando_F_Default").ID)).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("favorite_backpack", "")).Save()
@@ -136,8 +110,8 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("favorite_itemwraps", make([]string, 7))).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("favorite_loadingscreen", "")).Save()
 	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("favorite_musicpack", "")).Save()
-	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("banner_icon", "")).Save()
-	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("banner_color", "")).Save()
+	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("banner_icon", "StandardBanner1")).Save()
+	person.AthenaProfile.Attributes.AddAttribute(p.NewAttribute("banner_color", "DefaultColor1")).Save()
 
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("mfa_enabled", true)).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("mtx_affiliate", "")).Save()
@@ -151,10 +125,19 @@ func NewFortnitePersonWithId(id string, displayName string, everything bool) *p.
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("allowed_to_receive_gifts", true)).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("allowed_to_send_gifts", true)).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("gift_history", aid.JSON{})).Save()
+	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("in_app_purchases", aid.JSON{
+		"receipts": []string{},
+		"ignoredReceipts": []string{},
+		"fulfillmentCounts": map[string]int{},
+		"refreshTimers": aid.JSON{},
+	})).Save()
 
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("party.recieveIntents", "ALL")).Save()
 	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("party.recieveInvites", "ALL")).Save()
 
+	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("season.bookFreeClaimedUpTo", 0)).Save()
+	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("season.bookPaidClaimedUpTo", 0)).Save()
+	person.CommonCoreProfile.Attributes.AddAttribute(p.NewAttribute("season.levelClaimedUpTo", 0)).Save()
 
 	loadout := p.NewLoadout("PRESET 1", person.AthenaProfile)
 	person.AthenaProfile.Loadouts.AddLoadout(loadout).Save()

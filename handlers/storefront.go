@@ -1,18 +1,16 @@
 package handlers
 
 import (
-	"strings"
-
 	"github.com/goccy/go-json"
 
 	"github.com/ectrc/snow/aid"
-	"github.com/ectrc/snow/fortnite"
+	"github.com/ectrc/snow/shop"
 	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetStorefrontCatalog(c *fiber.Ctx) error {
-	shop := fortnite.NewRandomFortniteCatalog()
+	shop := shop.GetShop()
 	return c.Status(200).JSON(shop.GenerateFortniteCatalogResponse())
 }
 
@@ -27,7 +25,7 @@ func GetStorefrontKeychain(c *fiber.Ctx) error {
 }
 
 func GetStorefrontCatalogBulkOffers(c *fiber.Ctx) error {
-	shop := fortnite.NewRandomFortniteCatalog()
+	store := shop.GetShop()
 
 	appStoreIdBytes := c.Request().URI().QueryArgs().PeekMulti("id")
 	appStoreIds := make([]string, len(appStoreIdBytes))
@@ -37,21 +35,21 @@ func GetStorefrontCatalogBulkOffers(c *fiber.Ctx) error {
 
 	response := aid.JSON{}
 	for _, id := range appStoreIds {
-		offer := shop.FindCurrencyOfferById(strings.ReplaceAll(id, "app-", ""))
-		if offer == nil {
+		offerRaw, type_ := store.GetOfferByID(id)
+		if offerRaw == nil {
 			continue
 		}
 
-		response[id] = offer.GenerateFortniteCatalogBulkOfferResponse()
-	}
-
-	for _, id := range appStoreIds {
-		offer := shop.FindStarterPackById(strings.ReplaceAll(id, "app-", ""))
-		if offer == nil {
-			continue
+		switch type_ {
+		case shop.StorefrontCatalogOfferEnumCurrency:
+			offer := offerRaw.(*shop.StorefrontCatalogOfferTypeCurrency)
+			response[id] = offer.GenerateFortniteBulkOffersResponse()
+		case shop.StorefrontCatalogOfferEnumStarterKit:
+			offer := offerRaw.(*shop.StorefrontCatalogOfferTypeStarterKit)
+			response[id] = offer.GenerateFortniteBulkOffersResponse()
+		default:
+			break
 		}
-
-		response[id] = offer.GenerateFortniteCatalogBulkOfferResponse()
 	}
 
 	return c.Status(200).JSON(response)

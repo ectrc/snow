@@ -15,6 +15,7 @@ type DB_Person struct {
 	DisplayName string
 	RefundTickets int
 	Permissions int64
+	Receipts []DB_Receipt `gorm:"foreignkey:PersonID"`
 	Profiles []DB_Profile `gorm:"foreignkey:PersonID"`
 	Stats []DB_SeasonStat `gorm:"foreignkey:PersonID"`
 	Discord DB_DiscordPerson `gorm:"foreignkey:PersonID"`
@@ -35,6 +36,32 @@ func (DB_Relationship) TableName() string {
 	return "Relationships"
 }
 
+type DB_Receipt struct {
+	ID string `gorm:"primary_key"`
+	PersonID string `gorm:"index"`
+	OfferID string
+	PurchaseDate int64
+	TotalPaid int
+	State string
+	Loot []DB_ReceiptLoot `gorm:"foreignkey:ReceiptID"`
+}
+
+func (DB_Receipt) TableName() string {
+	return "Receipts"
+}
+
+type DB_ReceiptLoot struct {
+	ID string `gorm:"primary_key"`
+	ReceiptID string `gorm:"index"`
+	TemplateID string
+	Quantity int
+	ProfileType string
+}
+
+func (DB_ReceiptLoot) TableName() string {
+	return "ReceiptLoot"
+}
+
 type DB_Profile struct {
 	ID string `gorm:"primary_key"`
 	PersonID string `gorm:"index"`
@@ -44,6 +71,7 @@ type DB_Profile struct {
 	Attributes []DB_Attribute `gorm:"foreignkey:ProfileID"`
 	Loadouts []DB_Loadout `gorm:"foreignkey:ProfileID"`
 	Purchases []DB_Purchase `gorm:"foreignkey:ProfileID"`
+	VariantTokens []DB_VariantToken `gorm:"foreignkey:ProfileID"`
 	Type string
 	Revision int
 }
@@ -182,6 +210,32 @@ func (DB_GiftLoot) TableName() string {
 	return "GiftLoot"
 }
 
+type DB_VariantToken struct {
+	ID string `gorm:"primary_key"`
+	ProfileID string `gorm:"index"`
+	TemplateID string
+	Name string
+	AutoEquipOnGrant bool
+	CreateGiftboxOnGrant bool
+	MarkItemUnseenOnGrant bool
+	VariantGrants []DB_VariantTokenGrant `gorm:"foreignkey:VariantTokenID"`
+}
+
+func (DB_VariantToken) TableName() string {
+	return "VariantTokens"
+}
+
+type DB_VariantTokenGrant struct {
+	ID string `gorm:"primary_key"`
+	VariantTokenID string `gorm:"index"`
+	Channel string
+	Value string
+}
+
+func (DB_VariantTokenGrant) TableName() string {
+	return "VariantTokenGrants"
+}
+
 type DB_DiscordPerson struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
@@ -199,11 +253,11 @@ func (DB_DiscordPerson) TableName() string {
 type DB_SeasonStat struct {
 	ID string `gorm:"primary_key"`
 	PersonID string
-	Build string
+	Season int
 	SeasonXP int
-	SeasonalLevel int
-	SeasonalTier int
-	BattleStars int
+	BookXP int
+	BookPurchased bool
+	Hype int
 }
 
 func (DB_SeasonStat) TableName() string {

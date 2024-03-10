@@ -30,3 +30,9 @@ func JSONParse(input string) interface{} {
 	json.Unmarshal([]byte(input), &output)
 	return output
 }
+
+func JSONParseG[T interface{}](input string) T {
+	var output T
+	json.Unmarshal([]byte(input), &output)
+	return output
+}

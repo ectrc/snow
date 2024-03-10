@@ -1,6 +1,8 @@
 package person
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ectrc/snow/aid"
@@ -19,7 +21,10 @@ type Person struct {
 	Profile0Profile *Profile
 	CollectionsProfile *Profile
 	CreativeProfile *Profile
+	CurrentSeasonStats *SeasonStats
+	AllSeasonsStats aid.GenericSyncMap[SeasonStats]
 	Discord *storage.DB_DiscordPerson
+	Receipts *ReceiptMutex
 	BanHistory aid.GenericSyncMap[storage.DB_BanStatus]
 	Relationships aid.GenericSyncMap[Relationship]
 	Parties aid.GenericSyncMap[Party]
@@ -28,8 +33,9 @@ type Person struct {
 }
 
 func NewPerson() *Person {
+	id := uuid.New().String()
 	return &Person{
-		ID: uuid.New().String(),
+		ID: id,
 		DisplayName: uuid.New().String(),
 		Permissions: 0,
 		RefundTickets: 3,
@@ -39,6 +45,8 @@ func NewPerson() *Person {
 		Profile0Profile: NewProfile("profile0"),
 		CollectionsProfile: NewProfile("collections"),
 		CreativeProfile: NewProfile("creative"),
+		Receipts: NewReceiptMutex(id),
+		AllSeasonsStats: aid.GenericSyncMap[SeasonStats]{},
 		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
 		Relationships: aid.GenericSyncMap[Relationship]{},
 		Parties: aid.GenericSyncMap[Party]{},
@@ -59,6 +67,8 @@ func NewPersonWithCustomID(id string) *Person {
 		Profile0Profile: NewProfile("profile0"),
 		CollectionsProfile: NewProfile("collections"),
 		CreativeProfile: NewProfile("creative"),
+		Receipts: NewReceiptMutex(id),
+		AllSeasonsStats: aid.GenericSyncMap[SeasonStats]{},
 		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
 		Relationships: aid.GenericSyncMap[Relationship]{},
 		Parties: aid.GenericSyncMap[Party]{},
@@ -164,6 +174,7 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 	profile0 := NewProfile("profile0")
 	collectionsProfile := NewProfile("collections")
 	creativeProfile := NewProfile("creative")
+	receipts := NewReceiptMutex(databasePerson.ID)
 
 	for _, profile := range databasePerson.Profiles {
 		if profile.Type == "athena" {
@@ -197,11 +208,14 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		}
 	}
 
+	for _, receipt := range databasePerson.Receipts {
+		receipts.AddReceipt(FromDatabaseReceipt(&receipt))
+	}
+
 	person := &Person{
 		ID: databasePerson.ID,
 		DisplayName: databasePerson.DisplayName,
 		Permissions: Permission(databasePerson.Permissions),
-		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
 		AthenaProfile: athenaProfile,
 		CommonCoreProfile: commonCoreProfile,
 		CommonPublicProfile: commonPublicProfile,
@@ -210,6 +224,9 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 		CreativeProfile: creativeProfile,
 		Discord: &databasePerson.Discord,
 		RefundTickets: databasePerson.RefundTickets,
+		Receipts: receipts,
+		AllSeasonsStats: aid.GenericSyncMap[SeasonStats]{},
+		BanHistory: aid.GenericSyncMap[storage.DB_BanStatus]{},
 		Relationships: aid.GenericSyncMap[Relationship]{},
 		Parties: aid.GenericSyncMap[Party]{},
 		Invites: aid.GenericSyncMap[PartyInvite]{},
@@ -218,6 +235,21 @@ func findHelper(databasePerson *storage.DB_Person, shallow bool, save bool) *Per
 
 	for _, ban := range databasePerson.BanHistory {
 		person.BanHistory.Set(ban.ID, &ban)
+	}
+
+	for _, stat := range databasePerson.Stats {
+		person.AllSeasonsStats.Set(fmt.Sprint(stat.Season), FromDatabaseSeasonStats(stat))
+
+		if stat.Season == aid.Config.Fortnite.Season {
+			person.CurrentSeasonStats = FromDatabaseSeasonStats(stat)
+		}
+	}
+
+	if person.CurrentSeasonStats == nil {
+		person.CurrentSeasonStats = NewSeasonStats(aid.Config.Fortnite.Season)
+		person.CurrentSeasonStats.PersonID = person.ID
+		person.AllSeasonsStats.Set(fmt.Sprint(aid.Config.Fortnite.Season), person.CurrentSeasonStats)
+		person.CurrentSeasonStats.Save()
 	}
 
 	if !shallow {
@@ -340,10 +372,6 @@ func (p *Person) RemovePermission(permission Permission) {
 }
 
 func (p *Person) HasPermission(permission Permission) bool {
-	// if permission == PermissionAll && permission != PermissionOwner {
-	// 	return p.Permissions == PermissionAll
-	// }
-
 	return p.Permissions & permission != 0
 }
 
@@ -352,8 +380,9 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: int64(p.Permissions),
-		BanHistory: []storage.DB_BanStatus{},
 		RefundTickets: p.RefundTickets,
+		Receipts: []storage.DB_Receipt{},
+		BanHistory: []storage.DB_BanStatus{},
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},
@@ -374,6 +403,16 @@ func (p *Person) ToDatabase() *storage.DB_Person {
 
 	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
 		dbPerson.BanHistory = append(dbPerson.BanHistory, *ban)
+		return true
+	})
+
+	p.Receipts.RangeReceipts(func(key string, receipt *Receipt) bool {
+		dbPerson.Receipts = append(dbPerson.Receipts, *receipt.ToDatabase())
+		return true
+	})
+
+	p.AllSeasonsStats.Range(func(key string, stat *SeasonStats) bool {
+		dbPerson.Stats = append(dbPerson.Stats, *stat.ToDatabase(p.ID))
 		return true
 	})
 
@@ -426,8 +465,9 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 		ID: p.ID,
 		DisplayName: p.DisplayName,
 		Permissions: int64(p.Permissions),
-		BanHistory: []storage.DB_BanStatus{},
 		RefundTickets: p.RefundTickets,
+		Receipts: []storage.DB_Receipt{},
+		BanHistory: []storage.DB_BanStatus{},
 		Profiles: []storage.DB_Profile{},
 		Stats: []storage.DB_SeasonStat{},
 		Discord: storage.DB_DiscordPerson{},
@@ -439,6 +479,16 @@ func (p *Person) ToDatabaseShallow() *storage.DB_Person {
 
 	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
 		dbPerson.BanHistory = append(dbPerson.BanHistory, *ban)
+		return true
+	})
+
+	p.Receipts.RangeReceipts(func(key string, receipt *Receipt) bool {
+		dbPerson.Receipts = append(dbPerson.Receipts, *receipt.ToDatabase())
+		return true
+	})
+
+	p.AllSeasonsStats.Range(func(key string, stat *SeasonStats) bool {
+		dbPerson.Stats = append(dbPerson.Stats, *stat.ToDatabase(p.ID))
 		return true
 	})
 
@@ -457,7 +507,10 @@ func (p *Person) Snapshot() *PersonSnapshot {
 		Profile0Profile: *p.Profile0Profile.Snapshot(),
 		CollectionsProfile: *p.CollectionsProfile.Snapshot(),
 		CreativeProfile: *p.CreativeProfile.Snapshot(),
+		CurrentSeasonStats: *p.CurrentSeasonStats,
+		AllSeasonsStats: []SeasonStats{},
 		BanHistory: []storage.DB_BanStatus{},
+		Receipts: []storage.DB_Receipt{},
 		Discord: *p.Discord,
 		Relationships: *p.Relationships.Snapshot(),
 		Parties: *p.Parties.Snapshot(),
@@ -467,6 +520,16 @@ func (p *Person) Snapshot() *PersonSnapshot {
 
 	p.BanHistory.Range(func(key string, ban *storage.DB_BanStatus) bool {
 		snapshot.BanHistory = append(snapshot.BanHistory, *ban)
+		return true
+	})
+
+	p.Receipts.RangeReceipts(func(key string, receipt *Receipt) bool {
+		snapshot.Receipts = append(snapshot.Receipts, *receipt.ToDatabase())
+		return true
+	})
+
+	p.AllSeasonsStats.Range(func(key string, stat *SeasonStats) bool {
+		snapshot.AllSeasonsStats = append(snapshot.AllSeasonsStats, *stat)
 		return true
 	})
 
@@ -493,4 +556,72 @@ func (p *Person) SetPurchaseHistoryAttribute() {
 		"purchases": purchases,
 	})
 	purchaseAttribute.Save()
+}
+
+func (p *Person) SetInAppPurchasesAttribute() {
+	receipts := []string{}
+	fulfillmentCounts := map[string]int{}
+
+	p.Receipts.RangeReceipts(func(key string, r *Receipt) bool {
+		pureOfferId := strings.ReplaceAll(r.OfferID, "app-", "")
+		receipts = append(receipts, r.ID)
+		fulfillmentCounts[pureOfferId]++
+		return true
+	})
+
+	inAppPurchaseAttribute := p.CommonCoreProfile.Attributes.GetAttributeByKey("in_app_purchases")
+	inAppPurchaseAttribute.ValueJSON = aid.JSONStringify(aid.JSON{
+		"ignoredReceipts": []string{},
+		"refreshTimers": aid.JSON{},
+		"receipts": receipts,
+		"fulfillmentCounts": fulfillmentCounts,
+	})
+	inAppPurchaseAttribute.Save()
+}
+
+func (p *Person) SyncVBucks(sourceProfileType string) {
+	antiSourceLookup := map[string]string{
+		"profile0": "common_core",
+		"common_core": "profile0",
+	}
+	sourceProfile := p.GetProfileFromType(sourceProfileType)
+	antiSourceProfile := p.GetProfileFromType(antiSourceLookup[sourceProfileType])
+	if sourceProfile == nil || antiSourceProfile == nil {
+		return
+	}
+
+	sourceCurrency := sourceProfile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	antiSourceCurrency := antiSourceProfile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if sourceCurrency == nil || antiSourceCurrency == nil {
+		return
+	}
+
+	antiSourceCurrency.Quantity = sourceCurrency.Quantity
+	antiSourceCurrency.Save()
+}
+
+func (p *Person) TakeAndSyncVbucks(quant int) {
+	currency := p.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if currency == nil {
+		aid.Print("currency not found")
+		return
+	}
+
+	currency.Quantity -= quant
+	currency.Save()
+
+	p.SyncVBucks("common_core")
+}
+
+func (p *Person) GiveAndSyncVbucks(quant int) {
+	currency := p.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased")
+	if currency == nil {
+		aid.Print("currency not found")
+		return
+	}
+
+	currency.Quantity += quant
+	currency.Save()
+
+	p.SyncVBucks("common_core")
 }

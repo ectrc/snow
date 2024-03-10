@@ -14,7 +14,11 @@ func EmitGiftReceived(person *person.Person) {
 	}
 
 	s.JabberSendMessageToPerson(aid.JSON{
-		"payload": aid.JSON{},
+		"payload": aid.JSON{
+			"gifts": []aid.JSON{{
+				"Wahgsdhjgasjkd": "Wahgsdhjgasjkd",
+			}},
+		},
 		"type": "com.epicgames.gift.received",
 		"timestamp": time.Now().Format("2006-01-02T15:04:05.999Z"),
 	})

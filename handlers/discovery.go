@@ -7,157 +7,36 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func createContentPanel(title string, id string) aid.JSON {
-	return aid.JSON{
-		"NumPages": 1,
-		"AnalyticsId": id,
-		"PanelType": "AnalyticsList",
-		"AnalyticsListName": title,
-		"CuratedListOfLinkCodes": []aid.JSON{},
-		"ModelName": "",
-		"PageSize": 7,
-		"PlatformBlacklist": []aid.JSON{},
-		"PanelName": id,
-		"MetricInterval": "",
-		"SkippedEntriesCount": 0,
-		"SkippedEntriesPercent": 0,
-		"SplicedEntries": []aid.JSON{},
-		"PlatformWhitelist": []aid.JSON{},
-		"EntrySkippingMethod": "None",
-		"PanelDisplayName": aid.JSON{
-			"Category": "Game",
-			"NativeCulture": "",
-			"Namespace": "CreativeDiscoverySurface_Frontend",
-			"LocalizedStrings": []aid.JSON{{
-				"key": "en",
-				"value": title,
-			}},
-			"bIsMinimalPatch": false,
-			"NativeString": title,
-			"Key": "",
-		},
-		"PlayHistoryType": "RecentlyPlayed",
-		"bLowestToHighest": false,
-		"PanelLinkCodeBlacklist": []aid.JSON{},
-		"PanelLinkCodeWhitelist": []aid.JSON{},
-		"FeatureTags": []aid.JSON{},
-		"MetricName": "",
-	}
-}
-
-func createPlaylist(mnemonic string, image string) aid.JSON {
-	return aid.JSON{
-		"linkData": aid.JSON{
-			"namespace": "fn",
-			"mnemonic": mnemonic,
-			"linkType": "BR:Playlist",
-			"active": true,
-			"disabled": false,
-			"version": 1,
-			"moderationStatus": "Unmoderated",
-			"accountId": "epic",
-			"creatorName": "Epic",
-			"descriptionTags": []string{},
-			"metadata": aid.JSON{
-				"image_url": image,
-				"matchmaking": aid.JSON{
-					"override_playlist": mnemonic,
-				},
-			},
-		},
-		"lastVisited": nil,
-		"linkCode": mnemonic,
-		"isFavorite": false,
-	}
-}
-
-func PostDiscovery(c *fiber.Ctx) error {
-	results := []aid.JSON{}
-	results = append(results, createPlaylist("Playlist_DefaultSolo", "https://bucket.retrac.site/55737fa15677cd57fab9e7f4499d62f89cfde320.png"))
-
-	return c.Status(200).JSON(aid.JSON{
-		"Panels": []aid.JSON{
-			{
-				"PanelName": "1",
-				"Pages": []aid.JSON{{
-					"results": results,
-					"hasMore": false,
-				}},
-			},
-		},
-		"TestCohorts": []string{
-			"playlists",
-		},
-		"ModeSets": aid.JSON{},
-	})
-}
-
-func PostAssets(c *fiber.Ctx) error {
-	var body struct {
-		DAD_CosmeticItemUserOptions int `json:"DAD_CosmeticItemUserOptions"`
-		FortCreativeDiscoverySurface int `json:"FortCreativeDiscoverySurface"`
-		FortPlaylistAthena int `json:"FortPlaylistAthena"`
-	}
-
-	err := c.BodyParser(&body)
-	if err != nil {
-		return c.Status(400).JSON(aid.JSON{"error":err.Error()})
-	}
-
-	testCohort := aid.JSON{
-		"AnalyticsId": "0",
-		"CohortSelector": "PlayerDeterministic",
-		"PlatformBlacklist": []aid.JSON{},
-		"ContentPanels": []aid.JSON{
-			createContentPanel("Featured", "1"),
-		},
-		"PlatformWhitelist": []aid.JSON{},
-		"SelectionChance": 0.1,
-		"TestName": "playlists",
-	}
-
-	return c.Status(200).JSON(aid.JSON{
-		"FortCreativeDiscoverySurface": aid.JSON{
-			"meta": aid.JSON{
-				"promotion": 1,
-			},
-			"assets": aid.JSON{
-				"CreativeDiscoverySurface_Frontend": aid.JSON{
-					"meta": aid.JSON{
-						"revision": 1,
-						"headRevision": 1,
-						"promotion": 1,
-						"revisedAt": "0000-00-00T00:00:00.000Z",
-						"promotedAt": "0000-00-00T00:00:00.000Z",
-					},
-					"assetData": aid.JSON{
-						"AnalyticsId": "t412",
-						"TestCohorts": []aid.JSON{
-							testCohort,
-						},
-						"GlobalLinkCodeBlacklist": []aid.JSON{},
-						"SurfaceName": "CreativeDiscoverySurface_Frontend",
-						"TestName": "20.10_4/11/2022_hero_combat_popularConsole",
-						"primaryAssetId": "FortCreativeDiscoverySurface:CreativeDiscoverySurface_Frontend",
-						"GlobalLinkCodeWhitelist": []aid.JSON{},
-					},
-				},
-			},
-		},
-	})
-}
-
 func GetContentPages(c *fiber.Ctx) error {
 	seasonString := strconv.Itoa(aid.Config.Fortnite.Season)
 
-	playlists := []aid.JSON{}
-	// for playlist := range fortnite.PlaylistImages {
-	// 	playlists = append(playlists, aid.JSON{
-	// 		"image": "http://" +aid.Config.API.Host + aid.Config.API.Port + "/snow/image/" + playlist + ".png?cache="+strconv.Itoa(rand.Intn(9999)),
-	// 		"playlist_name": playlist,
-	// 		"hidden": false,
-	// 	})
-	// }
+	playlists := []aid.JSON{
+		{
+			"image": "https://cdn.snows.rocks/squads.png",
+			"playlist_name": "Playlist_DefaultSquad",
+			"hidden": false,
+		},
+		{
+			"image": "https://cdn.snows.rocks/duos.png",
+			"playlist_name": "Playlist_DefaultDuo",
+			"hidden": false,
+		},
+		{
+			"image": "https://cdn.snows.rocks/solo.png",
+			"playlist_name": "Playlist_DefaultSolo",
+			"hidden": false,
+		},
+		{
+			"image": "https://cdn.snows.rocks/arena_solo.png",
+			"playlist_name": "Playlist_ShowdownAlt_Solo",
+			"hidden": false,
+		},
+		{
+			"image": "https://cdn.snows.rocks/arena_duos.png",
+			"playlist_name": "Playlist_ShowdownAlt_Duos",
+			"hidden": false,
+		},
+	}
 
 	backgrounds := []aid.JSON{}
 	switch aid.Config.Fortnite.Season {
@@ -182,6 +61,17 @@ func GetContentPages(c *fiber.Ctx) error {
 					"spotlight": false,
 					"hidden": true,
 					"messagetype": "normal",
+					"image": "https://cdn.snows.rocks/loading_stw.png",
+				},
+			},
+			"saveTheWorld": aid.JSON{
+				"message": aid.JSON{
+					"title": "Co-op PvE",
+					"body": "Cooperative PvE storm-fighting adventure!",
+					"spotlight": false,
+					"hidden": true,
+					"messagetype": "normal",
+					"image": "https://cdn.snows.rocks/loading_stw.png",
 				},
 			},
 			"battleRoyale": aid.JSON{
@@ -191,6 +81,7 @@ func GetContentPages(c *fiber.Ctx) error {
 					"spotlight": false,
 					"hidden": true,
 					"messagetype": "normal",
+					"image": "https://cdn.snows.rocks/loading_br.png",
 				},
 			},
 			"creative": aid.JSON{
@@ -280,6 +171,23 @@ func GetContentPages(c *fiber.Ctx) error {
 			"frontend_matchmaking_header_style": "Basic",
 			"frontend_matchmaking_header_text_description": "Watch @ 3PM EST",
 			"frontend_matchmaking_header_text": "ECS Qualifiers",
+			"lastModified": "0000-00-00T00:00:00.000Z",
+		},
+		"tournamentinformation": aid.JSON{
+			"tournament_info": aid.JSON{
+				"tournaments": []aid.JSON{
+					{
+						"tournament_display_id": "SnowArenaSolo",
+						"playlist_tile_image": "https://cdn.snows.rocks/arena_solo.png",
+						"title_line_2" : "ARENA",
+					},
+					{
+						"tournament_display_id": "SnowArenaDuos",
+						"playlist_tile_image": "https://cdn.snows.rocks/arena_duos.png",
+						"title_line_2" : "ARENA",
+					},
+				},
+			},
 			"lastModified": "0000-00-00T00:00:00.000Z",
 		},
 		"lastModified": "0000-00-00T00:00:00.000Z",

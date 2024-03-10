@@ -62,7 +62,7 @@ func (a *AmazonClient) GetAllUserFiles() ([]string, error) {
 func (a *AmazonClient) CreateUserFile(fileName string, data []byte) error {
 	_, err := a.client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(a.ClientSettingsBucket),
-		Key:    aws.String(fileName),
+		Key:    aws.String("client/"+fileName),
 		Body:   bytes.NewReader(data),
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func (a *AmazonClient) CreateUserFile(fileName string, data []byte) error {
 func (a *AmazonClient) GetUserFile(fileName string) ([]byte, error) {
 	getObjectOutput, err := a.client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(a.ClientSettingsBucket),
-		Key:    aws.String(fileName),
+		Key:    aws.String("client/"+fileName),
 	})
 	if err != nil {
 		return nil, err

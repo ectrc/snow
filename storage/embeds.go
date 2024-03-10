@@ -13,6 +13,10 @@ var (
 	Assets embed.FS
 )
 
+type snowFS struct {
+	embed.FS
+}
+
 func Asset(file string) (*[]byte) {
 	data, err := Assets.ReadFile("mem/" + strings.ToLower(file))
 	if err != nil {

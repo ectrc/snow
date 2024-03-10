@@ -22,6 +22,7 @@ type CS struct {
 		Secret string
 		Token string
 		Guild string
+		CallbackURL string
 	}
 	Amazon struct {
 		Enabled bool
@@ -38,6 +39,10 @@ type CS struct {
 		Port string
 		FrontendPort string
 		Debug bool
+		XMPP struct {
+			Host string
+			Port string
+		}
 	}
 	JWT struct {
 		Secret string
@@ -106,6 +111,11 @@ func LoadConfig(file []byte) {
 		panic("Discord Guild ID is empty")
 	}
 
+	Config.Discord.CallbackURL = cfg.Section("api").Key("discord_url").String()
+	if Config.Discord.CallbackURL == "" {
+		panic("Discord Callback URL is empty")
+	}
+
 	Config.Amazon.Enabled = true
 	Config.Amazon.BucketURI = cfg.Section("amazon").Key("uri").String()
 	if Config.Amazon.BucketURI == "" {
@@ -143,6 +153,16 @@ func LoadConfig(file []byte) {
 	}
 
 	Config.API.Debug = cfg.Section("api").Key("debug").MustBool(false)
+
+	Config.API.XMPP.Host = cfg.Section("api").Key("xmpp_host").String()
+	if Config.API.XMPP.Host == "" {
+		panic("API XMPP Host is empty")
+	}
+
+	Config.API.XMPP.Port = cfg.Section("api").Key("xmpp_port").String()
+	if Config.API.XMPP.Port == "" {
+		panic("API XMPP Port is empty")
+	}
 
 	Config.JWT.Secret = cfg.Section("jwt").Key("secret").String()
 	if Config.JWT.Secret == "" {

@@ -32,10 +32,10 @@ func informationHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{
 				NewEmbedBuilder().
-					SetTitle("Information").
+					SetTitle("Snow Information").
 					SetColor(0x2b2d31).
 					AddField("Players Registered", aid.FormatNumber(playerCount), true).
-					AddField("Players Online", aid.FormatNumber(0), true).
+					AddField("Players Online", aid.FormatNumber(socket.JabberSockets.Len()), true).
 					AddField("VBucks in Circulation", aid.FormatNumber(totalVbucks), false).
 					Build(),
 			},
@@ -287,15 +287,7 @@ func addItemHandler(s *discordgo.Session, i *discordgo.InteractionCreate, looker
 	}
 
 	snapshot := player.GetProfileFromType(profile).Snapshot()
-	foundItem := player.GetProfileFromType(profile).Items.GetItemByTemplateID(item)
-	switch (foundItem) {
-	case nil:
-		foundItem = person.NewItem(item, int(qty))
-		player.GetProfileFromType(profile).Items.AddItem(foundItem)
-	default:
-		foundItem.Quantity += int(qty)
-	}
-	foundItem.Save()
+	fortnite.GrantToPerson(player, fortnite.NewItemGrant(item, int(qty)))
 	player.GetProfileFromType(profile).Diff(snapshot)
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

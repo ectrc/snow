@@ -1,6 +1,8 @@
 package person
 
 import (
+	"strings"
+
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/storage"
 	"github.com/google/uuid"
@@ -82,16 +84,29 @@ func FromDatabasePurchaseLoot(item *storage.DB_PurchaseLoot) *Item {
 	}
 }
 
-func (i *Item) GenerateFortniteItemEntry() aid.JSON {
-	attributes := aid.JSON{
-		"variants": i.GenerateFortniteItemVariantChannels(),
-		"favorite": i.Favorite,
-		"item_seen": i.HasSeen,
+func FromDatabaseReceiptLoot(item *storage.DB_ReceiptLoot) *Item {
+	return &Item{
+		ID:	item.ID,
+		TemplateID: item.TemplateID,
+		Quantity: item.Quantity,
+		Favorite: false,
+		HasSeen: false,
+		Variants: []*VariantChannel{},
+		ProfileType: item.ProfileType,
 	}
+}
 
-	if i.TemplateID == "Currency:MtxPurchased" {
+func (i *Item) GenerateFortniteItemEntry() aid.JSON {
+	attributes := aid.JSON{}
+
+	switch strings.Split(i.TemplateID, ":")[0] {
+	case "Currency": 
+		attributes["platform"] = "Shared"
+	default:
 		attributes = aid.JSON{
-			"platform": "Shared",
+			"variants": i.GenerateFortniteItemVariantChannels(),
+			"favorite": i.Favorite,
+			"item_seen": i.HasSeen,
 		}
 	}
 
@@ -137,6 +152,10 @@ func (i *Item) DeleteLoot() {
 	storage.Repo.DeleteLoot(i.ID)
 }
 
+func (i *Item) DeleteReceiptLoot() {
+	storage.Repo.DeleteReceiptLoot(i.ID)
+}
+
 func (i *Item) NewChannel(channel string, owned []string, active string) *VariantChannel {
 	return &VariantChannel{
 		ID: uuid.New().String(),
@@ -149,7 +168,6 @@ func (i *Item) NewChannel(channel string, owned []string, active string) *Varian
 
 func (i *Item) AddChannel(channel *VariantChannel) {
 	i.Variants = append(i.Variants, channel)
-	//storage.Repo.SaveItemVariant(i.ID, channel)
 }
 
 func (i *Item) RemoveChannel(channel *VariantChannel) {
@@ -211,6 +229,10 @@ func (i *Item) Save() {
 		return
 	}
 
+	for _, variant := range i.Variants {
+		variant.Save()
+	}
+
 	storage.Repo.SaveItem(i.ToDatabase(i.ProfileID))
 }
 
@@ -234,8 +256,17 @@ func (i *Item) ToPurchaseLootDatabase(purchaseId string) *storage.DB_PurchaseLoo
 	}
 }
 
+func (i *Item) ToReceiptLootDatabase(receiptId string) *storage.DB_ReceiptLoot {
+	return &storage.DB_ReceiptLoot{
+		ID: i.ID,
+		ReceiptID: receiptId,
+		ProfileType: i.ProfileType,
+		TemplateID: i.TemplateID,
+		Quantity: i.Quantity,
+	}
+}
+
 func (i *Item) SaveLoot(giftId string) {
-	//storage.Repo.SaveLoot(i.ToLootDatabase(giftId))
 }
 
 func (i *Item) Snapshot() ItemSnapshot {

@@ -43,6 +43,11 @@ type Storage interface {
 	SaveGift(gift *DB_Gift)
 	DeleteGift(giftId string)
 
+	SaveVariantToken(variantToken *DB_VariantToken)
+	SaveVariantTokenGrant(variantTokenGrant *DB_VariantTokenGrant)
+	DeleteVariantToken(variantTokenId string)
+	DeleteVariantTokenGrant(variantTokenGrantId string)
+
 	SaveAttribute(attribute *DB_Attribute)
 	DeleteAttribute(attributeId string)
 
@@ -57,6 +62,14 @@ type Storage interface {
 
 	SaveBanStatus(ban *DB_BanStatus)
 	DeleteBanStatus(banId string)
+
+	SaveReceipt(receipt *DB_Receipt)
+	SaveReceiptLoot(receiptLoot *DB_ReceiptLoot)
+	DeleteReceipt(receiptId string)
+	DeleteReceiptLoot(receiptLootId string)
+
+	SaveSeasonStats(season *DB_SeasonStat)
+	DeleteSeasonStats(seasonId string)
 }
 
 type Repository struct {
@@ -198,6 +211,22 @@ func (r *Repository) DeleteGift(giftId string) {
 	r.Storage.DeleteGift(giftId)
 }
 
+func (r *Repository) SaveVariantToken(variantToken *DB_VariantToken) {
+	r.Storage.SaveVariantToken(variantToken)
+}
+
+func (r *Repository) SaveVariantTokenGrant(variantTokenGrant *DB_VariantTokenGrant) {
+	r.Storage.SaveVariantTokenGrant(variantTokenGrant)
+}
+
+func (r *Repository) DeleteVariantToken(variantTokenId string) {
+	r.Storage.DeleteVariantToken(variantTokenId)
+}
+
+func (r *Repository) DeleteVariantTokenGrant(variantTokenGrantId string) {
+	r.Storage.DeleteVariantTokenGrant(variantTokenGrantId)
+}
+
 func (r *Repository) SaveAttribute(attribute *DB_Attribute) {
 	r.Storage.SaveAttribute(attribute)
 }
@@ -236,4 +265,28 @@ func (r *Repository) SaveBanStatus(ban *DB_BanStatus) {
 
 func (r *Repository) DeleteBanStatus(banId string) {
 	r.Storage.DeleteBanStatus(banId)
+}
+
+func (r *Repository) SaveReceipt(receipt *DB_Receipt) {
+	r.Storage.SaveReceipt(receipt)
+}
+
+func (r *Repository) SaveReceiptLoot(receiptLoot *DB_ReceiptLoot) {
+	r.Storage.SaveReceiptLoot(receiptLoot)
+}
+
+func (r *Repository) DeleteReceipt(receiptId string) {
+	r.Storage.DeleteReceipt(receiptId)
+}
+
+func (r *Repository) DeleteReceiptLoot(receiptLootId string) {
+	r.Storage.DeleteReceiptLoot(receiptLootId)
+}
+
+func (r *Repository) SaveSeasonStats(season *DB_SeasonStat) {
+	r.Storage.SaveSeasonStats(season)
+}
+
+func (r *Repository) DeleteSeasonStats(seasonId string) {
+	r.Storage.DeleteSeasonStats(seasonId)
 }

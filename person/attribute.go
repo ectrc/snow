@@ -56,6 +56,11 @@ func (a *Attribute) Save() {
 	storage.Repo.SaveAttribute(a.ToDatabase(a.ProfileID))
 }
 
+func (a *Attribute) SetValue(value interface{}) *Attribute {
+	a.ValueJSON = aid.JSONStringify(value)
+	return a
+}
+
 func AttributeConvertToSlice[T any](attribute *Attribute) []T {
 	valuesRaw := aid.JSONParse(attribute.ValueJSON).([]interface{})
 	values := make([]T, len(valuesRaw))
@@ -67,5 +72,5 @@ func AttributeConvertToSlice[T any](attribute *Attribute) []T {
 }
 
 func AttributeConvert[T any](attribute *Attribute) T {
-	return aid.JSONParse(attribute.ValueJSON).(T)
+	return aid.JSONParseG[T](attribute.ValueJSON)
 }

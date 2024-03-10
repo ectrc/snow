@@ -1,6 +1,7 @@
 package aid
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"regexp"
@@ -24,6 +25,13 @@ func FormatNumber(number int) string {
 	}
 
 	return ReverseString(str)
+}
+
+func FormatPrice(number int) string {
+	last := number % 100
+	number /= 100
+	str := fmt.Sprintf("%d.%02d", number, last)
+	return str
 }
 
 func ReverseString(input string) string {
@@ -53,9 +61,23 @@ func Regex(str, regex string) *string {
 	return nil
 }
 
+// if condition is true, return a, else return b
 func Ternary[T any](condition bool, a, b T) T {
 	if condition {
 		return a
 	}
 	return b
+}
+
+func ToInt(str string) int {
+	i, _ := strconv.Atoi(str)
+	return i
+}
+
+func Flatten[T any](arr [][]T) []T {
+	var flat []T
+	for _, a := range arr {
+		flat = append(flat, a...)
+	}
+	return flat
 }

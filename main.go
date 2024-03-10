@@ -9,6 +9,7 @@ import (
 	"github.com/ectrc/snow/fortnite"
 	"github.com/ectrc/snow/handlers"
 	"github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/shop"
 	"github.com/ectrc/snow/storage"
 
 	"github.com/goccy/go-json"
@@ -20,7 +21,7 @@ import (
 var configFile []byte
 
 func init() {
-	aid.LoadConfig(configFile)
+	aid.LoadConfig(configFile) 
 	var device storage.Storage
 	switch aid.Config.Database.Type {
 	case "postgres":
@@ -45,13 +46,20 @@ func init() {
 func init() {
 	discord.IntialiseClient()
 	fortnite.PreloadCosmetics()
-	fortnite.NewRandomFortniteCatalog()
+	fortnite.PreloadEvents()
+	shop.GetShop()
 
 	for _, username := range aid.Config.Accounts.Gods {
 		found := person.FindByDisplay(username)
 		if found == nil {
 			found = fortnite.NewFortnitePersonWithId(username, username, aid.Config.Fortnite.Everything)
 		}
+		found.Discord = &storage.DB_DiscordPerson{
+			ID: found.ID,
+			PersonID: found.ID,
+			Username: username,
+		}
+		found.Save()
 
 		found.AddPermission(person.PermissionAllWithRoles)
 		aid.Print("(snow) max account " + username + " loaded")
@@ -76,20 +84,16 @@ func main() {
 	})
 
 	r.Use(aid.FiberLogger())
-	r.Use(aid.FiberLimiter(100))
+	r.Use(aid.FiberLimiter(1000))
 	r.Use(aid.FiberCors())
 
 	r.Get("/region", handlers.GetRegion)
 	r.Get("/content/api/pages/fortnite-game", handlers.GetContentPages)
 	r.Get("/waitingroom/api/waitingroom", handlers.GetWaitingRoomStatus)
 	r.Get("/affiliate/api/public/affiliates/slug/:slug", handlers.GetAffiliate)
-	
-	r.Get("/api/v1/search/:accountId", handlers.GetPersonSearch)
-	r.Post("/api/v1/assets/Fortnite/:versionId/:assetName", handlers.PostAssets)
-
 	r.Get("/profile/privacy_settings", handlers.MiddlewareFortnite, handlers.GetPrivacySettings)
 	r.Put("/profile/play_region", handlers.AnyNoContent)
-	
+	r.Get("/api/v1/search/:accountId", handlers.GetPersonSearch)
 	r.Get("/", handlers.RedirectSocket)
 	r.Get("/socket", handlers.MiddlewareWebsocket, websocket.New(handlers.WebsocketConnection))
 
@@ -103,7 +107,7 @@ func main() {
 	account.Delete("/oauth/sessions/kill", handlers.DeleteToken)
 
 	fortnite := r.Group("/fortnite/api")
-	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.GetFortniteReceipts)
+	fortnite.Get("/receipts/v1/account/:accountId/receipts", handlers.MiddlewareFortnite, handlers.GetFortniteReceipts)
 	fortnite.Get("/v2/versioncheck/:version", handlers.GetFortniteVersion)
 	fortnite.Get("/calendar/v1/timeline", handlers.GetFortniteTimeline)
 
@@ -134,11 +138,15 @@ func main() {
 	friends.Post("/:version/:accountId/friends/:wanted", handlers.PostCreateFriend)
 	friends.Delete("/:version/:accountId/friends/:wanted", handlers.DeleteFriend)
 
+	events := r.Group("/api/v1/events/Fortnite")
+	events.Use(handlers.MiddlewareFortnite)
+	events.Get("/download/:accountId", handlers.GetEvents)
+	events.Get("/:eventId/history/:accountId", handlers.GetEventsBulkHistory)
+
 	game := fortnite.Group("/game/v2")
 	game.Get("/enabled_features", handlers.GetGameEnabledFeatures)
 	game.Post("/tryPlayOnPlatform/account/:accountId", handlers.PostGamePlatform)
 	game.Post("/grant_access/:accountId", handlers.PostGameAccess)
-	game.Post("/creative/discovery/surface/:accountId", handlers.PostDiscovery)
 	game.Post("/profileToken/verify/:accountId", handlers.AnyNoContent)
 
 	profile := game.Group("/profile/:accountId")
@@ -149,6 +157,12 @@ func main() {
 	lightswitch := r.Group("/lightswitch/api")
 	lightswitch.Use(handlers.MiddlewareFortnite)
 	lightswitch.Get("/service/bulk/status", handlers.GetLightswitchBulkStatus)
+
+	purchasing := r.Group("/purchase")
+	purchasing.Get("/", handlers.GetHtmlPurchasePage)
+	purchasing.Get("/offer", handlers.MiddlewareFortnite, handlers.GetPurchaseOffer)
+	purchasing.Post("/offer", handlers.MiddlewareFortnite, handlers.PostPurchaseOffer)
+	purchasing.Get("/assets", handlers.GetPurchaseAsset)
 
 	party := r.Group("/party/api/v1/Fortnite")
 	party.Use(handlers.MiddlewareFortnite)
@@ -169,13 +183,19 @@ func main() {
 	party.Post("/members/:friendId/intentions/:accountId", handlers.PostPartyCreateIntention)
 
 	snow := r.Group("/snow")
+	snow.Post("/log", handlers.PostSnowLog)
+
 	discord := snow.Group("/discord")
 	discord.Get("/", handlers.GetDiscordOAuthURL)
+
+	launcher := snow.Group("/launcher")
+	launcher.Get("/", handlers.GetLauncherStatus)
 
 	player := snow.Group("/player")
 	player.Use(handlers.MiddlewareWeb)
 	player.Get("/", handlers.GetPlayer)
 	player.Get("/okay", handlers.GetPlayerOkay)
+	player.Post("/code", handlers.PostPlayerCreateCode)
 
 	debug := snow.Group("/")
 	debug.Use(handlers.MiddlewareOnlyDebug)
@@ -191,10 +211,10 @@ func main() {
 	})
 	r.All("*", func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).JSON(aid.ErrorNotFound) })
 
-	if aid.Config.Fortnite.Season <= 2 {
-		t := handlers.NewServer()
-		go t.Listen()
-	}
+	// if aid.Config.Fortnite.Season <= 2 {
+	// 	t := handlers.NewServer()
+	// 	go t.Listen()
+	// }
 
 	err := r.Listen("0.0.0.0" + aid.Config.API.Port)
 	if err != nil {

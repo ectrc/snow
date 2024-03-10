@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/ectrc/snow/aid"
 	p "github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -27,7 +28,19 @@ func PostGameAccess(c *fiber.Ctx) error {
 }
 
 func GetFortniteReceipts(c *fiber.Ctx) error {
-	return c.Status(200).JSON([]string{})
+	person := c.Locals("person").(*p.Person)
+	receipts := []aid.JSON{}
+
+	person.Receipts.RangeReceipts(func(key string, value *p.Receipt) bool {
+		if value.State == "OK" {
+			return true
+		}
+		
+		receipts = append(receipts, value.GenerateFortniteReceiptEntry())
+		return true
+	})
+
+	return c.Status(200).JSON(receipts)
 }
 
 func GetMatchmakingSession(c *fiber.Ctx) error {
@@ -69,4 +82,15 @@ func GetRegion(c *fiber.Ctx) error {
 		},
 		"subdivisions": []aid.JSON{},
 	})
+}
+
+func SendJSONResponseFromAsset(c *fiber.Ctx, asset string) error {
+	bytes := storage.Asset(asset)
+	if bytes == nil {
+		return c.Status(404).JSON(aid.JSON{})
+	}
+
+	stringBytes := string(*bytes)
+	c.Set("Content-Type", "application/json")
+	return c.Status(200).SendString(stringBytes)
 }

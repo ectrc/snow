@@ -1,6 +1,7 @@
 package aid
 
 import (
+	"slices"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,7 +14,21 @@ func FiberLogger() fiber.Handler {
 	return logger.New(logger.Config{
 		Format: "(${method}) (${status}) (${latency}) ${path}\n",
 		Next: func(c *fiber.Ctx) bool {
-			return c.Response().StatusCode() == 302
+			if (slices.Contains[[]int](
+				[]int{302, 101},
+				c.Response().StatusCode(),
+			)) {
+				return true
+			}
+
+			if (slices.Contains[[]string](
+				[]string{"/snow/log", "/purchase/assets/", " /favicon.ico"},
+				c.Path(),
+			)) {
+				return true
+			}
+
+			return false
 		},
 	})
 }
@@ -43,3 +58,4 @@ func FiberGetQueries(c *fiber.Ctx, queryKeys ...string) map[string][]string {
 	}
 	return argsMaps
 }
+

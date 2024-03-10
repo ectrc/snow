@@ -18,29 +18,30 @@ var (
 
 type dataClient struct {
 	h *http.Client
-	FortniteSets map[string]*FortniteSet `json:"sets"`
-	FortniteItems map[string]*FortniteItem `json:"items"`
-	FortniteItemsWithDisplayAssets map[string]*FortniteItem `json:"-"`
-	FortniteItemsWithFeaturedImage []*FortniteItem `json:"-"`
-	TypedFortniteItems map[string][]*FortniteItem `json:"-"`
-	TypedFortniteItemsWithDisplayAssets map[string][]*FortniteItem `json:"-"`
+	FortniteSets map[string]*APISetDefinition `json:"sets"`
+	FortniteItems map[string]*APICosmeticDefinition `json:"items"`
+	FortniteItemsWithDisplayAssets map[string]*APICosmeticDefinition `json:"-"`
+	FortniteItemsWithFeaturedImage []*APICosmeticDefinition `json:"-"`
+	TypedFortniteItems map[string][]*APICosmeticDefinition `json:"-"`
+	TypedFortniteItemsWithDisplayAssets map[string][]*APICosmeticDefinition `json:"-"`
 	SnowVariantTokens map[string]*FortniteVariantToken `json:"variants"`
 	StorefrontCosmeticOfferPriceLookup map[string]map[string]int `json:"-"`
 	StorefrontDailyItemCountLookup []struct{Season int;Items int} `json:"-"`
 	StorefrontWeeklySetCountLookup []struct{Season int;Sets int} `json:"-"`
 	StorefrontCurrencyOfferPriceLookup map[string]map[int]int `json:"-"`
 	StorefrontCurrencyMultiplier map[string]float64 `json:"-"`
+	SnowSeason *SnowSeasonDefinition `json:"season"`
 }
 
 func NewDataClient() *dataClient {
 	return &dataClient{
 		h: &http.Client{},
-		FortniteItems: make(map[string]*FortniteItem),
-		FortniteSets: make(map[string]*FortniteSet),
-		FortniteItemsWithDisplayAssets: make(map[string]*FortniteItem),
-		FortniteItemsWithFeaturedImage: []*FortniteItem{},
-		TypedFortniteItems: make(map[string][]*FortniteItem),
-		TypedFortniteItemsWithDisplayAssets: make(map[string][]*FortniteItem),
+		FortniteItems: make(map[string]*APICosmeticDefinition),
+		FortniteSets: make(map[string]*APISetDefinition),
+		FortniteItemsWithDisplayAssets: make(map[string]*APICosmeticDefinition),
+		FortniteItemsWithFeaturedImage: []*APICosmeticDefinition{},
+		TypedFortniteItems: make(map[string][]*APICosmeticDefinition),
+		TypedFortniteItemsWithDisplayAssets: make(map[string][]*APICosmeticDefinition),
 		SnowVariantTokens: make(map[string]*FortniteVariantToken),
 		StorefrontDailyItemCountLookup: []struct{Season int;Items int}{
 			{2, 4},
@@ -55,7 +56,7 @@ func NewDataClient() *dataClient {
 		StorefrontCosmeticOfferPriceLookup: map[string]map[string]int{
 			"EFortRarity::Legendary": {
 				"AthenaCharacter": 2000,
-				"AthenaBackpack":  1500,
+				"AthenaBackpack":  300,
 				"AthenaPickaxe":   1500,
 				"AthenaGlider":    1800,
 				"AthenaDance":     500,
@@ -63,7 +64,7 @@ func NewDataClient() *dataClient {
 			},
 			"EFortRarity::Epic": {
 				"AthenaCharacter": 1500,
-				"AthenaBackpack":  1200,
+				"AthenaBackpack":  250,
 				"AthenaPickaxe":   1200,
 				"AthenaGlider":    1500,
 				"AthenaDance":     800,
@@ -71,7 +72,7 @@ func NewDataClient() *dataClient {
 			},
 			"EFortRarity::Rare": {
 				"AthenaCharacter": 1200,
-				"AthenaBackpack":  800,
+				"AthenaBackpack":  200,
 				"AthenaPickaxe":   800,
 				"AthenaGlider":    800,
 				"AthenaDance":     500,
@@ -133,14 +134,14 @@ func (c *dataClient) LoadExternalData() {
 		return
 	}
 
-	content := &FortniteCosmeticsResponse{}
+	content := &APICosmeticsResponse{}
 	err = json.Unmarshal(bodyBytes, content)
 	if err != nil {
 		return
 	}
 	
 	for _, item := range content.Data {
-		c.LoadItem(&item)
+		c.LoadItemDefinition(&item)
 	}
 
 	for _, item := range c.TypedFortniteItems["AthenaBackpack"] {
@@ -156,7 +157,7 @@ func (c *dataClient) LoadExternalData() {
 		c.AddDisplayAssetToItem(displayAsset)
 	}
 
-	variantTokens := storage.HttpAsset[map[string]SnowCosmeticVariantToken]("variants.snow.json")
+	variantTokens := storage.HttpAsset[map[string]SnowCosmeticVariantDefinition]("variants.snow.json")
 	if variantTokens == nil {
 		return
 	}
@@ -188,23 +189,142 @@ func (c *dataClient) LoadExternalData() {
 			c.AddNumericStylesToItem(item)
 		}
 	}
+
+	athenaSeasonObj := storage.HttpAsset[[]UnrealEngineObject[UnrealSeasonProperties, UnrealNoRows]]("season.snow.json")
+	if athenaSeasonObj == nil {
+		return
+	}
+
+	levelProgressionObj := storage.HttpAsset[[]UnrealEngineObject[UnrealProgressionProperties, UnrealProgressionRows]]("progression.levels.snow.json")
+	if levelProgressionObj == nil {
+		return
+	}
+
+	bookProgressionObj := storage.HttpAsset[[]UnrealEngineObject[UnrealProgressionProperties, UnrealProgressionRows]]("progression.book.snow.json")
+	if bookProgressionObj == nil {
+		return
+	}
+
+	c.SnowSeason = NewSeasonDefinition()
+
+	for index, tier := range (*athenaSeasonObj)[0].Properties.BookXpSchedulePaid.Levels {
+		c.SnowSeason.TierRewardsPremium[index] = []*ItemGrant{}
+		for _, reward := range tier.Rewards {
+			templateId := aid.Ternary[string](reward.ItemDefinition.AssetPathName != "None", convertAssetPathToTemplateId(reward.ItemDefinition.AssetPathName), reward.TemplateID)
+			c.SnowSeason.TierRewardsPremium[index] = append(c.SnowSeason.TierRewardsPremium[index], NewItemGrant(templateId, reward.Quantity))
+		}
+	}
+	c.SnowSeason.TierRewardsPremium[0] = []*ItemGrant{}
+
+	for index, tier := range (*athenaSeasonObj)[0].Properties.BookXpScheduleFree.Levels {
+		c.SnowSeason.TierRewardsFree[index] = []*ItemGrant{}
+		for _, reward := range tier.Rewards {
+			templateId := aid.Ternary[string](reward.ItemDefinition.AssetPathName != "None", convertAssetPathToTemplateId(reward.ItemDefinition.AssetPathName), reward.TemplateID)
+			c.SnowSeason.TierRewardsFree[index] = append(c.SnowSeason.TierRewardsFree[index], NewItemGrant(templateId, reward.Quantity))
+		}
+	}
+	c.SnowSeason.TierRewardsFree[0] = []*ItemGrant{}
+
+	for index, level := range (*athenaSeasonObj)[0].Properties.SeasonXpScheduleFree.Levels {
+		c.SnowSeason.LevelRewards[index] = []*ItemGrant{}
+		for _, reward := range level.Rewards {
+			templateId := aid.Ternary[string](reward.ItemDefinition.AssetPathName != "None", convertAssetPathToTemplateId(reward.ItemDefinition.AssetPathName), reward.TemplateID)
+			c.SnowSeason.LevelRewards[index] = append(c.SnowSeason.LevelRewards[index], NewItemGrant(templateId, reward.Quantity))
+		}
+	}
+	c.SnowSeason.LevelRewards[0] = []*ItemGrant{}
+
+	for _, token := range (*athenaSeasonObj)[0].Properties.TokensToRemoveAtSeasonEnd {
+		c.SnowSeason.SeasonTokenRemoval = append(c.SnowSeason.SeasonTokenRemoval, NewItemGrant(convertAssetPathToTemplateId(token.AssetPathName), 1))
+	}
+
+	for _, reward := range (*athenaSeasonObj)[0].Properties.SeasonFirstWinRewards.Rewards {
+		templateId := aid.Ternary[string](reward.ItemDefinition.AssetPathName != "None", convertAssetPathToTemplateId(reward.ItemDefinition.AssetPathName), reward.TemplateID)
+		c.SnowSeason.VictoryRewards = append(c.SnowSeason.VictoryRewards, NewItemGrant(templateId, reward.Quantity))
+	}
+
+	for _, token := range (*athenaSeasonObj)[0].Properties.ExpiringRewardTypes {
+		c.SnowSeason.SeasonTokenRemoval = append(c.SnowSeason.SeasonTokenRemoval, NewItemGrant(convertAssetPathToTemplateId(token.AssetPathName), 1))
+	}
+
+	for _, reward := range (*athenaSeasonObj)[0].Properties.SeasonGrantsToEveryone.Rewards {
+		templateId := aid.Ternary[string](reward.ItemDefinition.AssetPathName != "None", convertAssetPathToTemplateId(reward.ItemDefinition.AssetPathName), reward.TemplateID)
+		c.SnowSeason.TierRewardsFree[0] = append(c.SnowSeason.TierRewardsFree[0], NewItemGrant(templateId, reward.Quantity))
+	}
+
+	for _, replacement := range (*athenaSeasonObj)[0].Properties.BattleStarSubstitutionReward.Rewards {
+		templateId := aid.Ternary[string](replacement.ItemDefinition.AssetPathName != "None", convertAssetPathToTemplateId(replacement.ItemDefinition.AssetPathName), replacement.TemplateID)
+		c.SnowSeason.BookXPReplacements = append(c.SnowSeason.BookXPReplacements, NewItemGrant(templateId, replacement.Quantity))
+	}
+
+	for indexString, row := range *(*levelProgressionObj)[0].Rows {
+		index := aid.ToInt(indexString)
+		c.SnowSeason.LevelProgression[index] = &row
+	}
+	c.SnowSeason.LevelProgression[0] = &UnrealProgressionRows{
+		Level: 0,
+		XpToNextLevel: 0,
+		XpTotal: 0,
+	}
+	c.SnowSeason.LevelProgression[100] = &UnrealProgressionRows{
+		Level: 100,
+		XpToNextLevel: 0,
+		XpTotal: c.SnowSeason.LevelProgression[99].XpTotal + c.SnowSeason.LevelProgression[99].XpToNextLevel,
+	}
+
+	for indexString, row := range *(*bookProgressionObj)[0].Rows {
+		index := aid.ToInt(indexString)
+		c.SnowSeason.BookProgression[index] = &row
+	}
+	c.SnowSeason.BookProgression[0] = &UnrealProgressionRows{
+		Level: 0,
+		XpToNextLevel: 0,
+		XpTotal: 0,
+	}
+	c.SnowSeason.BookProgression[100] = &UnrealProgressionRows{
+		Level: 100,
+		XpToNextLevel: 0,
+		XpTotal: c.SnowSeason.BookProgression[99].XpTotal + c.SnowSeason.BookProgression[99].XpToNextLevel,
+	}
+
+	c.SnowSeason.DefaultOfferID = (*athenaSeasonObj)[0].Properties.BattlePassOfferId
+	c.SnowSeason.BundleOfferID = (*athenaSeasonObj)[0].Properties.BattlePassBundleOfferId
+	c.SnowSeason.TierOfferID = (*athenaSeasonObj)[0].Properties.BattlePassLevelOfferID
 }
 
-func (c *dataClient) LoadItem(item *FortniteItem) {
+func (c *dataClient) LoadItemDefinition(item *APICosmeticDefinition) {
 	if item.Introduction.BackendValue > aid.Config.Fortnite.Season || item.Introduction.BackendValue == 0 {
 		return
 	}
+
+	typeLookup := map[string]string{
+		"AthenaCharacter": "AthenaCharacter",
+		"AthenaBackpack": "AthenaBackpack",
+		"AthenaPickaxe": "AthenaPickaxe",
+		"AthenaGlider": "AthenaGlider",
+		"AthenaDance": "AthenaDance",
+		"AthenaToy": "AthenaDance",
+		"AthenaEmoji": "AthenaEmoji",
+		"AthenaItemWrap": "AthenaItemWrap",
+		"AthenaMusicPack": "AthenaMusicPack",
+		"AthenaPet": "AthenaBackpack",
+		"AthenaPetCarrier": "AthenaBackpack",
+		"AthenaLoadingScreen": "AthenaLoadingScreen",
+		"AthenaSkyDiveContrail": "AthenaSkyDiveContrail",
+	}
+
+	item.Type.BackendValue = aid.Ternary[string](typeLookup[item.Type.BackendValue] != "", typeLookup[item.Type.BackendValue], item.Type.BackendValue)
 	
 	if c.FortniteSets[item.Set.BackendValue] == nil {
-		c.FortniteSets[item.Set.BackendValue] = &FortniteSet{
+		c.FortniteSets[item.Set.BackendValue] = &APISetDefinition{
 			BackendName: item.Set.Value,
 			DisplayName: item.Set.Text,
-			Items: []*FortniteItem{},
+			Items: []*APICosmeticDefinition{},
 		}
 	}
 
 	if c.TypedFortniteItems[item.Type.BackendValue] == nil {
-		c.TypedFortniteItems[item.Type.BackendValue] = []*FortniteItem{}
+		c.TypedFortniteItems[item.Type.BackendValue] = []*APICosmeticDefinition{}
 	}
 
 	c.FortniteItems[item.ID] = item
@@ -228,7 +348,7 @@ func (c *dataClient) LoadItem(item *FortniteItem) {
 	c.FortniteItemsWithFeaturedImage = append(c.FortniteItemsWithFeaturedImage, item)
 }
 
-func (c *dataClient) AddBackpackToItem(backpack *FortniteItem) {
+func (c *dataClient) AddBackpackToItem(backpack *APICosmeticDefinition) {
 	if backpack.ItemPreviewHeroPath == "" {
 		return
 	}
@@ -239,7 +359,7 @@ func (c *dataClient) AddBackpackToItem(backpack *FortniteItem) {
 		return
 	}
 
-	character.Backpack = backpack
+	character.BackpackDefinition = backpack
 }
 
 func (c *dataClient) AddDisplayAssetToItem(displayAsset string) {
@@ -257,20 +377,20 @@ func (c *dataClient) AddDisplayAssetToItem(displayAsset string) {
 		return
 	}
 
-	found.DisplayAssetPath2 = displayAsset
+	found.NewDisplayAssetPath = displayAsset
 	c.FortniteItemsWithDisplayAssets[found.ID] = found
 	c.TypedFortniteItemsWithDisplayAssets[found.Type.BackendValue] = append(c.TypedFortniteItemsWithDisplayAssets[found.Type.BackendValue], found)
 }
 
-func (c *dataClient) AddNumericStylesToItem(item *FortniteItem) {
-	ownedStyles := []FortniteVariantChannel{}
+func (c *dataClient) AddNumericStylesToItem(item *APICosmeticDefinition) {
+	ownedStyles := []APICosmeticDefinitionVariant{}
 	for i := 0; i < 100; i++ {
-		ownedStyles = append(ownedStyles, FortniteVariantChannel{
+		ownedStyles = append(ownedStyles, APICosmeticDefinitionVariant{
 			Tag: fmt.Sprint(i),
 		})
 	}
 
-	item.Variants = append(item.Variants, FortniteVariant{
+	item.Variants = append(item.Variants, APICosmeticDefinitionVariantChannel{
 		Channel: "Numeric",
 		Type: "int",
 		Options: ownedStyles,
@@ -290,12 +410,12 @@ func (c *dataClient) GetStorefrontDailyItemCount(season int) int {
 
 func (c *dataClient) GetStorefrontWeeklySetCount(season int) int {
 	currentValue := 2
-	for _, item := range c.StorefrontWeeklySetCountLookup {
-		if item.Season > season {
-			continue
-		}
-		currentValue = item.Sets
-	}
+	// for _, item := range c.StorefrontWeeklySetCountLookup {
+	// 	if item.Season > season {
+	// 		continue
+	// 	}
+	// 	currentValue = item.Sets
+	// }
 	return currentValue
 }
 
@@ -307,7 +427,7 @@ func (c *dataClient) GetStorefrontCurrencyOfferPrice(currency string, amount int
 	return c.StorefrontCurrencyOfferPriceLookup[currency][amount]
 }
 
-func (c *dataClient) GetLocalizedPrice(currency string, amount int) int {
+func (c *dataClient) GetStorefrontLocalizedOfferPrice(currency string, amount int) int {
 	return int(float64(amount) * c.StorefrontCurrencyMultiplier[currency])
 }
 
@@ -319,7 +439,7 @@ func PreloadCosmetics() error {
 	return nil
 }
 
-func GetItemByShallowID(shallowID string) *FortniteItem {
+func GetItemByShallowID(shallowID string) *APICosmeticDefinition {
 	for _, item := range DataClient.TypedFortniteItems["AthenaCharacter"] {
 		if strings.Contains(item.ID, shallowID) {
 			return item
@@ -329,26 +449,26 @@ func GetItemByShallowID(shallowID string) *FortniteItem {
 	return nil
 }
 
-func GetRandomItemWithDisplayAsset() *FortniteItem {
+func GetRandomItemWithDisplayAsset() *APICosmeticDefinition {
 	items := DataClient.FortniteItemsWithDisplayAssets
 	if len(items) == 0 {
 		return nil
 	}
 
-	flat := []FortniteItem{}
+	flat := []APICosmeticDefinition{}
 	for _, item := range items {
 		flat = append(flat, *item)
 	}
 
-	slices.SortFunc[[]FortniteItem](flat, func(a, b FortniteItem) int {
+	slices.SortFunc[[]APICosmeticDefinition](flat, func(a, b APICosmeticDefinition) int {
 		return strings.Compare(a.ID, b.ID)
 	})
 
 	return &flat[aid.RandomInt(0, len(flat))]
 }
 
-func GetRandomItemWithDisplayAssetOfNotType(notType string) *FortniteItem {
-	flat := []FortniteItem{}
+func GetRandomItemWithDisplayAssetOfNotType(notType string) *APICosmeticDefinition {
+	flat := []APICosmeticDefinition{}
 	
 	for t, items := range DataClient.TypedFortniteItemsWithDisplayAssets {
 		if t == notType {
@@ -360,15 +480,15 @@ func GetRandomItemWithDisplayAssetOfNotType(notType string) *FortniteItem {
 		}
 	}
 
-	slices.SortFunc[[]FortniteItem](flat, func(a, b FortniteItem) int {
+	slices.SortFunc[[]APICosmeticDefinition](flat, func(a, b APICosmeticDefinition) int {
 		return strings.Compare(a.ID, b.ID)
 	})
 
 	return &flat[aid.RandomInt(0, len(flat))]
 }
 
-func GetRandomSet() *FortniteSet {
-	sets := []FortniteSet{}
+func GetRandomSet() *APISetDefinition {
+	sets := []APISetDefinition{}
 	for _, set := range DataClient.FortniteSets {
 		if set.BackendName == "" {
 			continue
@@ -376,7 +496,7 @@ func GetRandomSet() *FortniteSet {
 		sets = append(sets, *set)
 	}
 
-	slices.SortFunc[[]FortniteSet](sets, func(a, b FortniteSet) int {
+	slices.SortFunc[[]APISetDefinition](sets, func(a, b APISetDefinition) int {
 		return strings.Compare(a.BackendName, b.BackendName)
 	})
 

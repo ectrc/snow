@@ -10,7 +10,7 @@ import (
 
 type Gift struct {
 	ID string
-	ProfileID  string
+	ProfileID string
 	TemplateID string
 	Quantity int
 	FromID string

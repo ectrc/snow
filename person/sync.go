@@ -365,3 +365,104 @@ func (m *PurchaseMutex) CountRefunded() int {
 	})
 	return count
 }
+
+type ReceiptMutex struct {
+	sync.Map
+	PersonID	 string
+}
+
+func NewReceiptMutex(personID string) *ReceiptMutex {
+	return &ReceiptMutex{
+		PersonID: personID,
+	}
+}
+
+func (m *ReceiptMutex) AddReceipt(receipt *Receipt) *Receipt {
+	receipt.PersonID = m.PersonID
+	m.Store(receipt.ID, receipt)
+	// storage.Repo.SaveReceipt(receipt.ToDatabase())
+	return receipt
+}
+
+func (m *ReceiptMutex) DeleteReceipt(id string) {
+	receipt := m.GetReceipt(id)
+	if receipt == nil {
+		return
+	}
+
+	m.Delete(id)
+	receipt.Delete()
+}
+
+func (m *ReceiptMutex) GetReceipt(id string) *Receipt {
+	receipt, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return receipt.(*Receipt)
+}
+
+func (m *ReceiptMutex) RangeReceipts(f func(key string, value *Receipt) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*Receipt))
+	})
+}
+
+func (m *ReceiptMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
+
+type VariantTokenMutex struct {
+	sync.Map
+	ProfileID	 string
+	ProfileType string
+}
+
+func NewVariantTokenMutex(profile *storage.DB_Profile) *VariantTokenMutex {
+	return &VariantTokenMutex{
+		ProfileID:	 profile.ID,
+		ProfileType: profile.Type,
+	}
+}
+
+func (m *VariantTokenMutex) AddVariantToken(token *VariantToken) *VariantToken {
+	token.ProfileID = m.ProfileID
+	m.Store(token.ID, token)
+	// storage.Repo.SaveVariantToken(token.ToDatabase(m.ProfileID))
+	return token
+}
+
+func (m *VariantTokenMutex) DeleteVariantToken(id string) {
+	m.Delete(id)
+	storage.Repo.DeleteVariantToken(id)
+}
+
+func (m *VariantTokenMutex) GetVariantToken(id string) *VariantToken {
+	token, ok := m.Load(id)
+	if !ok {
+		return nil
+	}
+
+	return token.(*VariantToken)
+}
+
+func (m *VariantTokenMutex) RangeVariantTokens(f func(key string, value *VariantToken) bool) {
+	m.Range(func(key, value interface{}) bool {
+		return f(key.(string), value.(*VariantToken))
+	})
+}
+
+func (m *VariantTokenMutex) Count() int {
+	count := 0
+	m.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}

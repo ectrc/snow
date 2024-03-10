@@ -3,6 +3,7 @@ package socket
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/beevik/etree"
 	"github.com/ectrc/snow/aid"
@@ -29,7 +30,7 @@ func HandleNewJabberSocket(identifier string) {
 	if !ok {
 		return
 	}
-	defer JabberSockets.Delete(socket.ID)
+	defer socket.Remove()
 
 	for {
 		_, message, failed := socket.Connection.ReadMessage()
@@ -57,9 +58,6 @@ func JabberSocketOnMessage(socket *Socket[JabberData], message []byte) {
 }
 
 func jabberStreamHandler(socket *Socket[JabberData], parsed *etree.Document) error {
-	socket.Write([]byte(`<stream:stream id="`+socket.ID+`" from="prod.ol.epicgames.com" xml:lang="*" version="1.0" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client"/>`))
-	// socket.Write([]byte(`<open xmlns="urn:ietf:params:xml:ns:xmpp-framing" from="prod.ol.epicgames.com" version="1.0" id="`+ socket.ID +`" />`))
-	// socket.Write([]byte(`<stream:features xmlns:stream="http://etherx.jabber.org/streams" id="`+ socket.ID +`" />`))
 	return nil
 }
 
@@ -106,7 +104,9 @@ func jabberIqSetHandler(socket *Socket[JabberData], parsed *etree.Document) erro
 }
 
 func jabberIqGetHandler(socket *Socket[JabberData], parsed *etree.Document) error {
-	socket.Write([]byte(`<iq xmlns="jabber:client" type="result" id="`+ parsed.Root().SelectAttr("id").Value +`" from="prod.ol.epicgames.com" to="`+ socket.Data.JabberID +`" />`))
+	socket.Write([]byte(`<iq xmlns="jabber:client" type="result" id="`+ parsed.Root().SelectAttr("id").Value +`" from="prod.ol.epicgames.com" to="`+ parsed.Root().SelectAttr("from").Value +`" >
+		<ping xmlns="urn:xmpp:ping"/>
+	</iq`))
 	socket.JabberNotifyFriends()
 	return nil
 }
@@ -207,8 +207,6 @@ func jabberMessageHandler(socket *Socket[JabberData], parsed *etree.Document) er
 	return nil
 }
 
-// TODO: IMPLEMENT WHISPERING
-
 func jabberMessageChatHandler(socket *Socket[JabberData], parsed *etree.Document) error {
 	return nil
 }
@@ -267,4 +265,21 @@ func (s *Socket[T]) JabberNotifyFriends() {
 	jabberSocket.Write([]byte(`<presence xmlns="jabber:client" type="available" from="`+ jabberSocket.Data.JabberID +`" to="`+ jabberSocket.Data.JabberID +`">
 		<status>`+ jabberSocket.Data.LastPresence +`</status>
 	</presence>`))
+}
+
+func init() {
+	go func() {
+		timer := time.NewTicker(5 * time.Second)
+
+		for {
+			<-timer.C
+			
+			JabberSockets.Range(func(key string, value *Socket[JabberData]) bool {
+				value.Write([]byte(`<iq id="_xmpp_auth1" type="get" from="prod.ol.epicgames.com" xmlns="jabber:client">
+					<ping xmlns="urn:xmpp:ping"/>
+				</iq>`))
+				return true
+			})
+		}
+	}()
 }

@@ -49,6 +49,10 @@ func (s *PostgresStorage) MigrateAll() {
 	s.Migrate(&DB_DiscordPerson{}, "Discords")
 	s.Migrate(&DB_BanStatus{}, "Bans")
 	s.Migrate(&DB_SeasonStat{}, "Stats")
+	s.Migrate(&DB_Receipt{}, "Receipts")
+	s.Migrate(&DB_ReceiptLoot{}, "ReceiptLoot")
+	s.Migrate(&DB_VariantToken{}, "VariantTokens")
+	s.Migrate(&DB_VariantTokenGrant{}, "VariantTokenGrants")
 }
 
 func (s *PostgresStorage) DropTables() {
@@ -66,8 +70,12 @@ func (s *PostgresStorage) PreloadPerson() (tx *gorm.DB) {
 		Preload("Profiles.Gifts").
 		Preload("Profiles.Gifts.Loot").
 		Preload("Profiles.Quests").
+		Preload("Profiles.VariantTokens").
+		Preload("Profiles.VariantTokens.VariantGrants").
 		Preload("Profiles.Purchases").
 		Preload("Profiles.Purchases.Loot").
+		Preload("Receipts").
+		Preload("Receipts.Loot").
 		Preload("Discord").
 		Preload("BanHistory").
 		Preload("Stats")
@@ -220,6 +228,22 @@ func (s *PostgresStorage) DeleteGift(giftId string) {
 	s.Postgres.Delete(&DB_Gift{}, "id = ?", giftId)
 }
 
+func (s *PostgresStorage) SaveVariantToken(variantToken *DB_VariantToken) {
+	s.Postgres.Save(variantToken)
+}
+
+func (s *PostgresStorage) DeleteVariantToken(variantTokenId string) {
+	s.Postgres.Delete(&DB_VariantToken{}, "id = ?", variantTokenId)
+}
+
+func (s *PostgresStorage) SaveVariantTokenGrant(variantTokenGrant *DB_VariantTokenGrant) {
+	s.Postgres.Save(variantTokenGrant)
+}
+
+func (s *PostgresStorage) DeleteVariantTokenGrant(variantTokenGrantId string) {
+	s.Postgres.Delete(&DB_VariantTokenGrant{}, "id = ?", variantTokenGrantId)
+}
+
 func (s *PostgresStorage) SaveAttribute(attribute *DB_Attribute) {
 	s.Postgres.Save(attribute)
 }
@@ -258,4 +282,28 @@ func (s *PostgresStorage) SaveBanStatus(banStatus *DB_BanStatus) {
 
 func (s *PostgresStorage) DeleteBanStatus(banStatusId string) {
 	s.Postgres.Delete(&DB_BanStatus{}, "id = ?", banStatusId)
+}
+
+func (s *PostgresStorage) SaveReceipt(receipt *DB_Receipt) {
+	s.Postgres.Save(receipt)
+}
+
+func (s *PostgresStorage) DeleteReceipt(receiptId string) {
+	s.Postgres.Delete(&DB_Receipt{}, "id = ?", receiptId)
+}
+
+func (s *PostgresStorage) SaveReceiptLoot(receiptLoot *DB_ReceiptLoot) {
+	s.Postgres.Save(receiptLoot)
+}
+
+func (s *PostgresStorage) DeleteReceiptLoot(receiptLootId string) {
+	s.Postgres.Delete(&DB_ReceiptLoot{}, "id = ?", receiptLootId)
+}
+
+func (s *PostgresStorage) SaveSeasonStats(seasonStats *DB_SeasonStat) {
+	s.Postgres.Save(seasonStats)
+}
+
+func (s *PostgresStorage) DeleteSeasonStats(seasonId string) {
+	s.Postgres.Delete(&DB_SeasonStat{}, "id = ?", seasonId)
 }

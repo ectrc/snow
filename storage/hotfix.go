@@ -16,10 +16,6 @@ func GetDefaultEngine() []byte {
 	realPort := fmt.Sprintf("%d", portNumber)
 
 	str := `
-[OnlineSubsystemMcp.OnlinePaymentServiceMcp Fortnite]
-Domain="launcher-website-prod.ak.epicgames.com"
-BasePath="/logout?redirectUrl=https%3A%2F%2Fwww.unrealengine.com%2Fid%2Flogout%3FclientId%3Dxyza7891KKDWlczTxsyy7H3ExYgsNT4Y%26responseType%3Dcode%26redirectUrl%3Dhttps%253A%252F%252Ftesting-site.neonitedev.live%252Fid%252Flogin%253FredirectUrl%253Dhttps%253A%252F%252Ftesting-site.neonitedev.live%252Fpurchase%252Facquire&path="
-
 [XMPP]
 bEnableWebsockets=true
 
@@ -36,42 +32,59 @@ FortMatchmakingV2.EnableContentBeacon=0
 NumTestsPerRegion=5
 PingTimeout=3.0
 
+[/Script/Qos.QosRegionManager]
+NumTestsPerRegion=5
+PingTimeout=3.0
+!RegionDefinitions=ClearArray
++RegionDefinitions=(DisplayName=NSLOCTEXT("MMRegion", "Europe", "Europe"), RegionId="EU", bEnabled=true, bVisible=true, bAutoAssignable=true)
++RegionDefinitions=(DisplayName=NSLOCTEXT("MMRegion", "North America", "North America"), RegionId="NA", bEnabled=true, bVisible=true, bAutoAssignable=true)
++RegionDefinitions=(DisplayName=NSLOCTEXT("MMRegion", "Oceania", "Oceania"), RegionId="OCE", bEnabled=true, bVisible=true, bAutoAssignable=true)
+!DatacenterDefinitions=ClearArray
++DatacenterDefinitions=(Id="DE", RegionId="EU", bEnabled=true, Servers[0]=(Address="142.132.145.234", Port=22222))
++DatacenterDefinitions=(Id="VA", RegionId="NA", bEnabled=true, Servers[0]=(Address="69.10.34.38", Port=22222))
++DatacenterDefinitions=(Id="SYD", RegionId="OCE", bEnabled=true, Servers[0]=(Address="139.99.209.91", Port=22222))
+!Datacenters=ClearArray
++Datacenters=(DisplayName=NSLOCTEXT("MMRegion", "Europe", "Europe"), RegionId="EU", bEnabled=true, bVisible=true, bBeta=false, Servers[0]=(Address="142.132.145.234", Port=22222))
++Datacenters=(DisplayName=NSLOCTEXT("MMRegion", "North America", "North America"), RegionId="NA", bEnabled=true, bVisible=true, bBeta=false, Servers[0]=(Address="69.10.34.38", Port=22222))
++Datacenters=(DisplayName=NSLOCTEXT("MMRegion", "Oceania", "Oceania"), RegionId="OCE", bEnabled=true, bVisible=true, bBeta=false, Servers[0]=(Address="139.99.209.91", Port=22222))
+
 [LwsWebSocket]
 bDisableCertValidation=true
 bDisableDomainWhitelist=true
 
+[/Script/Engine.NetworkSettings]
+n.VerifyPeer=false
+
 [WinHttpWebSocket]
+bDisableCertValidation=true
 bDisableDomainWhitelist=true`
 
 	if aid.Config.Fortnite.Season <= 2 {
 		str += `
-		
 [OnlineSubsystemMcp.Xmpp]
 bUsePlainTextAuth=true
 bUseSSL=false
 Protocol=tcp
-ServerAddr="`+ aid.Config.API.Host + `"
+ServerAddr="`+ aid.Config.API.XMPP.Host + aid.Config.API.XMPP.Port + `"
 ServerPort=`+ realPort + `
 
 [OnlineSubsystemMcp.Xmpp Prod]
 bUsePlainTextAuth=true
 bUseSSL=false
 Protocol=tcp
-ServerAddr="`+ aid.Config.API.Host + `"
+ServerAddr="`+ aid.Config.API.XMPP.Host + aid.Config.API.XMPP.Port + `"
 ServerPort=`+ realPort
 	} else {
 		str += `
 [OnlineSubsystemMcp.Xmpp]
-bUsePlainTextAuth=true
 bUseSSL=false
 Protocol=ws
-ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?SNOW_SOCKET_CONNECTION"
+ServerAddr="ws://`+ aid.Config.API.XMPP.Host + aid.Config.API.XMPP.Port +`/?SNOW_SOCKET_CONNECTION"
 
 [OnlineSubsystemMcp.Xmpp Prod]
-bUsePlainTextAuth=true
 bUseSSL=false
 Protocol=ws
-ServerAddr="ws://`+ aid.Config.API.Host + aid.Config.API.Port +`/?SNOW_SOCKET_CONNECTION"`
+ServerAddr="ws://`+ aid.Config.API.XMPP.Host + aid.Config.API.XMPP.Port +`/?SNOW_SOCKET_CONNECTION"`
 	}
 
 	return []byte(str)
@@ -93,12 +106,23 @@ bShouldCheckIfPlatformAllowed=false
 
 [EpicPurchaseFlow]
 bUsePaymentWeb=false
-CI="http://localhost:5173/purchase"
-GameDev="http://localhost:5173/purchase"
-Stage="http://127.0.0.1:5173/purchase"
-Prod="http://127.0.0.1:5173/purchase"
+CI="http://127.0.0.1:3000/purchase"
+GameDev="http://127.0.0.1:3000/purchase"
+Stage="http://127.0.0.1:3000/purchase"
+Prod="http://127.0.0.1:3000/purchase"
 UEPlatform="FNGame"
 
+[/Script/FortniteGame.FortTextHotfixConfig]
++TextReplacements=(Category=Game, bIsMinimalPatch=True, Namespace="", Key="68ADE44C49B20BFF78677799BE68B0EE", NativeString="FORTNITEMARES", LocalizedStrings=(("en","BOOST PERKS")))
++TextReplacements=(Category=Game, bIsMinimalPatch=True, Namespace="", Key="BE6B17BD456F3F13EEB2998AF91DC717", NativeString="THANKS FOR PLAYING!", LocalizedStrings=(("en","THANKS FOR SUPPORTING SNOW!")))
+
+[/Script/FortniteGame.FortGameInstance]
+!FrontEndPlaylistData=ClearArray
++FrontEndPlaylistData=(PlaylistName=Playlist_DefaultSolo, PlaylistAccess=(bEnabled=True, bIsDefaultPlaylist=True, bVisibleWhenDisabled=True, bDisplayAsNew=False, CategoryIndex=0, bDisplayAsLimitedTime=False, DisplayPriority=0))
++FrontEndPlaylistData=(PlaylistName=Playlist_DefaultDuo, PlaylistAccess=(bEnabled=True, bIsDefaultPlaylist=True, bVisibleWhenDisabled=True, bDisplayAsNew=False, CategoryIndex=0, bDisplayAsLimitedTime=False, DisplayPriority=1))
++FrontEndPlaylistData=(PlaylistName=Playlist_DefaultSquad, PlaylistAccess=(bEnabled=True, bIsDefaultPlaylist=True, bVisibleWhenDisabled=True, bDisplayAsNew=False, CategoryIndex=0, bDisplayAsLimitedTime=False, DisplayPriority=2))
++FrontEndPlaylistData=(PlaylistName=Playlist_ShowdownAlt_Solo, PlaylistAccess=(bEnabled=True, bIsDefaultPlaylist=False, bVisibleWhenDisabled=True, bDisplayAsNew=False, CategoryIndex=1, bDisplayAsLimitedTime=False, DisplayPriority=0))
++FrontEndPlaylistData=(PlaylistName=Playlist_ShowdownAlt_Duos, PlaylistAccess=(bEnabled=True, bIsDefaultPlaylist=False, bVisibleWhenDisabled=True, bDisplayAsNew=False, CategoryIndex=1, bDisplayAsLimitedTime=False, DisplayPriority=1))
 `)}
 
 func GetDefaultRuntime() []byte {return []byte(`
@@ -107,6 +131,11 @@ func GetDefaultRuntime() []byte {return []byte(`
 ;+DisabledFrontendNavigationTabs=(TabName="AthenaChallenges",TabState=EFortRuntimeOptionTabState::Hidden)
 ;+DisabledFrontendNavigationTabs=(TabName="Showdown",TabState=EFortRuntimeOptionTabState::Hidden)
 ;+DisabledFrontendNavigationTabs=(TabName="AthenaStore",TabState=EFortRuntimeOptionTabState::Hidden)
+
+[/Script/FortniteGame.FortRuntimeOptions]
+bForceBRMode=True
+bSkipSubgameSelect=True
+bEnableInGameMatchmaking=True
 
 bEnableGlobalChat=true
 bDisableGifting=false

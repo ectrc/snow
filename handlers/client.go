@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ectrc/snow/aid"
 	"github.com/ectrc/snow/fortnite"
 	p "github.com/ectrc/snow/person"
+	"github.com/ectrc/snow/shop"
 	"github.com/ectrc/snow/socket"
 
 	"github.com/gofiber/fiber/v2"
@@ -33,6 +33,11 @@ var (
 		"RemoveGiftBox": clientRemoveGiftBoxAction,
 		"SetAffiliateName": clientSetAffiliateNameAction,
 		"SetReceiveGiftsEnabled": clientSetReceiveGiftsEnabledAction,
+		"VerifyRealMoneyPurchase": clientVerifyRealMoneyPurchaseAction,
+	}
+
+	repeatingActions = []func(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error{
+		clientCalculateTierAndLevel,
 	}
 )
 
@@ -66,6 +71,12 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 		}
 	}
 
+	for _, action := range repeatingActions {
+		if err := action(c, person, profile, &notifications); err != nil {
+			return c.Status(400).JSON(aid.ErrorBadRequest(err.Error()))
+		}
+	}
+
 	for key, profileSnapshot := range profileSnapshots {
 		profile := person.GetProfileFromType(key)
 		if profile == nil {
@@ -78,13 +89,8 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 
 		profile.Diff(profileSnapshot)
 	}
-	
-	revision, _ := strconv.Atoi(c.Query("rvn"))
-	if revision == -1 {
-		revision = profile.Revision
-	}
-	revision++
-	profile.Revision = revision
+
+	profile.Revision = aid.Ternary[int](c.QueryInt("rvn") == -1, profile.Revision, c.QueryInt("rvn"))+1
 	go profile.Save()
 	delete(profileSnapshots, profile.Type)
 
@@ -94,11 +100,11 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 		if profile == nil {
 			continue
 		}
-		profile.Revision++
-		
+	
 		if len(profile.Changes) == 0 {
 			continue
 		}
+		profile.Revision++
 		
 		multiUpdate = append(multiUpdate, aid.JSON{
 			"profileId": profile.Type,
@@ -126,11 +132,32 @@ func PostClientProfileAction(c *fiber.Ctx) error {
 }
 
 func clientQueryProfileAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	accountLevel := 0
+	person.AllSeasonsStats.Range(func(key string, value *p.SeasonStats) bool {
+		accountLevel += fortnite.DataClient.SnowSeason.GetSeasonLevel(value)
+		return true
+	})
+
 	profile.CreateFullProfileUpdateChange()
 	return nil
 }
 
 func clientClientQuestLoginAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	// _g := p.NewGift("GiftBox:GB_FortnitemaresChallenges", 1, "", "")
+	// _g.AddLoot(p.NewItemWithType("Token:FoundersPackDailyRewardToken", 1, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("Token:MysteryToken", 1, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("Token:AccountInventoryBonus", 1, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("Token:DeniedOrDisabledCosmeticPlaceholderToken", 1, "athena"))
+	// _g.AddLoot(p.NewItemWithType("Token:WorldInventoryBonus", 23, "athena"))
+	// _g.AddLoot(p.NewItemWithType("Token:CTF_Dom_Key", 1, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("FortIngredient:Ingredient_Crystal_ShadowShard", 32, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("Ingredient:Ingredient_Crystal_ShadowShard", 4232, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("AccountResource:AthenaBattleStar", 3, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("AccountResource:AthenaSeasonalXP", 2, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("HomebaseNode:QuestReward_BuildingUpgradeLevel2", 5, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("FortHomebaseNode:QuestReward_BuildingUpgradeLevel2", 8, "common_core"))
+	// _g.AddLoot(p.NewItemWithType("Token:NeighborhoodCurrency", 2, "common_core"))
+	// person.CommonCoreProfile.Gifts.AddGift(_g).Save()
 	return nil
 }
 
@@ -601,66 +628,73 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		return fmt.Errorf("invalid Body")
 	}
 	
-	shop := fortnite.NewRandomFortniteCatalog()
-	offer := shop.FindCosmeticOfferById(body.OfferID)
-	if offer == nil {
+	storefront := shop.GetShop()
+	offerRaw, type_ := storefront.GetOfferByID(body.OfferID)
+	if offerRaw == nil {
 		return fmt.Errorf("offer not found")
 	}
 
-	if offer.TotalPrice != body.ExpectedTotalPrice {
-		return fmt.Errorf("invalid price")
+	switch type_ {
+	case shop.StorefrontCatalogOfferEnumItem:
+		offer := offerRaw.(*shop.StorefrontCatalogOfferTypeItem)
+		if (offer.Price.FinalPrice * body.PurchaseQuantity) != body.ExpectedTotalPrice {
+			return fmt.Errorf("invalid price")
+		}
+	case shop.StorefrontCatalogOfferEnumBattlePass:
+		offer := offerRaw.(*shop.StorefrontCatalogOfferTypeBattlePass)
+		if (offer.Price.FinalPrice * body.PurchaseQuantity) != body.ExpectedTotalPrice {
+			return fmt.Errorf("invalid price")
+		}
+	default:
+		return fmt.Errorf("invalid offer type")
 	}
 
-	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
-	if vbucks == nil {
-		return fmt.Errorf("vbucks not found")
+	purchaseLookup := map[shop.StorefrontCatalogOfferEnum]func(quantity int, offerRaw interface{}, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error{
+		shop.StorefrontCatalogOfferEnumItem: clientPurchaseCatalogItemEntryAction,
+		shop.StorefrontCatalogOfferEnumBattlePass: clientPurchaseCatalogBattlePassEntryAction,
 	}
 
-	profile0Vbucks := person.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
-	if profile0Vbucks == nil {
-		return fmt.Errorf("profile0vbucks not found")
+	if purchaseFunc, ok := purchaseLookup[type_]; ok {
+		return purchaseFunc(body.PurchaseQuantity, offerRaw, person, profile, notifications)
 	}
 
-	if vbucks.Quantity < body.ExpectedTotalPrice {
-		return fmt.Errorf("not enough vbucks")
-	}
+	return nil
+}
 
-	vbucks.Quantity -= body.ExpectedTotalPrice
-	profile0Vbucks.Quantity = vbucks.Quantity
-	vbucks.Save()
-	profile0Vbucks.Save()
-
-	if offer.Meta.ProfileId != "athena" {
-		return fmt.Errorf("save the world not implemeted yet")
+func clientPurchaseCatalogItemEntryAction(quantity int, offerRaw interface{}, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	offer := offerRaw.(*shop.StorefrontCatalogOfferTypeItem)
+	for _, grant := range offer.Rewards {
+		if grant.ProfileType != shop.ShopGrantProfileTypeAthena {
+			return fmt.Errorf("save the world not implemeted yet")
+		}
 	}
+	person.TakeAndSyncVbucks(offer.Price.FinalPrice * quantity)
 
 	loot := []aid.JSON{}
-	purchase := p.NewPurchase(body.OfferID, body.ExpectedTotalPrice)
-	for i := 0; i < body.PurchaseQuantity; i++ {
-		for _, grant := range offer.Grants {
-			templateId := grant.Type.BackendValue + ":" + grant.ID
-			if profile.Items.GetItemByTemplateID(templateId) != nil {
-				item := profile.Items.GetItemByTemplateID(templateId)
-				item.Quantity++
-				go item.Save()
+	purchase := p.NewPurchase(offer.OfferID, offer.Price.FinalPrice)
 
-				continue
-			}
-
-			item := p.NewItem(templateId, 1)
-			person.AthenaProfile.Items.AddItem(item)
-			purchase.AddLoot(item)
-
-			loot = append(loot, aid.JSON{
-				"itemType": item.TemplateID,
-				"itemGuid": item.ID,
-				"quantity": item.Quantity,
-				"itemProfile": offer.Meta.ProfileId,
-			})
+	groupedRewards := map[string]int{}
+	for i := 0; i < quantity; i++ {
+		for _, grant := range offer.Rewards {
+			groupedRewards[grant.TemplateID] += grant.Quantity
 		}
 	}
 
-	person.AthenaProfile.Purchases.AddPurchase(purchase).Save()
+	for templateID, quantity := range groupedRewards {
+		r, err := fortnite.GrantToPerson(person, fortnite.NewItemGrant(templateID, quantity))
+		if err != nil {
+			continue
+		}
+
+		loot = append(loot, r.GenerateFortniteLootResultEntry()...)
+	}
+
+	for _, item := range loot {
+		purchaseItem := p.NewItem(item["itemType"].(string), 1)
+		purchaseItem.ID = item["itemGuid"].(string)
+		purchaseItem.ProfileType = item["itemProfile"].(string)
+		purchase.AddLoot(purchaseItem)
+	}
 
 	*notifications = append(*notifications, aid.JSON{
 		"type": "CatalogPurchase",
@@ -669,18 +703,53 @@ func clientPurchaseCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p
 		},
 		"primary": true,
 	})
+	person.AthenaProfile.Purchases.AddPurchase(purchase).Save()
 
 	affiliate := person.CommonCoreProfile.Attributes.GetAttributeByKey("mtx_affiliate")
 	if affiliate == nil {
-		return c.Status(400).JSON(aid.ErrorBadRequest("Invalid affiliate attribute"))
+		return nil
 	}
 
 	creator := p.Find(p.AttributeConvert[string](affiliate))
 	if creator != nil {
-		creator.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += body.ExpectedTotalPrice
-		creator.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += body.ExpectedTotalPrice
+		creator.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += int(float64(offer.Price.FinalPrice) * 0.10)
+		creator.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += int(float64(offer.Price.FinalPrice) * 0.10)
 	}
 
+	return nil
+}
+
+func clientPurchaseCatalogBattlePassEntryAction(quantity int, offerRaw interface{}, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	offer := offerRaw.(*shop.StorefrontCatalogOfferTypeBattlePass)
+	person.TakeAndSyncVbucks(offer.Price.FinalPrice * quantity)
+
+	groupedRewards := map[string]int{}
+	for i := 0; i < quantity; i++ {
+		for _, grant := range offer.Rewards {
+			groupedRewards[grant.TemplateID] += grant.Quantity
+		}
+	}
+
+	for templateID, quantity := range groupedRewards {
+		_, err := fortnite.GrantToPerson(person, fortnite.NewItemGrant(templateID, quantity))
+		if err != nil {
+			continue
+		}
+	}
+
+	receipt := p.NewReceipt(offer.GetOfferID(), 0)
+	receipt.SetState("OK")
+	person.Receipts.AddReceipt(receipt).Save()
+	affiliate := person.CommonCoreProfile.Attributes.GetAttributeByKey("mtx_affiliate")
+	if affiliate == nil {
+		return nil
+	}
+
+	creator := p.Find(p.AttributeConvert[string](affiliate))
+	if creator != nil {
+		creator.CommonCoreProfile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += int(float64(offer.Price.FinalPrice) * 0.10)
+		creator.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased").Quantity += int(float64(offer.Price.FinalPrice) * 0.10)
+	}
 	return nil
 }
 
@@ -703,35 +772,18 @@ func clientRefundMtxPurchaseAction(c *fiber.Ctx, person *p.Person, profile *p.Pr
 	}
 
 	person.RefundTickets--
-	for _, item := range purchase.Loot {
-		person.GetProfileFromType(item.ProfileType).Items.DeleteItem(item.ID)
-		person.GetProfileFromType(item.ProfileType).CreateItemRemovedChange(item.ID)
+	for _, lootItem := range purchase.Loot {
+		person.GetProfileFromType(lootItem.ProfileType).Items.DeleteItem(lootItem.ID)
+		person.GetProfileFromType(lootItem.ProfileType).CreateItemRemovedChange(lootItem.ID)
 	}
-	
-	purchase.RefundedAt = time.Now()
-	purchase.Save()
-
-	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
-	if vbucks == nil {
-		return fmt.Errorf("vbucks not found")
-	}
-
-	vbucks.Quantity += purchase.TotalPaid
-	vbucks.Save()
-
-	profile0Vbucks := person.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
-	if profile0Vbucks == nil {
-		return fmt.Errorf("profile0vbucks not found")
-	}
-
-	profile0Vbucks.Quantity = vbucks.Quantity
-	profile0Vbucks.Save()
+	person.GiveAndSyncVbucks(purchase.TotalPaid)
 
 	return nil
 }
 
 func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
+		OfferID string `json:"offerId" binding:"required"`
 		Currency string `json:"currency" binding:"required"`
 		CurrencySubType string `json:"currencySubType" binding:"required"`
 		ExpectedTotalPrice int `json:"expectedTotalPrice" binding:"required"`
@@ -739,20 +791,23 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 		GiftWrapTemplateId string `json:"giftWrapTemplateId" binding:"required"`
 		PersonalMessage string `json:"personalMessage" binding:"required"`
 		ReceiverAccountIds []string `json:"receiverAccountIds" binding:"required"`
-		OfferId string `json:"offerId" binding:"required"`
 	}
 
 	if err := c.BodyParser(&body); err != nil {
 		return fmt.Errorf("invalid Body")
 	}
 
-	shop := fortnite.NewRandomFortniteCatalog()
-	offer := shop.FindCosmeticOfferById(body.OfferId)
-	if offer == nil {
+	storefront := shop.GetShop()
+	offerRaw, type_ := storefront.GetOfferByID(body.OfferID)
+	if offerRaw == nil {
 		return fmt.Errorf("offer not found")
 	}
+	offer := offerRaw.(*shop.StorefrontCatalogOfferTypeItem)
+	if type_ != shop.StorefrontCatalogOfferEnumItem {
+		return fmt.Errorf("invalid offer type")
+	}
 
-	if offer.TotalPrice != body.ExpectedTotalPrice {
+	if offer.Price.FinalPrice != body.ExpectedTotalPrice {
 		return fmt.Errorf("invalid price")
 	}
 
@@ -762,40 +817,22 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 			return fmt.Errorf("one or more receivers not found")
 		}
 
-		for _, grant := range offer.Grants {
-			if receiverPerson.AthenaProfile.Items.GetItemByTemplateID(grant.Type.BackendValue + ":" + grant.ID) != nil {
+		for _, grant := range offer.Rewards {
+			if receiverPerson.AthenaProfile.Items.GetItemByTemplateID(grant.TemplateID) != nil {
 				return fmt.Errorf("one or more receivers has one of the items")
 			}
 		}
 	}
 
-	price := offer.TotalPrice * len(body.ReceiverAccountIds)
-
-	vbucks := profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
-	if vbucks == nil {
-		return fmt.Errorf("vbucks not found")
-	}
-
-	profile0Vbucks := person.Profile0Profile.Items.GetItemByTemplateID("Currency:MtxPurchased")
-	if profile0Vbucks == nil {
-		return fmt.Errorf("profile0vbucks not found")
-	}
-
-	if vbucks.Quantity < price {
-		return fmt.Errorf("not enough vbucks")
-	}
-
-	vbucks.Quantity -= price
-	profile0Vbucks.Quantity = price
-	vbucks.Save()
-	profile0Vbucks.Save()
+	price := offer.Price.FinalPrice * len(body.ReceiverAccountIds)
+	person.TakeAndSyncVbucks(price)
 
 	for _, receiverAccountId := range body.ReceiverAccountIds {
 		receiverPerson := p.Find(receiverAccountId)
 		gift := p.NewGift(body.GiftWrapTemplateId, 1, person.ID, body.PersonalMessage)
-		for _, grant := range offer.Grants {
-			item := p.NewItem(grant.Type.BackendValue + ":" + grant.ID, 1)
-			item.ProfileType = offer.Meta.ProfileId
+		for _, grant := range offer.Rewards {
+			item := p.NewItem(grant.TemplateID, grant.Quantity)
+			item.ProfileType = string(grant.ProfileType)
 			gift.AddLoot(item)
 		}
 		
@@ -808,7 +845,7 @@ func clientGiftCatalogEntryAction(c *fiber.Ctx, person *p.Person, profile *p.Pro
 
 func clientRemoveGiftBoxAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
 	var body struct {
-		GiftBoxItemId string `json:"giftBoxItemId" binding:"required"`
+		GiftBoxItemId string `json:"giftBoxItemId" binding:"required"`	
 	}
 
 	if err := c.BodyParser(&body); err != nil {
@@ -820,13 +857,27 @@ func clientRemoveGiftBoxAction(c *fiber.Ctx, person *p.Person, profile *p.Profil
 		return fmt.Errorf("gift not found")
 	}
 
-	aid.Print(gift.TemplateID)
-
+	loot := []aid.JSON{}
 	for _, item := range gift.Loot {
-		person.GetProfileFromType(item.ProfileType).Items.AddItem(item).Save()
+		result, err := fortnite.GrantToPerson(person, fortnite.NewItemGrant(item.TemplateID, item.Quantity))
+		if err != nil {
+			continue
+		}
+
+		loot = append(loot, result.GenerateFortniteLootResultEntry()...)
+		item.DeleteLoot()
 	}
 
 	person.CommonCoreProfile.Gifts.DeleteGift(gift.ID)
+
+	*notifications = append(*notifications, aid.JSON{
+		"type": "CatalogPurchase",
+		"lootResult": aid.JSON{
+			"items": loot,
+		},
+		"primary": true,
+	})
+
 	return nil
 }
 
@@ -867,13 +918,63 @@ func clientSetReceiveGiftsEnabledAction(c *fiber.Ctx, person *p.Person, profile 
 		return fmt.Errorf("invalid Body")
 	}
 
-	attribute := profile.Attributes.GetAttributeByKey("allowed_to_receive_gifts")
-	if attribute == nil {
-		return fmt.Errorf("attribute not found")
+	profile.Attributes.GetAttributeByKey("allowed_to_receive_gifts").SetValue(body.ReceiveGifts).Save()
+	return nil
+}
+
+func clientVerifyRealMoneyPurchaseAction(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	var body struct {
+		AppStore string `json:"appStore" binding:"required"`
+		AppStoreId string `json:"appStoreId" binding:"required"`
+		PurchaseCorrelationId string `json:"purchaseCorrelationId" binding:"required"`
+		ReceiptId string `json:"receiptId" binding:"required"`
+		ReceiptInfo string `json:"receiptInfo" binding:"required"`
 	}
 
-	attribute.ValueJSON = aid.JSONStringify(body.ReceiveGifts)
-	go attribute.Save()
+	if err := c.BodyParser(&body); err != nil {
+		return fmt.Errorf("invalid Body")
+	}
+
+	receipt := person.Receipts.GetReceipt(body.ReceiptId)
+	if receipt == nil {
+		return fmt.Errorf("receipt does not exist")
+	}
+
+	if receipt.OfferID != body.AppStoreId {
+		return fmt.Errorf("receipt does not match offer")
+	}
+
+	gift := p.NewGift("GiftBox:GB_MakeGood", 1, "", "Thank you for your purchase!")
+	for _, grant := range receipt.Loot {
+		item := p.NewItem(grant.TemplateID, grant.Quantity)
+		item.ProfileType = grant.ProfileType
+		gift.AddLoot(item)
+	}	
+	
+	person.CommonCoreProfile.Gifts.AddGift(gift).Save()
+	person.SetInAppPurchasesAttribute()
+	person.SyncVBucks("common_core")
+	receipt.SetState("OK")
+	receipt.Save()
+	return nil
+}
+
+func clientCalculateTierAndLevel(c *fiber.Ctx, person *p.Person, profile *p.Profile, notifications *[]aid.JSON) error {
+	for {
+		tierChanged := fortnite.DataClient.SnowSeason.GrantUnredeemedBookRewards(person, "GB_BattlePass")
+		levelChanged := fortnite.DataClient.SnowSeason.GrantUnredeemedLevelRewards(person)
+
+		if !tierChanged && !levelChanged {
+			break
+		}
+	}
+
+	person.AthenaProfile.Attributes.GetAttributeByKey("season_num").SetValue(person.CurrentSeasonStats.Season).Save()
+	person.AthenaProfile.Attributes.GetAttributeByKey("level").SetValue(fortnite.DataClient.SnowSeason.GetSeasonLevel(person.CurrentSeasonStats)).Save()
+	person.AthenaProfile.Attributes.GetAttributeByKey("xp").SetValue(fortnite.DataClient.SnowSeason.GetRelativeSeasonXP(person.CurrentSeasonStats)).Save()
+	person.AthenaProfile.Attributes.GetAttributeByKey("book_purchased").SetValue(person.CurrentSeasonStats.BookPurchased).Save()
+	person.AthenaProfile.Attributes.GetAttributeByKey("book_level").SetValue(fortnite.DataClient.SnowSeason.GetBookLevel(person.CurrentSeasonStats)).Save()
+	person.AthenaProfile.Attributes.GetAttributeByKey("book_xp").SetValue(fortnite.DataClient.SnowSeason.GetRelativeBookXP(person.CurrentSeasonStats)).Save()
 
 	return nil
 }

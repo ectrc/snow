@@ -55,7 +55,7 @@ func IntialiseClient() {
 
 	err := StaticClient.Client.Open()
 	if err != nil {
-		panic(err)
+		aid.Print("(discord) failed to connect; will be disabled")
 	}
 }
 

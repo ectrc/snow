@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="/purchase/assets/?asset=controller.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+    <title>Purchase Flow</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+
+        font-family: "Open Sans", sans-serif;
+        font-optical-sizing: auto;
+        font-style: normal;
+        font-weight: 500;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      :root {
+        --epic-background: #1e1e1e;
+        --epic-summary: #262626;
+        --epic-summary-hover: #2e2e2e;
+        --epic-card: #242524;
+        --epic-highlight: #28a7da;
+
+        --epic-color-active: #f5f5f5;
+        --epic-color-semiactive: #a1a1a1;
+        --epic-color-inactive: #636363;
+      }
+
+      .icon {
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+
+      .appContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        color: var(--epic-color-active);
+        background-color: var(--epic-background);
+      }
+
+      .order {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+      }
+
+      .orderSummary {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        width: 25rem;
+        min-width: 25rem;
+        height: 100%;
+        background-color: var(--epic-summary);
+      }
+
+      .orderSummaryHeader {
+        font-weight: 600;
+        margin-top: 3rem;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .orderClose {
+        border: none;
+        outline: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 0.25rem;
+        cursor: pointer;
+        border-radius: 0.65rem;
+        background-color: var(--epic-summary);
+        transition: background-color 50ms;
+      }
+
+      .orderClose svg {
+        fill: var(--epic-color-inactive);
+        transition: fill 50ms;
+      }
+
+      .orderClose:hover {
+        background-color: var(--epic-card);
+      }
+
+      .orderClose:hover svg {
+        fill: var(--epic-color-active);
+      }
+
+      .orderImage {
+        /* aspect-ratio: 9/12; */
+        width: 8rem;
+        min-width: max-content;
+        height: 10rem;
+        min-height: max-content;
+        border-radius: 0.5rem;
+        image-rendering: optimizeSpeed;
+        /* background-image: url("https://fortnite-api.com/images/cosmetics/br/CID_384_Athena_Commando_M_StreetAssassin/icon.png"); */
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-color: var(--epic-background);
+      }
+
+      .orderTitle {
+        display: flex;
+        flex-direction: row;
+        /* gap: 1rem; */
+      }
+
+      .orderTitleInformation {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-left: 0.5rem;
+      }
+
+      .orderTitleName {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.25rem;
+      }
+
+      .orderTitlePrice {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--epic-color-semiactive);
+      }
+
+      .bigFatButButton {
+        margin-top: auto;
+        outline: none;
+        border: none;
+        padding: 1.2rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--epic-color-active);
+        border-radius: 0.25rem;
+        background-color: #0078f2;
+        transition: filter 50ms;
+      }
+
+      .bigFatButButton:hover {
+        filter: brightness(0.9) contrast(1.5);
+      }
+
+      .priceBreakdown {
+        display: flex;
+        flex-direction: column;
+        /* gap: 0.15rem; */
+        margin-top: 0.5rem;
+      }
+
+      .priceBreakdown section {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+      }
+
+      .priceBreakdown section p {
+        font-weight: 400;
+        font-size: 0.95rem;
+        color: var(--epic-color-semiactive);
+      }
+      .priceBreakdown .divider {
+        margin-top: 0.35rem;
+        margin-bottom: 0.35rem;
+        height: 1px;
+        width: 100%;
+        background-color: #636363;
+      }
+
+      .priceBreakdown section.bold p {
+        font-weight: 600;
+        color: var(--epic-color-active);
+      }
+
+      .specialBannerIcon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 1.5rem;
+      }
+
+      .specialBannerIcon svg {
+        width: 1.5rem;
+        height: 1.5rem;
+        fill: #242424;
+      }
+
+      .specialBanner {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem;
+        width: 100%;
+        border-radius: 0.25rem;
+        background-image: linear-gradient(to right, #ccec86, #ffdd76);
+        margin-top: 0.5rem;
+      }
+
+      .specialBanner p {
+        font-size: 0.785rem;
+        line-height: 1rem;
+        font-weight: 500;
+        color: #2c2d28;
+      }
+
+      .specialBanner p b {
+        font-weight: 700;
+        color: #242424;
+      }
+
+      .orderPaymentMethods {
+        display: flex;
+        flex-direction: column;
+        width: 55rem;
+        height: 100%;
+        padding: 1rem;
+      }
+
+      .orderStatusContainer {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .orderStatus {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 20rem;
+        height: 3.5rem;
+        user-select: none;
+        cursor: pointer;
+        border-bottom: 0.15rem solid var(--epic-summary);
+      }
+
+      .orderStatus p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--epic-color-inactive);
+      }
+
+      .orderStatus:hover {
+        border-bottom: 0.15rem solid var(--epic-summary-hover);
+      }
+
+      .orderStatus.active {
+        border-bottom: 0.15rem solid var(--epic-highlight);
+      }
+
+      .orderStatus.active p {
+        color: var(--epic-color-active);
+      }
+
+      .orderStatus.fill {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        align-items: center;
+        width: unset;
+        cursor: default;
+        flex-grow: 1;
+      }
+      .orderStatus.fill:hover {
+        border-bottom: 0.15rem solid var(--epic-summary);
+      }
+
+      .orderStatusUserIcon {
+        width: 1.5rem;
+        height: 1.5rem;
+        fill: var(--epic-color-inactive);
+      }
+
+      .paymentMethodsContainer {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        padding: 1.5rem 0;
+      }
+
+      .paymentMethodsHeader {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #ddd;
+      }
+
+      .paymentMethodsContainer .divider {
+        margin-top: 1.25rem;
+        height: 1px;
+        width: 100%;
+        background-color: #333333;
+      }
+
+      .paymentMethod {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        margin-top: 1rem;
+        padding: 0.8rem;
+        min-height: 3rem;
+        cursor: pointer;
+        border-radius: 0.5rem;
+        background-color: var(--epic-card);
+        transition: background-color 50ms;
+      }
+
+      .paymentMethod:hover {
+        background-color: var(--epic-summary-hover);
+      }
+
+      .paymentMethod.active {
+        cursor: default;
+        background-color: var(--epic-card);
+      }
+
+      .paymentMethodCard {
+        display: flex;
+        flex-direction: row;
+        align-items: end;
+        justify-content: flex-end;
+        padding: 0.5rem;
+        width: 12rem;
+        height: 7rem;
+        border-radius: 0.5rem;
+        background-color: #fff;
+      }
+
+      .paymentCardProvider {
+        width: 40%;
+      }
+
+      .paymentInformation {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 1rem;
+      }
+
+      p.paymentCardNumber {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--epic-color-semiactive);
+      }
+
+      p.p {
+        font-size: 0.85rem;
+        font-weight: 400;
+        color: var(--epic-color-semiactive);
+      }
+
+      p.notice {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--epic-color-semiactive);
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="appContainer">
+      <div class="order">
+        <!-- <OrderPaymentMethods /> -->
+        <div class="orderPaymentMethods">
+          <div class="orderStatusContainer">
+            <div class="orderStatus active">
+              <p>CHECKOUT</p>
+            </div>
+            <div class="orderStatus fill">
+              <p class="orderStatusUsername" id="displayName"></p>
+            </div>
+          </div>
+          <div class="paymentMethodsContainer">
+            <h2 class="paymentMethodsHeader">REVIEW AND PLACE ORDER</h2>
+            <p class="p">YOUR PAYMENT METHODS</p>
+            <!-- <div class="paymentMethod active">
+              <div class="paymentMethodCard">
+                <img
+                  src="https://logos-world.net/wp-content/uploads/2020/04/Visa-Logo.png"
+                  alt=""
+                  class="paymentCardProvider"
+                />
+              </div>
+              <div class="paymentInformation">
+                <p class="paymentCardNumber">**** **** **** 0000</p>
+                <p class="paymentCard">Free Purchase!</p>
+              </div>
+            </div> -->
+            <div class="divider"></div>
+            <p class="notice">
+              Snow does not store your payment information. Your payment
+              information is stored securely by Sellix.
+            </p>
+          </div>
+        </div>
+        <!--  -->
+
+        <!-- <OrderSummary />  -->
+        <div class="orderSummary">
+          <header class="orderSummaryHeader">
+            <p>ORDER SUMMARY</p>
+            <button class="orderClose" id="close">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="icon"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </header>
+
+          <div class="orderTitle">
+            <div class="orderImage" id="orderImage"></div>
+            <div class="orderTitleInformation">
+              <h4 class="orderTitleName" id="orderName"></h4>
+              <p class="orderTitlePrice" id="orderPrice"></p>
+            </div>
+          </div>
+
+          <div class="priceBreakdown">
+            <section>
+              <p>Price</p>
+              <p id="orderSubtotalPrice"></p>
+            </section>
+            <section>
+              <p>VAT included where applicable</p>
+            </section>
+            <div class="divider"></div>
+            <section class="bold">
+              <p>Total</p>
+              <p id="orderTotalPrice"></p>
+            </section>
+          </div>
+
+          <div class="specialBanner">
+            <div class="specialBannerIcon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <p>
+              Earn <b>50 V-Bucks</b> with this purchase. Rewards are available
+              for use 14 days after purchase
+            </p>
+          </div>
+
+          <button class="bigFatButButton" id="purchaseOfferButton">
+            PLACE ORDER
+          </button>
+        </div>
+        <!--  -->
+      </div>
+    </div>
+
+    <script>
+      const snow = {
+        log: async (json) =>
+          await axios.post("http://127.0.0.1:3000/snow/log", {
+            json: json,
+            url: window.location.href,
+          }),
+      };
+
+      const unrealEngineInjected = window.ue ? window.ue : null;
+      unrealEngineInjected && main(unrealEngineInjected); // asyncronous!!!
+    </script>
+  </body>
+</html>

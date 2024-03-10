@@ -14,6 +14,10 @@ func GetFriendList(c *fiber.Ctx) error {
 	result := []aid.JSON{}
 
 	person.Relationships.Range(func(key string, value *p.Relationship) bool {
+		if value.Towards == nil || value.From == nil {
+			return true
+		}
+
 		switch value.Direction {
 		case p.RelationshipInboundDirection:
 			result = append(result, value.GenerateFortniteFriendEntry(p.GenerateTypeTowardsPerson))

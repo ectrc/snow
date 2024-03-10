@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/ectrc/snow/aid"
@@ -31,7 +32,20 @@ func (s *Socket[T]) Write(payload []byte) {
 	s.M.Lock()
 	defer s.M.Unlock()
 
-	s.Connection.WriteMessage(websocket.TextMessage, payload)
+	err := s.Connection.WriteMessage(websocket.TextMessage, payload)
+	if err != nil {
+		s.Remove()
+	}
+}
+
+func (s *Socket[T]) Remove() {
+	reflectType := reflect.TypeOf(s.Data).String()
+	switch reflectType {
+	case "*socket.JabberData":
+		JabberSockets.Delete(s.ID)
+	case "*socket.MatchmakerData":
+		MatchmakerSockets.Delete(s.ID)
+	}
 }
 
 func newSocket[T JabberData | MatchmakerData](conn WebSocket, data ...T) *Socket[T] {

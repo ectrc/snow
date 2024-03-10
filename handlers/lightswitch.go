@@ -94,7 +94,7 @@ func GetFortniteTimeline(c *fiber.Ctx) error {
 		"seasonNumber": season,
 		"seasonTemplateId": "AthenaSeason:AthenaSeason" + strings.Split(build, ".")[0],
 		"seasonBegin": time.Now().Add(-time.Hour * 24 * 7).Format("2006-01-02T15:04:05.000Z"),
-		"seasonEnd": time.Now().Add(time.Hour * 24 * 7).Format("2006-01-02T15:04:05.000Z"),
+		"seasonEnd": time.Now().Add(time.Hour * 24 * 65).Format("2006-01-02T15:04:05.000Z"),
 		"seasonDisplayedEnd": time.Now().Add(time.Hour * 24 * 7).Format("2006-01-02T15:04:05.000Z"),
 		"activeStorefronts": []aid.JSON{},
 		"dailyStoreEnd": aid.TimeEndOfDay(),
